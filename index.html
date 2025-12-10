@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>GSM KPI Dashboard</title>
+<title>LTE KPI Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.6.2/fuse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
@@ -33,6 +33,7 @@ button.action-btn:hover { background:#1f5ab5; }
 button.ppt-btn { background:#D24726; } /* PowerPoint Orange */
 button.ppt-btn:hover { background:#a8381e; }
 
+
 /* --- GRID LAYOUT (3 Graphs per row) --- */
 .chart-grid { 
   display:grid; 
@@ -49,6 +50,47 @@ button.ppt-btn:hover { background:#a8381e; }
 .chart-card { background:white; border-radius:8px; padding:15px; box-shadow:0 2px 8px rgba(0,0,0,0.08); display:flex; flex-direction:column; }
 .chart-title { display:none; } 
 .chart-container { position: relative; height: 280px; width: 100%; }
+
+  .toggle-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.toggle-switch .toggle-label {
+  user-select: none;
+}
+
+.toggle-switch .switch {
+  width: 50px;
+  height: 24px;
+  background: #ccc;
+  border-radius: 12px;
+  position: relative;
+  transition: background 0.3s;
+}
+
+.toggle-switch .switch .circle {
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: left 0.3s;
+}
+
+.toggle-switch.active .switch {
+  background: #2F80ED;
+}
+
+.toggle-switch.active .switch .circle {
+  left: 28px;
+}
+
 
 /* --- DROPDOWNS --- */
 #dropdown, #siteDropdownList, #onAirDateDropdownList { 
@@ -155,11 +197,11 @@ button.ppt-btn:hover { background:#a8381e; }
 </head>
 <body>
 
-<header>GSM KPI Dashboard</header>
+<header>LTE KPI Dashboard</header>
 
 <div class="navbar">
-  <a href="gsm.html" class="nav-btn active">GSM</a>
-  <a href="index.html" class="nav-btn">LTE</a>
+  <a href="gsm.html" class="nav-btn">GSM</a>
+  <a href="index.html" class="nav-btn active">LTE</a>
   <a href="nr.html" class="nav-btn">NR</a>
 </div>
 
@@ -183,6 +225,15 @@ button.ppt-btn:hover { background:#a8381e; }
     </button>
     <div id="siteDropdownList"></div>
   </div>
+
+  <div class="toggle-switch" id="sheetToggle">
+  <span class="toggle-label">Group Level</span>
+  <div class="switch" onclick="switchSheetToggle()">
+    <div class="circle"></div>
+  </div>
+  <span class="toggle-label">Site Level</span>
+</div>
+
 
   <button onclick="fetchData()" class="action-btn">Refresh</button>
   <button onclick="openPreview()" class="action-btn ppt-btn">Export PPT</button>
@@ -271,7 +322,7 @@ button.ppt-btn:hover { background:#a8381e; }
 let allData = [];
 let fuse = null;
 let allSites = [];
-let siteCutoverMap = {}; // Maps GBSC -> On-Air Date
+let siteCutoverMap = {}; // Maps eNodeB Name -> On-Air Date
 let allOnAirDates = [];
 let selectedOnAirDates = [];
 
@@ -281,17 +332,24 @@ let graphsPerSlide = 2;
 
 let chartExportColor = '#2F80ED'; // Default Line/Dot Color (Dark Blue)
 let chartExportTitleColor = '#333333'; // Default Title Color (Dark Gray/Black)
+  
+let currentSheet = 'site'; // Default
+const sheetToggle = document.getElementById("sheetToggle");
 
 const acceptanceKpis = [
-  "Call setup success rate(%)", "SDCCH Congestion Rate(%)", "TCH Congestion Rate(%)", 
-  "UL TBF establishment Suc Rate(%)", "Call drop rate(%)", "DL_TBF_drop_Rate(%)", 
-  "UL_TBF_drop_Rate(%)", "Handover Success Rate(%)", "DL TBF establishment Suc Rate(%)"
+  "LTE RRC Setup Success Rate(%)","ERAB Setup Success Rate(%)","LTE Call Setup Success Rate(%)","E-RAB Call Drop Rate(%)",
+  "CSFB Access Success Rate(%)","LTE Intra Freq HO Success Rate(%)","Intra-eNB HO Success Rate(%)","Inter-eNBX2HO Success Rate(%)",
+  "Inter-eNBS1HO Success Rate(%)","Max RRC Connected Ue","DL Data Total Volume (Gbyte)","UL Data Total Volume (Gbyte)",
+  "E-RAB Setup Success Rate (VoIP)(%)","Call Drop Rate (VoIP)(%)","Intra-frequency Handover Out Success Rate(VoIP)(%)",
+  "Inter-frequency Handover Out Success Rate(VoIP)(%)","SRVCC Success Rate (L2W)(%)","SRVCC Success Rate (L2G)(%)"
 ];
 const monitoringKpis = [
-  "CS Traffic (erl)", "Data DL Volume (Gbytes)", "Data UL Volume (Gbytes)", 
-  "Average DL RLC throughput in EGPRS mode (kbit/sec) per TSL", 
-  "Average DL RLC throughput in GPRS mode (kbit/sec) Per TSL", "Cell Availability(%)"
+  "Cell Availability Ratio(%)","Average Latency Downlink (msecs)","DL PRB Utilization (%)","UL PRB Utilization (%)",
+  "LTE DL - Cell Average Throughput (Mbit/s)","LTE UL - Cell Average Thoughput (Mbit/s)","LTE DL -USER Average Throughput (Mbit/s)",
+  "LTE UL -USER Average Throughput (Mbit/s)","Downlink Packet Loss Rate (VoIP)(%)","Uplink Packet Loss Rate (VoIP)(%)",
+  "VoLTE Traffic Erlang","VoLTE Traffic DL (MB)","VoLTE Traffic UL (MB)","DL BLER QCI1","UL BLER QCI1"
 ];
+
 let selectedKpis = {
   acceptance: [...acceptanceKpis],
   monitoring: [...monitoringKpis]
@@ -313,10 +371,28 @@ function switchTab(tab) {
 }
 
 // --- DATA FETCHING & MAPPING ---
+
+function switchSheetToggle() {
+    if(currentSheet === 'site') {
+        currentSheet = 'group';
+        sheetToggle.classList.add('active');
+    } else {
+        currentSheet = 'site';
+        sheetToggle.classList.remove('active');
+    }
+    fetchData(); // Refetch charts based on new sheet
+}
+
+
 async function fetchData(){
   try {
     // 1. Fetch KPI Data
-    const kpiUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1930867305&single=true&output=csv&t=" + Date.now();
+    const sheetUrls = {
+    site: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=893314169&single=true&output=csv",
+    group: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=0&single=true&output=csv"
+};
+  
+const kpiUrl = sheetUrls[currentSheet] + "&t=" + Date.now();
     const kpiRes = await fetch(kpiUrl);
     const kpiText = await kpiRes.text();
     
@@ -332,7 +408,7 @@ async function fetchData(){
     });
 
     // Determine all sites present in the KPI data
-    allSites = [...new Set(allData.map(d=>d["GBSC"]))].filter(s=>s).sort();
+    allSites = [...new Set(allData.map(d=>d["eNodeB Name"]))].filter(s=>s).sort();
 
     // 2. Fetch Cutover Data
     const cutoverUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=19616562&single=true&output=csv&t=" + Date.now();
@@ -344,7 +420,7 @@ async function fetchData(){
     
     siteCutoverMap = {};
     cutoverRows.forEach(r => {
-        const siteName = r[cutoverHeaders.indexOf("GBSC")]?.trim();
+        const siteName = r[cutoverHeaders.indexOf("eNodeB Name")]?.trim();
         const onAirDate = r[cutoverHeaders.indexOf("On-Air Date")]?.trim();
         if (siteName && onAirDate) {
             // Only map sites that exist in the KPI data to prevent issues
@@ -457,7 +533,7 @@ function updateDateFilterUI(options = {close: true}) {
     }
 }
 
-// --- FILTER UI LOGIC (GBSC) ---
+// --- FILTER UI LOGIC (eNodeB Name) ---
 
 function setupSiteDropdown(){
   const list = document.getElementById("siteDropdownList");
@@ -555,149 +631,179 @@ function updateSiteFilterUI(options = {close: true}) {
 
 // --- CHART RENDERING ---
 
+// --- CHART RENDERING (Modified with Custom Scaling Logic) ---
+
 function renderCharts(){
-  const container = document.getElementById("mainChartContainer");
-  container.innerHTML = "";
-  
-  let kpisToShow = [];
-  if(currentTab === "acceptance") kpisToShow = selectedKpis.acceptance;
-  else if(currentTab === "monitoring") kpisToShow = selectedKpis.monitoring;
-  else if(currentTab === "both") kpisToShow = [...selectedKpis.acceptance, ...selectedKpis.monitoring];
+    const container = document.getElementById("mainChartContainer");
+    container.innerHTML = "";
+    // ... (rest of filtering and timeline logic remains the same)
 
-  // 1. Determine final list of sites based on date filter AND site filter
-  let sitesFromDate = allSites.filter(site => {
-      const date = siteCutoverMap[site];
-      return selectedOnAirDates.includes(date);
-  });
+    let kpisToShow = [];
+    if(currentTab === "acceptance") kpisToShow = selectedKpis.acceptance;
+    // ... (rest of kpisToShow logic)
 
-  let finalSiteList;
-  if (selectedSites.length > 0) {
-      // Use specifically selected sites
-      finalSiteList = selectedSites;
-  } else {
-      // Use all sites allowed by the date filter (default behavior when no specific site is selected)
-      finalSiteList = sitesFromDate;
-  }
-  
-  let filteredData = allData.filter(d => finalSiteList.includes(d["GBSC"]));
-
-
-  // 2. Process Timeline (unchanged)
-  const timeline = [...new Set(filteredData.map(d=>d["Date"]))].sort((a,b)=>{
-    const [da,ma,ya]=a.split('/').map(Number);
-    const [db,mb,yb]=b.split('/').map(Number);
-    return new Date(ya,ma-1,da)-new Date(yb,mb-1,db);
-  });
-
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const timelineLabels = timeline.map(d => {
-      const [day, month] = d.split('/').map(Number);
-      return `${day} ${monthNames[month - 1]}`; // e.g., "5 Jan"
-  });
-
-  // 3. Generate Charts
-  kpisToShow.forEach((kpi, idx) => {
-    const card = document.createElement("div");
-    card.className = "chart-card";
-    
-    const wrapper = document.createElement("div");
-    wrapper.className = "chart-container";
-    
-    const canvas = document.createElement("canvas");
-    canvas.id = `chart_${idx}`;
-    
-    wrapper.appendChild(canvas);
-    card.appendChild(wrapper);
-    container.appendChild(card);
-
-    // Calculate Data
-const dataPoints = timeline.map(date => {
-  const values = filteredData
-    .filter(d => d["Date"] === date)
-    .map(d => Number(d[kpi]))
-    .filter(v => !isNaN(v));
-
-  if(values.length === 0) return null;
-
-  const avg = values.reduce((a,b) => a+b, 0) / values.length;
-  return avg;
-});
-
-let validValues = dataPoints.filter(v => v !== null);
-let minVal = Math.min(...validValues);
-let maxVal = Math.max(...validValues);
-
-// Special rule: if min >= 95 and max <= 100, set scale explicitly
-if(minVal >= 95 && maxVal <= 100) {
-    minVal = 95;
-    maxVal = 100;
-} else {
-    // Apply your normal rules
-    if(minVal < 40) minVal = Math.max(Math.floor(minVal), 42);
-    if(maxVal > 100) maxVal = 100;
-
-    // Optionally round to nearest 5 for nicer axis
-    minVal = Math.floor(minVal / 5) * 5;
-    maxVal = Math.ceil(maxVal / 5) * 5;
-}
-
-
-    // Draw Chart with Animation
-    new Chart(canvas.getContext("2d"), {
-      type: 'line',
-      data: {
-        labels: timelineLabels,
-        datasets: [{
-          label: (finalSiteList.length > 0 && dataPoints.some(p => p !== null)) ? "Aggregate" : "No Data",
-          data: dataPoints,
-          borderColor: getRandomColor(),
-          backgroundColor: 'transparent',
-          borderWidth: 2,
-          pointRadius: 3,
-          tension: 0.1,
-          spanGaps: true 
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: {
-            x: {
-                type: 'number',
-                easing: 'linear',
-                duration: 500,
-                from: NaN,
-                delay: (ctx) => ctx.index * 30 
-            },
-            y: { duration: 0 }
-        },
-        plugins: { 
-            legend: { display: false },
-            title: { // Chart.js built-in title
-                display: true,
-                text: kpi,
-                font: {
-                    size: 14,
-                    weight: 'bold'
-                },
-                color: '#333'
-            }
-        },
-        scales: {
-           x: { 
-               ticks: { font: {size:8} }, 
-               grid: {display:false} 
-           },
-           y: { 
-               beginAtZero: false, 
-               grid: {color:'#eee'},
-               // If no data points, fix the scale to prevent giant axes
-               min: (finalSiteList.length === 0 || dataPoints.every(p => p === null)) ? 0 : undefined 
-           }
-        }
-      }
+    let sitesFromDate = allSites.filter(site => {
+        const date = siteCutoverMap[site];
+        return selectedOnAirDates.includes(date);
     });
-  });
+
+    let finalSiteList;
+    if (selectedSites.length > 0) {
+        finalSiteList = selectedSites;
+    } else {
+        finalSiteList = sitesFromDate;
+    }
+    
+    let filteredData = allData.filter(d => finalSiteList.includes(d["eNodeB Name"]));
+
+    const timeline = [...new Set(filteredData.map(d=>d["Date"]))].sort((a,b)=>{
+        const [da,ma,ya]=a.split('/').map(Number);
+        const [db,mb,yb]=b.split('/').map(Number);
+        return new Date(ya,ma-1,da)-new Date(yb,mb-1,db);
+    });
+
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const timelineLabels = timeline.map(d => {
+        const [day, month] = d.split('/').map(Number);
+        return `${day} ${monthNames[month - 1]}`;
+    });
+
+    // 3. Generate Charts
+    kpisToShow.forEach((kpi, idx) => {
+        const card = document.createElement("div");
+        card.className = "chart-card";
+        
+        const wrapper = document.createElement("div");
+        wrapper.className = "chart-container";
+        
+        const canvas = document.createElement("canvas");
+        canvas.id = `chart_${idx}`;
+        
+        wrapper.appendChild(canvas);
+        card.appendChild(wrapper);
+        container.appendChild(card);
+
+        // Calculate Data
+        const dataPoints = timeline.map(date => {
+            const values = filteredData
+            .filter(d => d["Date"] === date)
+            .map(d => d[kpi])
+            .filter(v => v !== null && v !== "")
+            .map(Number)
+            .filter(v => !isNaN(v));
+    
+            if (values.length === 0) return null;
+
+            const kpiLower = kpi.toLowerCase();
+            if (kpiLower.includes('%') || kpiLower.includes('rate') || kpiLower.includes('avg') || kpiLower.includes('average') || kpiLower.includes('max')) {
+                return values.reduce((a, b) => a + b, 0) / values.length; // AVERAGE
+            } else {
+                return values.reduce((a, b) => a + b, 0); // SUM
+            }
+        });
+
+        let validValues = dataPoints.filter(v => v !== null);
+        let minVal = Math.min(...validValues);
+        let maxVal = Math.max(...validValues);
+
+        let suggestedMin;
+        let suggestedMax;
+        
+        // ==========================================================
+        // *** START: Custom Scaling Logic (Based on User's Request)
+        // ==========================================================
+        
+        // 1. Max Rule: if max value < 1, set max scale to max * 1.10
+        if (maxVal < 1) {
+            suggestedMax = maxVal * 1.10;
+        } else {
+            // For values >= 1, we can use the default rounding logic
+            suggestedMax = Math.ceil(maxVal / 5) * 5;
+        }
+
+        // 2. Min Rule: if min value != 0, set min scale to min * 0.90
+        // Assuming the goal is to show a buffer below the minimum data point.
+        if (minVal !== 0 && validValues.length > 0) {
+            suggestedMin = minVal * 0.90;
+        } else {
+            // If min is 0 or no data, let Chart.js default (or use a floor like 0)
+            suggestedMin = 0;
+        }
+        
+        // For KPI percentage data, we may still want to enforce max cap and specific floors/ceilings
+        // For example, ensuring max is never set to 1.1 if the data is a percentage.
+        if (kpi.includes('%') || kpi.includes('Rate')) {
+            suggestedMax = Math.min(suggestedMax, 100); // Cap percentage scales at 100
+        }
+
+        // ==========================================================
+        // *** END: Custom Scaling Logic
+        // ==========================================================
+        
+        /* // Original Scaling Logic (Commented out):
+        // if (minVal >= 95 && maxVal <= 100) {
+        //   minVal = 95;
+        //   maxVal = 100;
+        // } else {
+        //   if (minVal < 40) minVal = Math.max(Math.floor(minVal), 42);
+        //   if (maxVal > 100) maxVal = 100;
+
+        //   minVal = Math.floor(minVal / 5) * 5;
+        //   maxVal = Math.ceil(maxVal / 5) * 5;
+        // }
+        */
+
+        // Draw Chart with Animation
+        new Chart(canvas.getContext("2d"), {
+            type: 'line',
+            data: {
+                labels: timelineLabels,
+                datasets: [{
+                    label: (finalSiteList.length > 0 && dataPoints.some(p => p !== null)) ? "Aggregate" : "No Data",
+                    data: dataPoints,
+                    borderColor: getRandomColor(),
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    tension: 0.1,
+                    spanGaps: true 
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    x: {
+                        type: 'number',
+                        easing: 'linear',
+                        duration: 500,
+                        from: NaN,
+                        delay: (ctx) => ctx.index * 30 
+                    },
+                    y: { duration: 0 }
+                },
+                plugins: { 
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: kpi,
+                        font: { size: 14, weight: 'bold' },
+                        color: '#333'
+                    }
+                },
+                scales: {
+                    x: { ticks: { font: {size:8} }, grid: {display:false} },
+                    y: { 
+                        beginAtZero: false, 
+                        grid: {color:'#eee'},
+                        // Apply the calculated suggested min/max here
+                        min: validValues.length > 0 ? suggestedMin : 0, 
+                        max: validValues.length > 0 ? suggestedMax : undefined
+                    }
+                }
+            }
+        });
+    });
 }
 
 function getRandomColor() {
@@ -942,9 +1048,6 @@ function updatePreviewSettings(newCount, newLineColor, newTitleColor) {
                     previewRows = 1;
                 }
                 // --- END PREVIEW FIX LOGIC ---
-
-                // Adjust height for preview based on calculated rows
-                box.style.height = `calc((100% / ${previewRows}) - 15px)`;	
                 
                 grid.appendChild(box);
             }
@@ -1016,7 +1119,7 @@ async function downloadPPT(){
     
     // Title Slide
     let slide = pptx.addSlide();
-    slide.addText("GSM KPI Report", { x:0.5, y:2, fontSize:32, bold:true, color:'2F80ED' });
+    slide.addText("LTE KPI Report", { x:0.5, y:2, fontSize:32, bold:true, color:'2F80ED' });
     slide.addText(`Generated: ${new Date().toLocaleDateString()}`, { x:0.5, y:3, fontSize:14 });
 
     const canvases = document.querySelectorAll("canvas");
