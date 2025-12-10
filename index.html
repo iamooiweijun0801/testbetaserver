@@ -253,14 +253,9 @@ display: flex; flex-direction: column;
 
 <div class="chart-grid" id="mainChartContainer"></div>
 
-<div class="kpiDrawerToggle" onclick="toggleDrawer()">⚙</div>
-<div id="kpiDrawer" class="kpiDrawer">
-  <div class="drawer-header">
-    <h3 id="drawerHeaderTitle">KPI Settings</h3>
     <!-- NEW: CHART STYLE TOGGLE BUTTON -->
+    
 <div class="chartStyleDrawerToggle" onclick="toggleChartStyleDrawer()">🎨</div>
-
-
 <!-- NEW: CHART STYLE DRAWER -->
 <div id="chartStyleDrawer" class="chartStyleDrawer">
 <div class="drawer-header">
@@ -285,10 +280,14 @@ display: flex; flex-direction: column;
 <hr style="margin:15px 0;">
 
 
+<div class="kpiDrawerToggle" onclick="toggleDrawer()">⚙</div>
+<div id="kpiDrawer" class="kpiDrawer">
+  <div class="drawer-header">
+    <h3 id="drawerHeaderTitle">KPI Settings</h3>
 <label><b>Custom Color:</b></label>
 <input type="color" id="customChartColor" onchange="applyCustomColor()" style="width:100%; height:40px; margin-top:6px;">
 </div>
-</div>
+</div> 
     <div class="drawer-controls">
         <button class="action-btn" onclick="selectVisibleKpis()" style="background:#5cb85c;">Select All</button>
         <button class="action-btn" onclick="clearVisibleKpis()" style="background:#f0ad4e;">Clear All</button>
@@ -400,41 +399,6 @@ let selectedKpis = {
 };
 
 // --- GLOBAL UTILITY FUNCTIONS ---
-function toggleChartStyleDrawer(){
-document.getElementById("chartStyleDrawer").classList.toggle("open");
-}
-
-
-const chartStyles = [
-{ borderWidth: 2, pointRadius: 3, borderDash: [], tension: 0.2 },
-{ borderWidth: 4, pointRadius: 5, borderDash: [], tension: 0.25 },
-{ borderWidth: 2, pointRadius: 0, borderDash: [6,3], tension: 0.1 },
-{ borderWidth: 3, pointRadius: 4, borderDash: [], tension: 0.4 },
-{ borderWidth: 1, pointRadius: 0, borderDash: [], tension: 0 },
-{ borderWidth: 2, pointRadius: 2, borderDash: [4,4], tension: 0.3 },
-{ borderWidth: 3, pointRadius: 6, borderDash: [], tension: 0.15 },
-{ borderWidth: 3, pointRadius: 3, borderDash: [], tension: 0.2 },
-{ borderWidth: 2, pointRadius: 8, borderDash: [], tension: 0.25 },
-{ borderWidth: 3, pointRadius: 5, borderDash: [], tension: 0.25, randomColor: true }
-];
-
-
-function applyChartStyle(styleIndex){
-const style = chartStyles[styleIndex];
-
-
-window.activeChartStyle = style;
-
-
-renderCharts();
-}
-
-
-function applyCustomColor(){
-const color = document.getElementById("customChartColor").value;
-window.activeCustomColor = color;
-renderCharts();
-}
 /**
  * Switches the active tab (Acceptance, Monitoring, Both).
  * @param {string} tab - The tab identifier ('acceptance', 'monitoring', 'both').
@@ -966,6 +930,42 @@ function applyKpis(){
   
   toggleDrawer();
   renderCharts();
+}
+
+function toggleChartStyleDrawer(){
+document.getElementById("chartStyleDrawer").classList.toggle("open");
+}
+
+
+const chartStyles = [
+{ borderWidth: 2, pointRadius: 3, borderDash: [], tension: 0.2 },
+{ borderWidth: 4, pointRadius: 5, borderDash: [], tension: 0.25 },
+{ borderWidth: 2, pointRadius: 0, borderDash: [6,3], tension: 0.1 },
+{ borderWidth: 3, pointRadius: 4, borderDash: [], tension: 0.4 },
+{ borderWidth: 1, pointRadius: 0, borderDash: [], tension: 0 },
+{ borderWidth: 2, pointRadius: 2, borderDash: [4,4], tension: 0.3 },
+{ borderWidth: 3, pointRadius: 6, borderDash: [], tension: 0.15 },
+{ borderWidth: 3, pointRadius: 3, borderDash: [], tension: 0.2 },
+{ borderWidth: 2, pointRadius: 8, borderDash: [], tension: 0.25 },
+{ borderWidth: 3, pointRadius: 5, borderDash: [], tension: 0.25, randomColor: true }
+];
+
+
+function applyChartStyle(styleIndex){
+const style = chartStyles[styleIndex];
+
+
+window.activeChartStyle = style;
+
+
+renderCharts();
+}
+
+
+function applyCustomColor(){
+const color = document.getElementById("customChartColor").value;
+window.activeCustomColor = color;
+renderCharts();
 }
 
 // --- PPT EXPORT CUSTOMIZATION & PREVIEW ---
