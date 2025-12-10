@@ -108,57 +108,19 @@ button.ppt-btn:hover { background:#a8381e; }
 }
 #dropdown div, #siteDropdownList div, #onAirDateDropdownList div { padding:6px 10px; cursor:pointer; font-size:13px; border-bottom:1px solid #eee; }
 #dropdown div:hover, #siteDropdownList div:hover, #onAirDateDropdownList div:hover { background:#f0f7ff; color:#2F80ED; }
-
-  /* --- CHART STYLE DRAWER --- */
-.chartStyleDrawerToggle {
-    position: fixed;
-    top: 150px;
-    right: 0;
-    width: 36px;
-    height: 36px;
-    background: #9B51E0;
-    color: white;
-    border-radius: 6px 0 0 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    z-index: 900;
-}
-
+.chartStyleDrawerToggle { position: fixed; top: 55px; right: 0; width: 36px; height: 36px; background: #8E44AD; color: white; border-radius: 6px 0 0 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; z-index: 900; }
 .chartStyleDrawer {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 260px;
-    height: 100%;
-    background: white;
-    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-    z-index: 1100;
-    transform: translateX(100%);
-    transition: 0.3s;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
+position: fixed; top: 0; right: 0;
+width: 320px;
+height: 100%; background: white;
+box-shadow: -2px 0 10px rgba(0,0,0,0.1); z-index: 1000;
+transform: translateX(100%); transition: 0.3s; padding: 20px;
+display: flex; flex-direction: column;
 }
 .chartStyleDrawer.open { transform: translateX(0); }
-
-.chart-style-item {
-    padding: 8px;
-    margin-bottom: 6px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    cursor: pointer;
-    background: #fafafa;
-    font-size: 14px;
-    transition: 0.2s;
-}
-.chart-style-item:hover {
-    background: #f0e7ff;
-    border-color: #9B51E0;
-}
-
+.style-button { padding: 8px 12px; margin: 6px 0; background: #eee; border-radius: 6px; cursor: pointer; font-weight: bold; }
+.style-button:hover { background: #ddd; }
+  
 /* --- KPI Drawer Fixes --- */
 .kpiDrawerToggle { position:fixed; top:100px; right:0; width:36px; height:36px; background:#2F80ED; color:white; border-radius:6px 0 0 6px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:20px; z-index:900; }
 .kpiDrawer { 
@@ -291,39 +253,50 @@ button.ppt-btn:hover { background:#a8381e; }
 
 <div class="chart-grid" id="mainChartContainer"></div>
 
-<div class="chartStyleDrawerToggle" onclick="toggleChartStyleDrawer()">🎨</div>
-  
 <div class="kpiDrawerToggle" onclick="toggleDrawer()">⚙</div>
 <div id="kpiDrawer" class="kpiDrawer">
   <div class="drawer-header">
     <h3 id="drawerHeaderTitle">KPI Settings</h3>
+    <!-- NEW: CHART STYLE TOGGLE BUTTON -->
+<div class="chartStyleDrawerToggle" onclick="toggleChartStyleDrawer()">🎨</div>
+
+
+<!-- NEW: CHART STYLE DRAWER -->
+<div id="chartStyleDrawer" class="chartStyleDrawer">
+<div class="drawer-header">
+<h3>Chart Styles</h3>
+<button onclick="toggleChartStyleDrawer()" style="border:none; background:none; font-size:22px; cursor:pointer;">✕</button>
+</div>
+
+
+<div>
+<div class="style-button" onclick="applyChartStyle(0)">Style 1 – Clean Lines</div>
+<div class="style-button" onclick="applyChartStyle(1)">Style 2 – Bold</div>
+<div class="style-button" onclick="applyChartStyle(2)">Style 3 – Dotted</div>
+<div class="style-button" onclick="applyChartStyle(3)">Style 4 – Thick + Soft</div>
+<div class="style-button" onclick="applyChartStyle(4)">Style 5 – Minimalist</div>
+<div class="style-button" onclick="applyChartStyle(5)">Style 6 – Dashed</div>
+<div class="style-button" onclick="applyChartStyle(6)">Style 7 – Neon</div>
+<div class="style-button" onclick="applyChartStyle(7)">Style 8 – Shadow Line</div>
+<div class="style-button" onclick="applyChartStyle(8)">Style 9 – Rounded Dots</div>
+<div class="style-button" onclick="applyChartStyle(9)">Style 10 – Random Colors</div>
+
+
+<hr style="margin:15px 0;">
+
+
+<label><b>Custom Color:</b></label>
+<input type="color" id="customChartColor" onchange="applyCustomColor()" style="width:100%; height:40px; margin-top:6px;">
+</div>
+</div>
     <div class="drawer-controls">
         <button class="action-btn" onclick="selectVisibleKpis()" style="background:#5cb85c;">Select All</button>
-        <button class="action-btn" onclick="clearVisibleKpis()" ="background:#f0ad4e;">Clear All</button>
+        <button class="action-btn" onclick="clearVisibleKpis()" style="background:#f0ad4e;">Clear All</button>
         <button class="action-btn" onclick="applyKpis()">Apply</button>
-        <button onclick="toggleDrawer()" ="border:none; background:none; font-size:24px; cursor:pointer; color:#777;">✕</button>
+        <button onclick="toggleDrawer()" style="border:none; background:none; font-size:24px; cursor:pointer; color:#777;">✕</button>
     </div>
   </div>
   <div class="kpi-options-body" id="kpiOptionsList"></div>
-</div>
-<div id="chartStyleDrawer" class="chartStyleDrawer">
-    <h3>Chart Styles</h3>
-
-    <div id="chartStyleList">
-        <div class="chart-style-item" onclick="applyChartStyle('default')">Default Line</div>
-        <div class="chart-style-item" onclick="applyChartStyle('smooth')">Smooth Line</div>
-        <div class="chart-style-item" onclick="applyChartStyle('bar')">Bar Chart</div>
-        <div class="chart-style-item" onclick="applyChartStyle('stepped')">Stepped Line</div>
-        <div class="chart-style-item" onclick="applyChartStyle('area')">Area Fill</div>
-        <div class="chart-style-item" onclick="applyChartStyle('dot')">Only Dots</div>
-        <div class="chart-style-item" onclick="applyChartStyle('mixed')">Mixed Line+Bar</div>
-        <div class="chart-style-item" onclick="applyChartStyle('thin')">Thin Line</div>
-        <div class="chart-style-item" onclick="applyChartStyle('thick')">Thick Line</div>
-        <div class="chart-style-item" onclick="applyChartStyle('random')">Random Style</div>
-    </div>
-
-    <h4>Color</h4>
-    <input type="color" id="chartColorPicker" value="#2F80ED" onchange="applySelectedColor()">
 </div>
 
 
@@ -331,7 +304,7 @@ button.ppt-btn:hover { background:#a8381e; }
   <div class="modal-content">
     <div class="modal-header">
       <span id="previewTitle">PPT Export Preview</span>
-      <button onclick="closePreview()" ="border:none; background:none; font-size:20px; cursor:pointer;">✕</button>
+      <button onclick="closePreview()" style="border:none; background:none; font-size:20px; cursor:pointer;">✕</button>
     </div>
     <div class="modal-body">
         
@@ -427,7 +400,41 @@ let selectedKpis = {
 };
 
 // --- GLOBAL UTILITY FUNCTIONS ---
+function toggleChartStyleDrawer(){
+document.getElementById("chartStyleDrawer").classList.toggle("open");
+}
 
+
+const chartStyles = [
+{ borderWidth: 2, pointRadius: 3, borderDash: [], tension: 0.2 },
+{ borderWidth: 4, pointRadius: 5, borderDash: [], tension: 0.25 },
+{ borderWidth: 2, pointRadius: 0, borderDash: [6,3], tension: 0.1 },
+{ borderWidth: 3, pointRadius: 4, borderDash: [], tension: 0.4 },
+{ borderWidth: 1, pointRadius: 0, borderDash: [], tension: 0 },
+{ borderWidth: 2, pointRadius: 2, borderDash: [4,4], tension: 0.3 },
+{ borderWidth: 3, pointRadius: 6, borderDash: [], tension: 0.15 },
+{ borderWidth: 3, pointRadius: 3, borderDash: [], tension: 0.2 },
+{ borderWidth: 2, pointRadius: 8, borderDash: [], tension: 0.25 },
+{ borderWidth: 3, pointRadius: 5, borderDash: [], tension: 0.25, randomColor: true }
+];
+
+
+function applyChartStyle(styleIndex){
+const style = chartStyles[styleIndex];
+
+
+window.activeChartStyle = style;
+
+
+renderCharts();
+}
+
+
+function applyCustomColor(){
+const color = document.getElementById("customChartColor").value;
+window.activeCustomColor = color;
+renderCharts();
+}
 /**
  * Switches the active tab (Acceptance, Monitoring, Both).
  * @param {string} tab - The tab identifier ('acceptance', 'monitoring', 'both').
@@ -793,25 +800,6 @@ const dataPoints = timeline.map(date => {
       maxVal = Math.ceil(maxVal / 5) * 5;
     }
 
-    let chartOptions = { ...baseOptions };
-let chartDatasetOptions = {
-    borderColor: globalChartColor,
-    backgroundColor: globalChartColor + "33",
-    pointRadius: 3
-};
-
-switch (globalChartStyle) {
-    case "smooth": chartDatasetOptions.tension = 0.4; break;
-    case "stepped": chartDatasetOptions.stepped = true; break;
-    case "area": chartDatasetOptions.fill = true; break;
-    case "dot": chartDatasetOptions.borderWidth = 0; chartDatasetOptions.pointRadius = 5; break;
-    case "thin": chartDatasetOptions.borderWidth = 1; break;
-    case "thick": chartDatasetOptions.borderWidth = 4; break;
-    case "bar": chartType = "bar"; break;
-    case "mixed": chartType = "bar"; break; // you can enhance later
-}
-
-
     // Draw Chart with Animation
     new Chart(canvas.getContext("2d"), {
       type: 'line',
@@ -873,32 +861,6 @@ switch (globalChartStyle) {
 function getRandomColor() {
   const colors = ['#2F80ED', '#27AE60', '#D24726', '#8E44AD', '#F39C12', '#2980B9'];
   return colors[Math.floor(Math.random() * colors.length)];
-}
-
-  let globalChartStyle = "default";
-let globalChartColor = "#2F80ED";
-
-/* Toggle drawer */
-function toggleChartStyleDrawer() {
-    document.getElementById("chartStyleDrawer").classList.toggle("open");
-}
-
-/* Handle picking a style */
-function applyChartStyle(style) {
-    globalChartStyle = style;
-
-    if (style === "random") {
-        const colors = ["#2F80ED","#27AE60","#D24726","#8E44AD","#F39C12","#16A085","#C0392B","#2980B9"];
-        globalChartColor = colors[Math.floor(Math.random() * colors.length)];
-    }
-
-    renderCharts(); // refresh charts immediately
-}
-
-/* Handle color picker */
-function applySelectedColor() {
-    globalChartColor = document.getElementById("chartColorPicker").value;
-    renderCharts();
 }
 
 // --- KPI DRAWER & UTILITY LOGIC ---
