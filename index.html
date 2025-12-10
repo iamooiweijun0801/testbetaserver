@@ -32,8 +32,6 @@ button.action-btn { padding:8px 16px; cursor:pointer; border:none; background:#2
 button.action-btn:hover { background:#1f5ab5; }
 button.ppt-btn { background:#D24726; } /* PowerPoint Orange */
 button.ppt-btn:hover { background:#a8381e; }
-button.style-btn { background:#8E44AD; } /* Style button color */
-button.style-btn:hover { background:#6C3483; }
 
 /* --- GRID LAYOUT (3 Graphs per row) --- */
 .chart-grid { 
@@ -259,8 +257,7 @@ button.style-btn:hover { background:#6C3483; }
 
 
   <button onclick="fetchData()" class="action-btn">Refresh</button>
-  <button onclick="openPreview()" class="action-btn ppt-btn">Export PPT</button>
-  <button onclick="toggleStyleDrawer()" class="action-btn style-btn">🎨 Style</button>
+  <button onclick="exportToPPT()" class="action-btn ppt-btn">Export PPT</button>
 </div>
 
 <div class="chart-grid" id="mainChartContainer"></div>
@@ -402,17 +399,47 @@ let selectedKpis = {
   monitoring: [...monitoringKpis]
 };
 
-// --- IMPROVED Y-AXIS SCALING FUNCTIONS ---
+// --- FIXED Y-AXIS SCALING FUNCTIONS ---
 
 /**
- * Gets optimal tick interval for a given range
+ * Cleans floating point numbers to avoid precision errors
+ */
+function cleanFloat(num) {
+    // Round to avoid floating point precision errors
+    if (num === 0) return 0;
+    if (Math.abs(num) < 0.000001) return 0;
+    
+    // For very small numbers, use fixed precision
+    if (Math.abs(num) < 0.001) {
+        return parseFloat(num.toFixed(8));
+    }
+    
+    // For small numbers, use appropriate precision
+    if (Math.abs(num) < 1) {
+        return parseFloat(num.toFixed(4));
+    }
+    
+    if (Math.abs(num) < 10) {
+        return parseFloat(num.toFixed(2));
+    }
+    
+    if (Math.abs(num) < 100) {
+        return parseFloat(num.toFixed(1));
+    }
+    
+    return Math.round(num * 1000) / 1000;
+}
+
+/**
+ * Gets optimal tick interval for a given range with FIXED values
  */
 function getOptimalTickInterval(range) {
-    const niceIntervals = [0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000];
-    const targetTicks = 5; // Aim for about 5-6 ticks
-    
-    // Calculate ideal interval
+    // Target 5-6 ticks
+    const targetTicks = 6;
     let idealInterval = range / targetTicks;
+    
+    // Define nice intervals
+    const niceIntervals = [0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000];
     
     // Find the nearest nice interval
     let bestInterval = niceIntervals[0];
@@ -426,70 +453,47 @@ function getOptimalTickInterval(range) {
         }
     }
     
-    return bestInterval;
+    return cleanFloat(bestInterval);
 }
 
 /**
- * Makes nice rounded values with better interval logic
+ * Generates ticks for a given range with FIXED precision
  */
-function makeNiceRange(min, max) {
-    // If both are 0, return sensible defaults
-    if (min === 0 && max === 0) {
-        return { min: 0, max: 10, stepSize: 2 };
+function generateTicks(min, max, interval) {
+    const ticks = [];
+    let current = min;
+    
+    // Ensure we start at a nice value
+    const startTick = Math.floor(min / interval) * interval;
+    current = Math.max(min, startTick);
+    
+    while (current <= max + interval) {
+        ticks.push(cleanFloat(current));
+        current = cleanFloat(current + interval);
     }
     
-    // Handle very small values
-    if (max < 0.001) {
-        const magnitude = Math.pow(10, Math.ceil(-Math.log10(max)));
-        const step = 0.1 / magnitude;
-        const niceMin = Math.floor(min * magnitude) / magnitude;
-        const niceMax = Math.ceil(max * magnitude) / magnitude;
-        return { 
-            min: Math.max(0, niceMin - step), 
-            max: niceMax + step, 
-            stepSize: step 
-        };
-    }
-    
-    const range = max - min;
-    
-    // Add 10% padding
-    const padding = range * 0.1;
-    let paddedMin = Math.max(0, min - padding);
-    let paddedMax = max + padding;
-    
-    // Get optimal tick interval
-    const interval = getOptimalTickInterval(paddedMax - paddedMin);
-    
-    // Round to nice intervals
-    const niceMin = Math.floor(paddedMin / interval) * interval;
-    const niceMax = Math.ceil(paddedMax / interval) * interval;
-    
-    // Ensure we have at least 5 ticks
-    const actualTicks = (niceMax - niceMin) / interval;
-    if (actualTicks < 4) {
-        const extraTicks = Math.ceil((4 - actualTicks) / 2);
-        const newMin = Math.max(0, niceMin - (extraTicks * interval));
-        const newMax = niceMax + (extraTicks * interval);
-        
-        return { 
-            min: newMin, 
-            max: newMax, 
-            stepSize: interval 
-        };
-    }
-    
-    return { 
-        min: Math.max(0, niceMin), 
-        max: niceMax, 
-        stepSize: interval 
-    };
+    return ticks;
 }
 
 /**
- * Gets Y-axis configuration based on data values
+ * Gets Y-axis configuration with FIXED precision
  */
 function getYAxisConfig(dataMin, dataMax, kpi) {
+    // Clean the input values
+    dataMin = cleanFloat(dataMin);
+    dataMax = cleanFloat(dataMax);
+    
+    // Handle edge cases
+    if (dataMin === dataMax) {
+        if (dataMin === 0) {
+            return { min: 0, max: 10, stepSize: 2, ticks: [0, 2, 4, 6, 8, 10] };
+        }
+        // Add some range around single value
+        const padding = Math.max(dataMin * 0.2, 1);
+        dataMin = Math.max(0, dataMin - padding);
+        dataMax = dataMax + padding;
+    }
+    
     const kpiLower = kpi.toLowerCase();
     const isPercentageKpi = kpiLower.includes('%') || 
                            kpiLower.includes('rate') || 
@@ -500,16 +504,18 @@ function getYAxisConfig(dataMin, dataMax, kpi) {
     
     // Special handling for percentage KPIs in 95-100 range
     if (isPercentageKpi && dataMin >= 95 && dataMax <= 100) {
-        return { min: 95, max: 100, stepSize: 1 };
+        return { 
+            min: 95, 
+            max: 100, 
+            stepSize: 1,
+            ticks: [95, 96, 97, 98, 99, 100]
+        };
     }
     
     // Handle percentage KPIs (0-100)
     if (isPercentageKpi) {
-        let min = Math.max(0, dataMin * 0.9);
-        let max = Math.min(100, dataMax * 1.1);
-        
-        // Ensure we don't go below 0
-        if (min < 0) min = 0;
+        let min = Math.max(0, cleanFloat(dataMin * 0.9));
+        let max = Math.min(100, cleanFloat(dataMax * 1.1));
         
         // If max is 100, keep it at 100
         if (dataMax === 100) max = 100;
@@ -520,15 +526,52 @@ function getYAxisConfig(dataMin, dataMax, kpi) {
         const range = max - min;
         const interval = getOptimalTickInterval(range);
         
+        // Ensure at least 5 ticks
+        let actualTicks = Math.ceil((max - min) / interval);
+        if (actualTicks < 5) {
+            const extra = Math.ceil((5 - actualTicks) / 2);
+            min = Math.max(0, cleanFloat(min - (extra * interval)));
+            max = cleanFloat(max + (extra * interval));
+        }
+        
+        const ticks = generateTicks(min, max, interval);
+        
         return {
-            min: Math.floor(min / interval) * interval,
-            max: Math.ceil(max / interval) * interval,
-            stepSize: interval
+            min: ticks[0],
+            max: ticks[ticks.length - 1],
+            stepSize: interval,
+            ticks: ticks
         };
     }
     
-    // For all other KPIs, use the improved scaling
-    return makeNiceRange(dataMin, dataMax);
+    // For all other KPIs
+    const range = dataMax - dataMin;
+    
+    // Add 10% padding
+    const padding = cleanFloat(range * 0.1);
+    let min = Math.max(0, cleanFloat(dataMin - padding));
+    let max = cleanFloat(dataMax + padding);
+    
+    // Get interval
+    const interval = getOptimalTickInterval(max - min);
+    
+    // Ensure we have at least 5 ticks
+    let tickCount = Math.ceil((max - min) / interval);
+    if (tickCount < 5) {
+        const neededTicks = 5 - tickCount;
+        const extraTicks = Math.ceil(neededTicks / 2);
+        min = Math.max(0, cleanFloat(min - (extraTicks * interval)));
+        max = cleanFloat(max + (extraTicks * interval));
+    }
+    
+    const ticks = generateTicks(min, max, interval);
+    
+    return {
+        min: ticks[0],
+        max: ticks[ticks.length - 1],
+        stepSize: interval,
+        ticks: ticks
+    };
 }
 
 // --- GLOBAL UTILITY FUNCTIONS ---
@@ -616,7 +659,7 @@ const kpiUrl = sheetUrls[currentSheet] + "&t=" + Date.now();
   } catch(e) { console.error(e); alert("Failed to load data."); }
 }
 
-// --- FILTER UI LOGIC (ON-AIR DATE) ---
+// --- FILTER UI LOGIC ---
 
 function setupOnAirDateDropdown(){
   const list = document.getElementById("onAirDateDropdownList");
@@ -691,8 +734,6 @@ function updateDateFilterUI(options = {close: true}) {
         list.style.display = "block";
     }
 }
-
-// --- FILTER UI LOGIC (eNodeB Name) ---
 
 function setupSiteDropdown(){
   const list = document.getElementById("siteDropdownList");
@@ -855,19 +896,16 @@ function populateStyleOptions() {
         div.className = "style-option";
         div.dataset.styleId = style.id;
         
-        // Check if this is the current style
         const isSelected = JSON.stringify(style.config) === JSON.stringify(currentChartStyle);
         if (isSelected) {
             div.classList.add("selected");
         }
         
-        // Create preview canvas
         const preview = document.createElement("canvas");
         preview.className = "style-preview";
         preview.width = 300;
         preview.height = 40;
         
-        // Draw preview
         const ctx = preview.getContext('2d');
         drawStylePreview(ctx, style.config);
         
@@ -891,10 +929,8 @@ function drawStylePreview(ctx, style) {
     const width = 300;
     const height = 40;
     
-    // Clear
     ctx.clearRect(0, 0, width, height);
     
-    // Draw grid
     ctx.strokeStyle = '#eee';
     ctx.lineWidth = 1;
     for (let i = 0; i <= 4; i++) {
@@ -904,7 +940,6 @@ function drawStylePreview(ctx, style) {
         ctx.stroke();
     }
     
-    // Draw line
     ctx.strokeStyle = '#2F80ED';
     ctx.lineWidth = style.lineWidth;
     ctx.setLineDash(style.borderDash);
@@ -919,14 +954,12 @@ function drawStylePreview(ctx, style) {
     ];
     
     if (style.stepped) {
-        // Draw stepped line
         ctx.moveTo(points[0].x, points[0].y);
         for (let i = 1; i < points.length; i++) {
             ctx.lineTo(points[i].x, points[i-1].y);
             ctx.lineTo(points[i].x, points[i].y);
         }
     } else {
-        // Draw curved line
         ctx.moveTo(points[0].x, points[0].y);
         for (let i = 1; i < points.length - 2; i++) {
             const xc = (points[i].x + points[i + 1].x) / 2;
@@ -938,7 +971,6 @@ function drawStylePreview(ctx, style) {
     }
     ctx.stroke();
     
-    // Draw points
     if (style.pointRadius > 0) {
         ctx.fillStyle = '#2F80ED';
         ctx.setLineDash([]);
@@ -949,7 +981,6 @@ function drawStylePreview(ctx, style) {
         });
     }
     
-    // Fill area if needed
     if (style.fill) {
         ctx.globalAlpha = 0.2;
         ctx.fillStyle = '#2F80ED';
@@ -993,7 +1024,6 @@ function renderCharts(){
   else if(currentTab === "monitoring") kpisToShow = selectedKpis.monitoring;
   else if(currentTab === "both") kpisToShow = [...selectedKpis.acceptance, ...selectedKpis.monitoring];
 
-  // 1. Determine final list of sites based on date filter AND site filter
   let sitesFromDate = allSites.filter(site => {
       const date = siteCutoverMap[site];
       return selectedOnAirDates.includes(date);
@@ -1008,7 +1038,6 @@ function renderCharts(){
   
   let filteredData = allData.filter(d => finalSiteList.includes(d["eNodeB Name"]));
 
-  // 2. Process Timeline
   const timeline = [...new Set(filteredData.map(d=>d["Date"]))].sort((a,b)=>{
     const [da,ma,ya]=a.split('/').map(Number);
     const [db,mb,yb]=b.split('/').map(Number);
@@ -1021,7 +1050,6 @@ function renderCharts(){
       return `${day} ${monthNames[month - 1]}`;
   });
 
-  // 3. Generate Charts
   kpisToShow.forEach((kpi, idx) => {
     const card = document.createElement("div");
     card.className = "chart-card";
@@ -1036,7 +1064,6 @@ function renderCharts(){
     card.appendChild(wrapper);
     container.appendChild(card);
 
-    // Calculate Data
     const dataPoints = timeline.map(date => {
       const values = filteredData
         .filter(d => d["Date"] === date)
@@ -1049,21 +1076,18 @@ function renderCharts(){
 
       const kpiLower = kpi.toLowerCase();
       if (kpiLower.includes('%') || kpiLower.includes('rate') || kpiLower.includes('avg') || kpiLower.includes('average') || kpiLower.includes('max')) {
-        return values.reduce((a, b) => a + b, 0) / values.length;
+        return cleanFloat(values.reduce((a, b) => a + b, 0) / values.length);
       } else {
-        return values.reduce((a, b) => a + b, 0);
+        return cleanFloat(values.reduce((a, b) => a + b, 0));
       }
     });
 
-    // Get valid values for Y-axis scaling
     let validValues = dataPoints.filter(v => v !== null);
     let dataMin = validValues.length > 0 ? Math.min(...validValues) : 0;
     let dataMax = validValues.length > 0 ? Math.max(...validValues) : 100;
 
-    // Get Y-axis configuration using improved scaling
     const yAxisConfig = getYAxisConfig(dataMin, dataMax, kpi);
 
-    // Draw Chart with current style
     new Chart(canvas.getContext("2d"), {
       type: 'line',
       data: {
@@ -1121,23 +1145,41 @@ function renderCharts(){
                ticks: {
                    stepSize: yAxisConfig.stepSize,
                    callback: function(value) {
+                       // Clean the value first
+                       value = cleanFloat(value);
+                       
+                       // If value is 0, show just "0" not "0.00"
+                       if (value === 0) return '0';
+                       
                        if (kpi.includes('%')) {
                            return value + '%';
                        }
-                       // Format large numbers nicely
+                       
+                       // Format large numbers
                        if (value >= 1000000) {
                            return (value / 1000000).toFixed(1) + 'M';
                        }
                        if (value >= 1000) {
                            return (value / 1000).toFixed(1) + 'K';
                        }
-                       // Format small numbers with appropriate precision
-                       if (value < 1) {
+                       
+                       // Format based on magnitude
+                       if (value < 0.001) {
+                           return value.toExponential(2);
+                       }
+                       if (value < 0.01) {
+                           return value.toFixed(4);
+                       }
+                       if (value < 0.1) {
                            return value.toFixed(3);
+                       }
+                       if (value < 1) {
+                           return value.toFixed(2);
                        }
                        if (value < 10) {
                            return value.toFixed(1);
                        }
+                       
                        return Math.round(value);
                    }
                }
@@ -1242,7 +1284,18 @@ function applyKpis(){
   renderCharts();
 }
 
-// --- PPT EXPORT CUSTOMIZATION & PREVIEW ---
+// --- PPT EXPORT FIXED ---
+
+function exportToPPT() {
+    // Direct export without preview
+    const canvases = document.querySelectorAll("canvas");
+    if(canvases.length === 0) { 
+        alert("No charts to export."); 
+        return; 
+    }
+    
+    downloadPPT();
+}
 
 function getLayoutConfig(count) {
     const slideWidth = 10.0;
