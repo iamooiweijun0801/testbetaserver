@@ -109,7 +109,7 @@ button.ppt-btn:hover { background:#a8381e; }
 #dropdown div, #siteDropdownList div, #onAirDateDropdownList div { padding:6px 10px; cursor:pointer; font-size:13px; border-bottom:1px solid #eee; }
 #dropdown div:hover, #siteDropdownList div:hover, #onAirDateDropdownList div:hover { background:#f0f7ff; color:#2F80ED; }
 
-/* --- Side Drawer for Chart Style Customization --- */
+/* --- Chart Style Drawer --- */
 .chartStyleDrawerToggle { 
   position:fixed; 
   top:150px; 
@@ -185,56 +185,58 @@ button.ppt-btn:hover { background:#a8381e; }
 .kpi-options-body { flex-grow: 1; overflow-y: auto; padding-right: 5px; padding-bottom: 40px; } 
 
 /* Chart Style Controls */
-.style-control-group { 
-  margin-bottom: 15px; 
-  padding-bottom: 15px; 
-  border-bottom: 1px solid #eee; 
+.style-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 15px;
 }
-.style-control-group h4 { 
-  margin: 0 0 10px 0; 
-  font-size: 14px; 
-  color: #555; 
+
+.style-preset-btn {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  font-size: 12px;
 }
-.style-control-row { 
-  display: flex; 
-  align-items: center; 
-  justify-content: space-between; 
-  margin-bottom: 8px; 
+
+.style-preset-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
-.style-control-row label { 
-  font-size: 13px; 
-  color: #333; 
+
+.style-preset-btn.active {
+  border-color: #8E44AD;
+  background: #f8f5ff;
+  font-weight: bold;
 }
-.style-control-row input[type="range"] { 
-  width: 150px; 
+
+.color-options-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
 }
-.style-control-row input[type="color"] { 
-  width: 40px; 
-  height: 30px; 
-  border: 1px solid #ccc; 
-  border-radius: 4px; 
-  cursor: pointer; 
+
+.color-option-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
 }
-.style-control-row select { 
-  width: 160px; 
-  font-size: 13px; 
-  padding: 4px 8px; 
+
+.color-option-btn:hover {
+  transform: scale(1.1);
 }
-.chart-colors { 
-  display: flex; 
-  flex-wrap: wrap; 
-  gap: 8px; 
-  margin-top: 5px; 
-}
-.chart-color-option { 
-  width: 25px; 
-  height: 25px; 
-  border-radius: 4px; 
-  cursor: pointer; 
-  border: 2px solid transparent; 
-}
-.chart-color-option.selected { 
-  border-color: #333; 
+
+.color-option-btn.selected {
+  border-color: #333;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #8E44AD;
 }
 
 /* --- PREVIEW MODAL --- */
@@ -338,125 +340,31 @@ button.ppt-btn:hover { background:#a8381e; }
 
 <div class="chart-grid" id="mainChartContainer"></div>
 
-<!-- Chart Style Drawer (New) -->
+<!-- Chart Style Drawer Button (ABOVE KPI Settings) -->
 <div class="chartStyleDrawerToggle" onclick="toggleChartStyleDrawer()">🎨</div>
 <div id="chartStyleDrawer" class="chartStyleDrawer">
   <div class="drawer-header">
-    <h3>Chart Style Customization</h3>
+    <h3>Chart Style Presets</h3>
     <button onclick="toggleChartStyleDrawer()" style="border:none; background:none; font-size:24px; cursor:pointer; color:#777;">✕</button>
   </div>
   
-  <div class="style-control-group">
-    <h4>Line Style</h4>
-    <div class="style-control-row">
-      <label>Line Width:</label>
-      <input type="range" id="lineWidth" min="1" max="10" value="2" onchange="updateChartStyle('lineWidth', this.value)">
-      <span id="lineWidthValue">2px</span>
-    </div>
-    <div class="style-control-row">
-      <label>Line Color:</label>
-      <input type="color" id="lineColor" value="#2F80ED" onchange="updateChartStyle('lineColor', this.value)">
-    </div>
-    <div class="style-control-row">
-      <label>Line Style:</label>
-      <select id="lineStyle" onchange="updateChartStyle('lineStyle', this.value)">
-        <option value="solid">Solid</option>
-        <option value="dashed">Dashed</option>
-        <option value="dotted">Dotted</option>
-        <option value="step">Step</option>
-        <option value="step-before">Step Before</option>
-        <option value="step-after">Step After</option>
-      </select>
+  <div style="margin-bottom: 20px;">
+    <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #555;">10 Popular Styles</h4>
+    <div class="style-presets-grid" id="stylePresetsGrid">
+      <!-- 10 popular styles will be added here by JavaScript -->
     </div>
   </div>
 
-  <div class="style-control-group">
-    <h4>Points</h4>
-    <div class="style-control-row">
-      <label>Show Points:</label>
-      <select id="showPoints" onchange="updateChartStyle('showPoints', this.value)">
-        <option value="true">Yes</option>
-        <option value="false">No</option>
-      </select>
-    </div>
-    <div class="style-control-row">
-      <label>Point Size:</label>
-      <input type="range" id="pointSize" min="1" max="10" value="3" onchange="updateChartStyle('pointSize', this.value)">
-      <span id="pointSizeValue">3px</span>
-    </div>
-    <div class="style-control-row">
-      <label>Point Style:</label>
-      <select id="pointStyle" onchange="updateChartStyle('pointStyle', this.value)">
-        <option value="circle">Circle</option>
-        <option value="rect">Square</option>
-        <option value="triangle">Triangle</option>
-        <option value="cross">Cross</option>
-        <option value="rectRot">Rotated Square</option>
-        <option value="star">Star</option>
-      </select>
+  <div style="margin-bottom: 20px;">
+    <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #555;">Color Options</h4>
+    <div class="color-options-grid" id="colorOptionsGrid">
+      <!-- Color options will be added here by JavaScript -->
     </div>
   </div>
 
-  <div class="style-control-group">
-    <h4>Fill</h4>
-    <div class="style-control-row">
-      <label>Fill Area:</label>
-      <select id="fillArea" onchange="updateChartStyle('fillArea', this.value)">
-        <option value="none">No Fill</option>
-        <option value="origin">To Origin</option>
-        <option value="start">To Start</option>
-        <option value="end">To End</option>
-      </select>
-    </div>
-    <div class="style-control-row">
-      <label>Fill Color:</label>
-      <input type="color" id="fillColor" value="#2F80ED20" onchange="updateChartStyle('fillColor', this.value)">
-    </div>
-    <div class="style-control-row">
-      <label>Fill Opacity:</label>
-      <input type="range" id="fillOpacity" min="0.1" max="1" step="0.1" value="0.2" onchange="updateChartStyle('fillOpacity', this.value)">
-      <span id="fillOpacityValue">0.2</span>
-    </div>
-  </div>
-
-  <div class="style-control-group">
-    <h4>Grid & Axis</h4>
-    <div class="style-control-row">
-      <label>Show Grid:</label>
-      <select id="showGrid" onchange="updateChartStyle('showGrid', this.value)">
-        <option value="true">Yes</option>
-        <option value="false">No</option>
-      </select>
-    </div>
-    <div class="style-control-row">
-      <label>Grid Color:</label>
-      <input type="color" id="gridColor" value="#eee" onchange="updateChartStyle('gridColor', this.value)">
-    </div>
-    <div class="style-control-row">
-      <label>Tension:</label>
-      <input type="range" id="tension" min="0" max="1" step="0.1" value="0.1" onchange="updateChartStyle('tension', this.value)">
-      <span id="tensionValue">0.1</span>
-    </div>
-  </div>
-
-  <div class="style-control-group">
-    <h4>Quick Color Presets</h4>
-    <div class="chart-colors">
-      <div class="chart-color-option" style="background:#2F80ED;" onclick="applyColorPreset('#2F80ED')"></div>
-      <div class="chart-color-option" style="background:#27AE60;" onclick="applyColorPreset('#27AE60')"></div>
-      <div class="chart-color-option" style="background:#D24726;" onclick="applyColorPreset('#D24726')"></div>
-      <div class="chart-color-option" style="background:#8E44AD;" onclick="applyColorPreset('#8E44AD')"></div>
-      <div class="chart-color-option" style="background:#F39C12;" onclick="applyColorPreset('#F39C12')"></div>
-      <div class="chart-color-option" style="background:#3498DB;" onclick="applyColorPreset('#3498DB')"></div>
-      <div class="chart-color-option" style="background:#E74C3C;" onclick="applyColorPreset('#E74C3C')"></div>
-      <div class="chart-color-option" style="background:#2C3E50;" onclick="applyColorPreset('#2C3E50')"></div>
-    </div>
-  </div>
-
-  <div style="margin-top: 20px; display: flex; gap: 10px;">
-    <button class="action-btn" onclick="saveChartStyle()" style="background:#27AE60;">Save Style</button>
-    <button class="action-btn" onclick="resetChartStyle()" style="background:#95a5a6;">Reset</button>
-    <button class="action-btn" onclick="applyToAllCharts()">Apply to All</button>
+  <div style="margin-top: auto; display: flex; gap: 10px; padding-top: 20px; border-top: 1px solid #eee;">
+    <button class="action-btn" onclick="applyChartStyleToAll()" style="flex: 1; background:#27AE60;">Apply to All Charts</button>
+    <button class="action-btn" onclick="saveChartStyle()" style="flex: 1;">Save Style</button>
   </div>
 </div>
 
@@ -576,20 +484,115 @@ let selectedKpis = {
 };
 
 // --- CHART STYLE CONFIGURATION ---
-let chartStyleConfig = {
-  lineWidth: 2,
-  lineColor: '#2F80ED',
-  lineStyle: 'solid',
-  showPoints: true,
-  pointSize: 3,
-  pointStyle: 'circle',
-  fillArea: 'none',
-  fillColor: '#2F80ED20',
-  fillOpacity: 0.2,
-  showGrid: true,
-  gridColor: '#eee',
-  tension: 0.1
-};
+let currentChartStyle = null;
+
+// 10 Popular Chart Style Presets
+const chartStylePresets = [
+  {
+    id: 'default',
+    name: 'Default',
+    color: '#2F80ED',
+    lineWidth: 2,
+    pointRadius: 3,
+    tension: 0.1,
+    fill: false
+  },
+  {
+    id: 'bold',
+    name: 'Bold',
+    color: '#D24726',
+    lineWidth: 4,
+    pointRadius: 0,
+    tension: 0,
+    fill: false
+  },
+  {
+    id: 'smooth',
+    name: 'Smooth',
+    color: '#27AE60',
+    lineWidth: 3,
+    pointRadius: 4,
+    tension: 0.4,
+    fill: false
+  },
+  {
+    id: 'dashed',
+    name: 'Dashed',
+    color: '#8E44AD',
+    lineWidth: 2,
+    pointRadius: 0,
+    tension: 0.1,
+    fill: false,
+    borderDash: [10, 5]
+  },
+  {
+    id: 'filled',
+    name: 'Filled',
+    color: '#F39C12',
+    lineWidth: 2,
+    pointRadius: 0,
+    tension: 0.1,
+    fill: 'origin',
+    backgroundColor: '#F39C12' + '40'
+  },
+  {
+    id: 'stepped',
+    name: 'Stepped',
+    color: '#3498DB',
+    lineWidth: 2,
+    pointRadius: 0,
+    tension: 0,
+    fill: false,
+    stepped: true
+  },
+  {
+    id: 'dotted',
+    name: 'Dotted',
+    color: '#9B59B6',
+    lineWidth: 2,
+    pointRadius: 6,
+    pointStyle: 'rect',
+    tension: 0,
+    fill: false
+  },
+  {
+    id: 'minimal',
+    name: 'Minimal',
+    color: '#34495E',
+    lineWidth: 1,
+    pointRadius: 0,
+    tension: 0,
+    fill: false
+  },
+  {
+    id: 'area',
+    name: 'Area Chart',
+    color: '#2ECC71',
+    lineWidth: 1,
+    pointRadius: 0,
+    tension: 0.2,
+    fill: 'origin',
+    backgroundColor: '#2ECC71' + '30'
+  },
+  {
+    id: 'highlight',
+    name: 'Highlight Points',
+    color: '#E74C3C',
+    lineWidth: 2,
+    pointRadius: 6,
+    pointStyle: 'circle',
+    tension: 0.1,
+    fill: false
+  }
+];
+
+// Color Options
+const colorOptions = [
+  '#2F80ED', '#27AE60', '#D24726', '#8E44AD', '#F39C12',
+  '#3498DB', '#E74C3C', '#2C3E50', '#1ABC9C', '#9B59B6',
+  '#34495E', '#16A085', '#2980B9', '#8E44AD', '#2C3E50',
+  '#F1C40F', '#E67E22', '#95A5A6', '#7F8C8D', '#BDC3C7'
+];
 
 // --- CHART STYLE FUNCTIONS ---
 function toggleChartStyleDrawer() {
@@ -602,145 +605,208 @@ function toggleChartStyleDrawer() {
     kpiDrawer.classList.remove("open");
   }
   
-  // Load saved style if drawer is opening
-  if (drawer.classList.contains("open")) {
-    loadChartStyle();
+  // Initialize presets if drawer is opening for first time
+  if (drawer.classList.contains("open") && !document.getElementById('stylePresetsGrid').hasChildNodes()) {
+    initializeStylePresets();
+    initializeColorOptions();
   }
 }
 
-function loadChartStyle() {
-  const savedStyle = localStorage.getItem('chartStyleConfig');
-  if (savedStyle) {
-    chartStyleConfig = JSON.parse(savedStyle);
+function initializeStylePresets() {
+  const grid = document.getElementById('stylePresetsGrid');
+  grid.innerHTML = '';
+  
+  chartStylePresets.forEach(preset => {
+    const btn = document.createElement('button');
+    btn.className = 'style-preset-btn';
+    btn.textContent = preset.name;
+    btn.dataset.id = preset.id;
+    
+    // Add color indicator
+    const colorIndicator = document.createElement('div');
+    colorIndicator.style.width = '100%';
+    colorIndicator.style.height = '4px';
+    colorIndicator.style.backgroundColor = preset.color;
+    colorIndicator.style.marginTop = '5px';
+    colorIndicator.style.borderRadius = '2px';
+    
+    btn.appendChild(colorIndicator);
+    
+    btn.onclick = () => {
+      // Remove active class from all buttons
+      document.querySelectorAll('.style-preset-btn').forEach(b => b.classList.remove('active'));
+      // Add active class to clicked button
+      btn.classList.add('active');
+      
+      // Apply the preset
+      applyChartStylePreset(preset);
+    };
+    
+    grid.appendChild(btn);
+  });
+  
+  // Set default as active
+  setTimeout(() => {
+    const defaultBtn = grid.querySelector('[data-id="default"]');
+    if (defaultBtn) defaultBtn.classList.add('active');
+  }, 100);
+}
+
+function initializeColorOptions() {
+  const grid = document.getElementById('colorOptionsGrid');
+  grid.innerHTML = '';
+  
+  colorOptions.forEach(color => {
+    const btn = document.createElement('button');
+    btn.className = 'color-option-btn';
+    btn.style.backgroundColor = color;
+    btn.dataset.color = color;
+    
+    btn.onclick = () => {
+      // Remove selected class from all color buttons
+      document.querySelectorAll('.color-option-btn').forEach(b => b.classList.remove('selected'));
+      // Add selected class to clicked button
+      btn.classList.add('selected');
+      
+      // Apply the color
+      applyChartColor(color);
+    };
+    
+    grid.appendChild(btn);
+  });
+  
+  // Set default color as selected
+  setTimeout(() => {
+    const defaultColorBtn = grid.querySelector('[data-color="#2F80ED"]');
+    if (defaultColorBtn) defaultColorBtn.classList.add('selected');
+  }, 100);
+}
+
+function applyChartStylePreset(preset) {
+  currentChartStyle = { ...preset };
+  
+  // Update color selection
+  const colorBtn = document.querySelector(`.color-option-btn[data-color="${preset.color}"]`);
+  if (colorBtn) {
+    document.querySelectorAll('.color-option-btn').forEach(b => b.classList.remove('selected'));
+    colorBtn.classList.add('selected');
   }
   
-  // Update UI controls
-  document.getElementById('lineWidth').value = chartStyleConfig.lineWidth;
-  document.getElementById('lineWidthValue').textContent = chartStyleConfig.lineWidth + 'px';
-  document.getElementById('lineColor').value = chartStyleConfig.lineColor;
-  document.getElementById('lineStyle').value = chartStyleConfig.lineStyle;
-  document.getElementById('showPoints').value = chartStyleConfig.showPoints.toString();
-  document.getElementById('pointSize').value = chartStyleConfig.pointSize;
-  document.getElementById('pointSizeValue').textContent = chartStyleConfig.pointSize + 'px';
-  document.getElementById('pointStyle').value = chartStyleConfig.pointStyle;
-  document.getElementById('fillArea').value = chartStyleConfig.fillArea;
-  document.getElementById('fillColor').value = chartStyleConfig.fillColor;
-  document.getElementById('fillOpacity').value = chartStyleConfig.fillOpacity;
-  document.getElementById('fillOpacityValue').textContent = chartStyleConfig.fillOpacity;
-  document.getElementById('showGrid').value = chartStyleConfig.showGrid.toString();
-  document.getElementById('gridColor').value = chartStyleConfig.gridColor;
-  document.getElementById('tension').value = chartStyleConfig.tension;
-  document.getElementById('tensionValue').textContent = chartStyleConfig.tension;
+  applyChartStyleToAll();
 }
 
-function updateChartStyle(property, value) {
-  chartStyleConfig[property] = value;
-  
-  // Update UI feedback
-  if (property === 'lineWidth') {
-    document.getElementById('lineWidthValue').textContent = value + 'px';
-  } else if (property === 'pointSize') {
-    document.getElementById('pointSizeValue').textContent = value + 'px';
-  } else if (property === 'fillOpacity') {
-    document.getElementById('fillOpacityValue').textContent = value;
-  } else if (property === 'tension') {
-    document.getElementById('tensionValue').textContent = value;
+function applyChartColor(color) {
+  if (currentChartStyle) {
+    currentChartStyle.color = color;
+    if (currentChartStyle.backgroundColor && currentChartStyle.backgroundColor.includes('40')) {
+      currentChartStyle.backgroundColor = color + '40';
+    } else if (currentChartStyle.backgroundColor && currentChartStyle.backgroundColor.includes('30')) {
+      currentChartStyle.backgroundColor = color + '30';
+    }
+  } else {
+    currentChartStyle = {
+      id: 'custom',
+      name: 'Custom',
+      color: color,
+      lineWidth: 2,
+      pointRadius: 3,
+      tension: 0.1,
+      fill: false
+    };
   }
   
-  // Apply to current chart if available
-  applyStyleToCurrentCharts();
+  applyChartStyleToAll();
 }
 
-function applyColorPreset(color) {
-  chartStyleConfig.lineColor = color;
-  chartStyleConfig.fillColor = color + '20'; // Add opacity
+function applyChartStyleToAll() {
+  if (!currentChartStyle) return;
   
-  // Update UI
-  document.getElementById('lineColor').value = color;
-  document.getElementById('fillColor').value = color + '20';
-  
-  // Apply to current chart
-  applyStyleToCurrentCharts();
-}
-
-function applyStyleToCurrentCharts() {
+  // Get all chart instances
   const charts = Chart.getChart('chart_0') ? Chart.instances : [];
+  
   Object.values(charts).forEach(chart => {
-    applyStyleToChart(chart);
-  });
-}
-
-function applyStyleToChart(chart) {
-  if (!chart) return;
-  
-  // Apply line style
-  chart.data.datasets.forEach(dataset => {
-    dataset.borderWidth = chartStyleConfig.lineWidth;
-    dataset.borderColor = chartStyleConfig.lineColor;
-    dataset.pointRadius = chartStyleConfig.showPoints ? chartStyleConfig.pointSize : 0;
-    dataset.pointStyle = chartStyleConfig.pointStyle;
-    dataset.pointBorderColor = chartStyleConfig.lineColor;
-    dataset.pointBackgroundColor = chartStyleConfig.lineColor;
-    dataset.tension = chartStyleConfig.tension;
-    
-    // Apply line style (dashed/dotted)
-    if (chartStyleConfig.lineStyle === 'dashed') {
-      dataset.borderDash = [10, 5];
-    } else if (chartStyleConfig.lineStyle === 'dotted') {
-      dataset.borderDash = [2, 2];
-    } else {
-      dataset.borderDash = [];
+    if (chart && chart.data && chart.data.datasets) {
+      chart.data.datasets.forEach(dataset => {
+        // Apply style properties
+        dataset.borderColor = currentChartStyle.color;
+        dataset.borderWidth = currentChartStyle.lineWidth;
+        dataset.pointRadius = currentChartStyle.pointRadius;
+        dataset.pointStyle = currentChartStyle.pointStyle || 'circle';
+        dataset.tension = currentChartStyle.tension;
+        
+        // Apply fill if specified
+        if (currentChartStyle.fill) {
+          dataset.fill = currentChartStyle.fill;
+          dataset.backgroundColor = currentChartStyle.backgroundColor || currentChartStyle.color + '20';
+        } else {
+          dataset.fill = false;
+          dataset.backgroundColor = 'transparent';
+        }
+        
+        // Apply border dash for dashed lines
+        if (currentChartStyle.borderDash) {
+          dataset.borderDash = currentChartStyle.borderDash;
+        } else {
+          dataset.borderDash = [];
+        }
+        
+        // Apply stepped line
+        if (currentChartStyle.stepped) {
+          chart.options.elements = chart.options.elements || {};
+          chart.options.elements.line = chart.options.elements.line || {};
+          chart.options.elements.line.stepped = true;
+        } else if (chart.options.elements && chart.options.elements.line) {
+          chart.options.elements.line.stepped = false;
+        }
+      });
+      
+      chart.update('none');
     }
-    
-    // Apply fill
-    if (chartStyleConfig.fillArea !== 'none') {
-      dataset.backgroundColor = chartStyleConfig.fillColor;
-      dataset.fill = chartStyleConfig.fillArea;
-    } else {
-      dataset.backgroundColor = 'transparent';
-      dataset.fill = false;
-    }
   });
-  
-  // Apply grid
-  chart.options.scales.y.grid.color = chartStyleConfig.showGrid ? chartStyleConfig.gridColor : 'transparent';
-  chart.options.scales.x.grid.color = chartStyleConfig.showGrid ? chartStyleConfig.gridColor : 'transparent';
-  
-  chart.update('none');
 }
 
 function saveChartStyle() {
-  localStorage.setItem('chartStyleConfig', JSON.stringify(chartStyleConfig));
-  alert('Chart style saved! It will persist across pages and sessions.');
+  if (currentChartStyle) {
+    localStorage.setItem('chartStylePreset', JSON.stringify(currentChartStyle));
+    alert('Chart style saved! It will be applied when you refresh or open other pages.');
+  }
 }
 
-function resetChartStyle() {
-  chartStyleConfig = {
-    lineWidth: 2,
-    lineColor: '#2F80ED',
-    lineStyle: 'solid',
-    showPoints: true,
-    pointSize: 3,
-    pointStyle: 'circle',
-    fillArea: 'none',
-    fillColor: '#2F80ED20',
-    fillOpacity: 0.2,
-    showGrid: true,
-    gridColor: '#eee',
-    tension: 0.1
-  };
-  
-  loadChartStyle();
-  applyStyleToCurrentCharts();
-  alert('Style reset to defaults.');
-}
-
-function applyToAllCharts() {
-  applyStyleToCurrentCharts();
-  alert('Style applied to all charts.');
+function loadSavedChartStyle() {
+  const savedStyle = localStorage.getItem('chartStylePreset');
+  if (savedStyle) {
+    try {
+      currentChartStyle = JSON.parse(savedStyle);
+      
+      // Apply the saved style
+      setTimeout(() => {
+        // Update UI to reflect saved style
+        const presetBtn = document.querySelector(`.style-preset-btn[data-id="${currentChartStyle.id}"]`);
+        if (presetBtn) {
+          document.querySelectorAll('.style-preset-btn').forEach(b => b.classList.remove('active'));
+          presetBtn.classList.add('active');
+        }
+        
+        const colorBtn = document.querySelector(`.color-option-btn[data-color="${currentChartStyle.color}"]`);
+        if (colorBtn) {
+          document.querySelectorAll('.color-option-btn').forEach(b => b.classList.remove('selected'));
+          colorBtn.classList.add('selected');
+        }
+        
+        applyChartStyleToAll();
+      }, 500);
+    } catch (e) {
+      console.error('Error loading saved chart style:', e);
+    }
+  }
 }
 
 // --- GLOBAL UTILITY FUNCTIONS ---
+
+/**
+ * Switches the active tab (Acceptance, Monitoring, Both).
+ * @param {string} tab - The tab identifier ('acceptance', 'monitoring', 'both').
+ */
 function switchTab(tab) {
     document.querySelectorAll('.tab').forEach(btn => {
         btn.classList.remove('active');
@@ -751,6 +817,7 @@ function switchTab(tab) {
 }
 
 // --- DATA FETCHING & MAPPING ---
+
 function switchSheetToggle() {
     if(currentSheet === 'site') {
         currentSheet = 'group';
@@ -761,6 +828,7 @@ function switchSheetToggle() {
     }
     fetchData(); // Refetch charts based on new sheet
 }
+
 
 async function fetchData(){
   try {
@@ -822,6 +890,7 @@ const kpiUrl = sheetUrls[currentSheet] + "&t=" + Date.now();
 }
 
 // --- FILTER UI LOGIC (ON-AIR DATE) ---
+
 function setupOnAirDateDropdown(){
   const list = document.getElementById("onAirDateDropdownList");
   const btn = document.getElementById("onAirDateDropdownBtn");
@@ -911,6 +980,7 @@ function updateDateFilterUI(options = {close: true}) {
 }
 
 // --- FILTER UI LOGIC (eNodeB Name) ---
+
 function setupSiteDropdown(){
   const list = document.getElementById("siteDropdownList");
   const btn = document.getElementById("siteDropdownBtn");
@@ -1006,56 +1076,6 @@ function updateSiteFilterUI(options = {close: true}) {
 }
 
 // --- CHART RENDERING ---
-function getSmartScale(minVal, maxVal) {
-  // Special case for percentage values 95-100
-  if (minVal >= 95 && maxVal <= 100) {
-    return { min: 95, max: 100 };
-  }
-
-  // Special rule for values less than 1
-  if (maxVal < 1) {
-    // Find nearest 0.xx where xx is multiply of 5 (0.05, 0.10, 0.15, etc.)
-    const niceSteps = [0.01, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 
-                      0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00];
-    
-    // Find the nearest step greater than maxVal
-    let roundedMax = niceSteps.find(step => step >= maxVal) || 1.00;
-    
-    // Ensure we have at least 4 intervals
-    const intervalSize = roundedMax / 4;
-    
-    // Adjust to nice interval if needed
-    const niceIntervals = [0.01, 0.02, 0.05, 0.10, 0.20, 0.25, 0.50];
-    let niceInterval = niceIntervals.find(int => int >= intervalSize) || 0.25;
-    
-    // Recalculate max based on nice interval
-    roundedMax = Math.ceil(maxVal / niceInterval) * niceInterval;
-    
-    // Set min
-    let roundedMin = Math.floor(minVal / niceInterval) * niceInterval;
-    if (roundedMin < 0) roundedMin = 0;
-    
-    return { min: roundedMin, max: roundedMax };
-  }
-
-  // Original logic for values >= 1
-  if (minVal < 40) minVal = Math.max(Math.floor(minVal), 42);
-  if (maxVal > 100) maxVal = 100;
-
-  let roundedMin = Math.floor(minVal / 5) * 5;
-  let roundedMax = Math.ceil(maxVal / 5) * 5;
-  
-  // Ensure at least 4 intervals
-  const interval = (roundedMax - roundedMin) / 4;
-  if (interval < 1) {
-    // Adjust to get at least 4 intervals
-    const requiredRange = 4; // Minimum range for 4 intervals of 1
-    roundedMax = roundedMin + Math.max(requiredRange, roundedMax - roundedMin);
-    roundedMax = Math.ceil(roundedMax / 5) * 5;
-  }
-
-  return { min: roundedMin, max: roundedMax };
-}
 
 function renderCharts(){
   const container = document.getElementById("mainChartContainer");
@@ -1113,13 +1133,14 @@ function renderCharts(){
     container.appendChild(card);
 
     // Calculate Data
-    const dataPoints = timeline.map(date => {
+const dataPoints = timeline.map(date => {
       const values = filteredData
-        .filter(d => d["Date"] === date)
-        .map(d => d[kpi])                // take raw value
-        .filter(v => v !== null && v !== "") // keep only actual values
-        .map(Number)                     // convert remaining to number
-        .filter(v => !isNaN(v));         // remove any NaN
+  .filter(d => d["Date"] === date)
+  .map(d => d[kpi])                // take raw value
+  .filter(v => v !== null && v !== "") // keep only actual values
+  .map(Number)                     // convert remaining to number
+  .filter(v => !isNaN(v));         // remove any NaN
+
 
       if (values.length === 0) return null;
 
@@ -1132,37 +1153,34 @@ function renderCharts(){
     });
 
     let validValues = dataPoints.filter(v => v !== null);
-    let minVal = validValues.length > 0 ? Math.min(...validValues) : 0;
-    let maxVal = validValues.length > 0 ? Math.max(...validValues) : 0;
+    let minVal = Math.min(...validValues);
+    let maxVal = Math.max(...validValues);
 
-    // Apply smart scaling
-    const scale = getSmartScale(minVal, maxVal);
-    
-    // Get saved chart style from localStorage
-    const savedStyle = localStorage.getItem('chartStyleConfig');
-    if (savedStyle) {
-      chartStyleConfig = JSON.parse(savedStyle);
+    // Special rule: if min >= 95 and max <= 100, set scale explicitly
+    if (minVal >= 95 && maxVal <= 100) {
+      minVal = 95;
+      maxVal = 100;
+    } else {
+      if (minVal < 40) minVal = Math.max(Math.floor(minVal), 42);
+      if (maxVal > 100) maxVal = 100;
+
+      minVal = Math.floor(minVal / 5) * 5;
+      maxVal = Math.ceil(maxVal / 5) * 5;
     }
 
     // Draw Chart with Animation
-    const chart = new Chart(canvas.getContext("2d"), {
+    new Chart(canvas.getContext("2d"), {
       type: 'line',
       data: {
         labels: timelineLabels,
         datasets: [{
           label: (finalSiteList.length > 0 && dataPoints.some(p => p !== null)) ? "Aggregate" : "No Data",
           data: dataPoints,
-          borderColor: chartStyleConfig.lineColor,
-          backgroundColor: chartStyleConfig.fillArea !== 'none' ? chartStyleConfig.fillColor : 'transparent',
-          borderWidth: chartStyleConfig.lineWidth,
-          pointRadius: chartStyleConfig.showPoints ? chartStyleConfig.pointSize : 0,
-          pointStyle: chartStyleConfig.pointStyle,
-          pointBorderColor: chartStyleConfig.lineColor,
-          pointBackgroundColor: chartStyleConfig.lineColor,
-          tension: chartStyleConfig.tension,
-          fill: chartStyleConfig.fillArea !== 'none' ? chartStyleConfig.fillArea : false,
-          borderDash: chartStyleConfig.lineStyle === 'dashed' ? [10, 5] : 
-                     chartStyleConfig.lineStyle === 'dotted' ? [2, 2] : [],
+          borderColor: getRandomColor(),
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 3,
+          tension: 0.1,
           spanGaps: true 
         }]
       },
@@ -1194,35 +1212,27 @@ function renderCharts(){
         scales: {
            x: { 
                ticks: { font: {size:8} }, 
-               grid: { 
-                 display: chartStyleConfig.showGrid,
-                 color: chartStyleConfig.gridColor
-               } 
+               grid: {display:false} 
            },
            y: { 
                beginAtZero: false, 
-               grid: {
-                 display: chartStyleConfig.showGrid,
-                 color: chartStyleConfig.gridColor
-               },
-               min: scale.min,
-               max: scale.max,
-               ticks: {
-                 stepSize: (scale.max - scale.min) / 4
-               }
+               grid: {color:'#eee'},
+               // If no data points, fix the scale to prevent giant axes
+               min: (finalSiteList.length === 0 || dataPoints.every(p => p === null)) ? 0 : undefined 
            }
         }
       }
     });
-
-    // Apply step line style if selected
-    if (chartStyleConfig.lineStyle === 'step' || 
-        chartStyleConfig.lineStyle === 'step-before' || 
-        chartStyleConfig.lineStyle === 'step-after') {
-      chart.options.elements.line.stepped = chartStyleConfig.lineStyle;
-      chart.update('none');
-    }
   });
+  
+  // Apply saved chart style after rendering
+  setTimeout(() => {
+    if (currentChartStyle) {
+      applyChartStyleToAll();
+    } else {
+      loadSavedChartStyle();
+    }
+  }, 100);
 }
 
 function getRandomColor() {
@@ -1231,6 +1241,7 @@ function getRandomColor() {
 }
 
 // --- KPI DRAWER & UTILITY LOGIC ---
+
 function toggleDrawer(){
   const d = document.getElementById("kpiDrawer");
   d.classList.toggle("open");
@@ -1271,6 +1282,9 @@ function populateKpiOptions(){
   if (monitoringSection) createGroup("Monitoring KPIs", "monitoring", monitoringKpis);
 }
 
+/**
+ * Selects all visible KPI checkboxes and updates the internal state.
+ */
 function selectVisibleKpis() {
     const chks = document.querySelectorAll(".kpi-chk");
     
@@ -1288,6 +1302,9 @@ function selectVisibleKpis() {
     }
 }
 
+/**
+ * Clears all visible KPI checkboxes and updates the internal state.
+ */
 function clearVisibleKpis() {
     const chks = document.querySelectorAll(".kpi-chk");
     
@@ -1304,6 +1321,7 @@ function clearVisibleKpis() {
         selectedKpis.monitoring = [];
     }
 }
+
 
 function applyKpis(){
   const chks = document.querySelectorAll(".kpi-chk");
@@ -1328,6 +1346,8 @@ function applyKpis(){
 }
 
 // --- PPT EXPORT CUSTOMIZATION & PREVIEW ---
+
+// Centralized Layout Logic: Ensures Preview and PPT match exactly
 function getLayoutConfig(count) {
     // Standard PPT Slide: 10 inches x 5.625 inches
     const slideWidth = 10.0;
@@ -1613,8 +1633,6 @@ async function downloadPPT(){
 
 // Init
 fetchData();
-// Load saved chart style
-loadChartStyle();
 </script>
 </body>
 </html>
