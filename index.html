@@ -73,13 +73,37 @@
             max-width: 1800px; 
             margin: 0 auto; 
         }
+        
+        /* Technology group styling */
+        .tech-group {
+            grid-column: 1 / -1;
+            margin-bottom: 30px;
+        }
+        
+        .tech-header {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2F80ED;
+            margin: 20px 0 10px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #2F80ED;
+        }
+        
+        .tech-charts-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        
         @media (max-width: 1400px) { 
-            .chart-grid { 
+            .chart-grid,
+            .tech-charts-container { 
                 grid-template-columns: repeat(2, 1fr); 
             } 
         }
         @media (max-width: 768px) { 
-            .chart-grid { 
+            .chart-grid,
+            .tech-charts-container { 
                 grid-template-columns: 1fr; 
             } 
         }
@@ -92,11 +116,35 @@
             box-shadow:0 2px 8px rgba(0,0,0,0.08); 
             display:flex; 
             flex-direction:column; 
+            animation: fadeIn 0.5s ease-out;
         }
         .chart-container { 
             position: relative; 
             height: 280px; 
             width: 100%; 
+        }
+        
+        /* --- ANIMATIONS --- */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes lineDraw {
+            0% {
+                stroke-dashoffset: 1000;
+            }
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+        
+        .line-animation {
+            animation: lineDraw 1.5s ease-out forwards;
         }
         
         /* --- DRAWERS --- */
@@ -514,7 +562,7 @@
         let selectedKpis = [];
         let selectedTechForColor = '';
         let selectedColor = '';
-        let pptLayout = 3; // Default: 3 graphs per slide
+        let pptLayout = 9; // Default: 3 graphs per slide
         let selectedTechForExport = {
             GSM: true,
             LTE: true,
@@ -727,178 +775,286 @@
                 return;
             }
 
-            chartsToRender.forEach((kpiDef, idx) => {
-                const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
+            // Group charts by technology
+            const chartsByTech = {};
+            chartsToRender.forEach(kpiDef => {
                 const tech = kpiDef.tech;
-                const kpi = kpiDef.kpi;
-
-                const card = document.createElement("div");
-                card.className = "chart-card";
-                const wrapper = document.createElement("div");
-                wrapper.className = "chart-container";
-                const canvas = document.createElement("canvas");
-                canvas.id = `chart_${idx}`;
-                wrapper.appendChild(canvas);
-                card.appendChild(wrapper);
-                container.appendChild(card);
-
-                // Data Processing
-                const dataPoints = timeline.map(date => {
-                    const values = allData
-                        .filter(d => d.Tech === tech && d[dateHeaderName] === date)
-                        .map(d => d[kpi])
-                        .filter(v => v !== null && v !== "")
-                        .map(Number)
-                        .filter(v => !isNaN(v));
-                    
-                    if (values.length === 0) return null;
-                    
-                    const kpiLower = kpi.toLowerCase();
-                    if (kpiLower.includes('%') || kpiLower.includes('rate') || kpiLower.includes('avg') || kpiLower.includes('average')|| kpiLower.includes('max')) {
-                        return values.reduce((a, b) => a + b, 0) / values.length;
-                    } else {
-                        return values.reduce((a, b) => a + b, 0);
-                    }
-                });
-
-                const validValues = dataPoints.filter(v => v !== null);
-                if (validValues.length === 0) {
-                    const noDataMsg = document.createElement("div");
-                    noDataMsg.style.textAlign = "center";
-                    noDataMsg.style.padding = "20px";
-                    noDataMsg.style.color = "#666";
-                    noDataMsg.textContent = "No data available for this KPI";
-                    card.appendChild(noDataMsg);
-                    return;
+                if (!chartsByTech[tech]) {
+                    chartsByTech[tech] = [];
                 }
+                chartsByTech[tech].push(kpiDef);
+            });
 
-                let minVal = Math.min(...validValues);
-                let maxVal = Math.max(...validValues);
-
-                // Y-Axis Helper Functions
-                function niceNumber(value, round) {
-                    if (value === 0) return 0;
-                    const exponent = Math.floor(Math.log10(value));
-                    const fraction = value / Math.pow(10, exponent);
-                    let niceFraction;
-                    if (round) {
-                        if (fraction < 1.5) niceFraction = 1; 
-                        else if (fraction < 3) niceFraction = 2; 
-                        else if (fraction < 7) niceFraction = 5; 
-                        else niceFraction = 10;
-                    } else {
-                        if (fraction <= 1) niceFraction = 1; 
-                        else if (fraction <= 2) niceFraction = 2; 
-                        else if (fraction <= 5) niceFraction = 5; 
-                        else niceFraction = 10;
-                    }
-                    return niceFraction * Math.pow(10, exponent);
-                }
-      
-                function computeYAxis(minVal, maxVal) {
-                    if (minVal >= 98 && maxVal <= 100) {
-                        return { niceMin: 98, niceMax: 100, tickSpacing: 0.5 };
-                    }
-                    let minV = minVal * 0.95; 
-                    let maxV = maxVal * 1.05;
-                    if (maxVal < 10) minV = 0;
-                    if (maxVal > 90 && maxVal <= 100) maxV = 100;
-                    let range = maxV - minV;
-                    if (range === 0) range = Math.abs(maxV) * 0.1 || 1;
-                    const tickSpacing = niceNumber(range / 5, true);
-                    const niceMin = Math.floor(minV / tickSpacing) * tickSpacing;
-                    const niceMax = Math.ceil(maxV / tickSpacing) * tickSpacing;
-                    return { niceMin, niceMax, tickSpacing };
-                }
+            // Process each technology
+            Object.keys(chartsByTech).forEach(tech => {
+                const techCharts = chartsByTech[tech];
                 
-                const { niceMin, niceMax, tickSpacing } = computeYAxis(minVal, maxVal);
-                let chartColor = techColors[tech];
+                // Create technology group
+                const techGroup = document.createElement("div");
+                techGroup.className = "tech-group";
+                
+                // Technology header
+                const techHeader = document.createElement("div");
+                techHeader.className = "tech-header";
+                techHeader.textContent = `${tech} KPIs`;
+                techHeader.style.color = techColors[tech];
+                techHeader.style.borderBottomColor = techColors[tech];
+                techGroup.appendChild(techHeader);
+                
+                // Charts container
+                const chartsContainer = document.createElement("div");
+                chartsContainer.className = "tech-charts-container";
+                
+                // Add empty placeholders if needed
+                const totalCharts = techCharts.length;
+                const remainder = totalCharts % 3;
+                const chartsToAdd = remainder === 0 ? totalCharts : totalCharts + (3 - remainder);
+                
+                // Render actual charts
+                techCharts.forEach((kpiDef, idx) => {
+                    const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
+                    const kpi = kpiDef.kpi;
 
-                // Chart Config
-                const chartConfig = {
-                    type: 'line',
-                    data: {
-                        labels: timelineLabels,
-                        datasets: [{ 
-                            label: kpi,
-                            data: dataPoints,
-                            borderColor: chartColor,
-                            backgroundColor: activeChartStyle && activeChartStyle.fill ? 
-                                chartColor.replace(')', ', 0.1)').replace('rgb', 'rgba') : 'transparent',
-                            borderWidth: activeChartStyle ? activeChartStyle.borderWidth : 2, 
-                            pointRadius: activeChartStyle ? activeChartStyle.pointRadius : 5, 
-                            pointBackgroundColor: chartColor,
-                            pointBorderColor: chartColor,
-                            pointBorderWidth: 1,
-                            tension: activeChartStyle ? activeChartStyle.tension : 0.4, 
-                            spanGaps: true
-                        }]
-                    },
-                    options: {
-                        responsive: true, 
-                        maintainAspectRatio: false,
-                        plugins: { 
-                            legend: { 
-                                display: false 
-                            },
-                            title: { 
-                                display: true, 
-                                text: `${tech} - ${kpi}`,
-                                font: { 
-                                    size: 14, 
-                                    weight: 'bold' 
-                                }, 
-                                color: '#333'
-                            }
+                    const card = document.createElement("div");
+                    card.className = "chart-card";
+                    
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "chart-container";
+                    const canvas = document.createElement("canvas");
+                    canvas.id = `chart_${tech}_${idx}`;
+                    wrapper.appendChild(canvas);
+                    card.appendChild(wrapper);
+                    chartsContainer.appendChild(card);
+
+                    // Data Processing
+                    const dataPoints = timeline.map(date => {
+                        const values = allData
+                            .filter(d => d.Tech === tech && d[dateHeaderName] === date)
+                            .map(d => d[kpi])
+                            .filter(v => v !== null && v !== "")
+                            .map(Number)
+                            .filter(v => !isNaN(v));
+                        
+                        if (values.length === 0) return null;
+                        
+                        const kpiLower = kpi.toLowerCase();
+                        if (kpiLower.includes('%') || kpiLower.includes('rate') || kpiLower.includes('avg') || kpiLower.includes('average')|| kpiLower.includes('max')) {
+                            return values.reduce((a, b) => a + b, 0) / values.length;
+                        } else {
+                            return values.reduce((a, b) => a + b, 0);
+                        }
+                    });
+
+                    const validValues = dataPoints.filter(v => v !== null);
+                    if (validValues.length === 0) {
+                        const noDataMsg = document.createElement("div");
+                        noDataMsg.style.textAlign = "center";
+                        noDataMsg.style.padding = "20px";
+                        noDataMsg.style.color = "#666";
+                        noDataMsg.textContent = "No data available for this KPI";
+                        card.appendChild(noDataMsg);
+                        return;
+                    }
+
+                    let minVal = Math.min(...validValues);
+                    let maxVal = Math.max(...validValues);
+
+                    // Y-Axis Helper Functions
+                    function niceNumber(value, round) {
+                        if (value === 0) return 0;
+                        const exponent = Math.floor(Math.log10(value));
+                        const fraction = value / Math.pow(10, exponent);
+                        let niceFraction;
+                        if (round) {
+                            if (fraction < 1.5) niceFraction = 1; 
+                            else if (fraction < 3) niceFraction = 2; 
+                            else if (fraction < 7) niceFraction = 5; 
+                            else niceFraction = 10;
+                        } else {
+                            if (fraction <= 1) niceFraction = 1; 
+                            else if (fraction <= 2) niceFraction = 2; 
+                            else if (fraction <= 5) niceFraction = 5; 
+                            else niceFraction = 10;
+                        }
+                        return niceFraction * Math.pow(10, exponent);
+                    }
+        
+                    function computeYAxis(minVal, maxVal) {
+                        if (minVal >= 98 && maxVal <= 100) {
+                            return { niceMin: 98, niceMax: 100, tickSpacing: 0.5 };
+                        }
+                        let minV = minVal * 0.95; 
+                        let maxV = maxVal * 1.05;
+                        if (maxVal < 10) minV = 0;
+                        if (maxVal > 90 && maxVal <= 100) maxV = 100;
+                        let range = maxV - minV;
+                        if (range === 0) range = Math.abs(maxV) * 0.1 || 1;
+                        const tickSpacing = niceNumber(range / 5, true);
+                        const niceMin = Math.floor(minV / tickSpacing) * tickSpacing;
+                        const niceMax = Math.ceil(maxV / tickSpacing) * tickSpacing;
+                        return { niceMin, niceMax, tickSpacing };
+                    }
+                    
+                    const { niceMin, niceMax, tickSpacing } = computeYAxis(minVal, maxVal);
+                    let chartColor = techColors[tech];
+
+                    // Chart Config with animation
+                    const chartConfig = {
+                        type: 'line',
+                        data: {
+                            labels: timelineLabels,
+                            datasets: [{ 
+                                label: kpi,
+                                data: dataPoints,
+                                borderColor: chartColor,
+                                backgroundColor: activeChartStyle && activeChartStyle.fill ? 
+                                    chartColor.replace(')', ', 0.1)').replace('rgb', 'rgba') : 'transparent',
+                                borderWidth: activeChartStyle ? activeChartStyle.borderWidth : 2, 
+                                pointRadius: activeChartStyle ? activeChartStyle.pointRadius : 5, 
+                                pointBackgroundColor: chartColor,
+                                pointBorderColor: chartColor,
+                                pointBorderWidth: 1,
+                                tension: activeChartStyle ? activeChartStyle.tension : 0.4, 
+                                spanGaps: true,
+                                // Line animation settings
+                                segment: {
+                                    borderColor: ctx => ctx.p0.skip || ctx.p1.skip ? 'transparent' : chartColor,
+                                    borderWidth: ctx => ctx.p0.parsed.y === null || ctx.p1.parsed.y === null ? 0 : (activeChartStyle ? activeChartStyle.borderWidth : 2)
+                                },
+                                animation: {
+                                    duration: 1500,
+                                    easing: 'easeOutQuart',
+                                    delay: idx * 200, // Stagger animation
+                                    onProgress: (ctx) => {
+                                        if (ctx.chart.data.datasets[0]._animation) {
+                                            const dataset = ctx.chart.data.datasets[0];
+                                            const meta = ctx.chart.getDatasetMeta(0);
+                                            
+                                            // Custom line drawing animation
+                                            meta.data.forEach((point, pointIndex) => {
+                                                if (point) {
+                                                    const model = point.getProps(['x', 'y'], true);
+                                                    const previousPoint = meta.data[pointIndex - 1];
+                                                    
+                                                    if (previousPoint && ctx.chart.ctx) {
+                                                        const previousModel = previousPoint.getProps(['x', 'y'], true);
+                                                        const progress = ctx.chart.data.datasets[0]._animation.currentStep / ctx.chart.data.datasets[0]._animation.numSteps;
+                                                        
+                                                        // Draw animated line
+                                                        ctx.chart.ctx.save();
+                                                        ctx.chart.ctx.beginPath();
+                                                        ctx.chart.ctx.moveTo(previousModel.x, previousModel.y);
+                                                        ctx.chart.ctx.lineTo(
+                                                            previousModel.x + (model.x - previousModel.x) * progress,
+                                                            previousModel.y + (model.y - previousModel.y) * progress
+                                                        );
+                                                        ctx.chart.ctx.strokeStyle = chartColor;
+                                                        ctx.chart.ctx.lineWidth = activeChartStyle ? activeChartStyle.borderWidth : 2;
+                                                        ctx.chart.ctx.stroke();
+                                                        ctx.chart.ctx.restore();
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    }
+                                }
+                            }]
                         },
-                        scales: {
-                            x: { 
-                                ticks: { 
-                                    font: { size: 8 } 
-                                }, 
-                                grid: { 
-                                    display: false 
-                                } 
+                        options: {
+                            responsive: true, 
+                            maintainAspectRatio: false,
+                            animation: {
+                                duration: 1500,
+                                easing: 'easeOutQuart',
+                                onComplete: (ctx) => {
+                                    // Final render after animation
+                                    ctx.chart.update('none');
+                                }
                             },
-                            y: { 
-                                grid: { 
-                                    color: '#eee' 
-                                }, 
-                                min: niceMin, 
-                                max: niceMax, 
-                                ticks: { 
-                                    stepSize: tickSpacing 
-                                }, 
-                                beginAtZero: maxVal < 10 
+                            plugins: { 
+                                legend: { 
+                                    display: false 
+                                },
+                                title: { 
+                                    display: true, 
+                                    text: `${tech} - ${kpi}`,
+                                    font: { 
+                                        size: 14, 
+                                        weight: 'bold' 
+                                    }, 
+                                    color: '#333'
+                                }
+                            },
+                            scales: {
+                                x: { 
+                                    ticks: { 
+                                        font: { size: 8 } 
+                                    }, 
+                                    grid: { 
+                                        display: false 
+                                    } 
+                                },
+                                y: { 
+                                    grid: { 
+                                        color: '#eee' 
+                                    }, 
+                                    min: niceMin, 
+                                    max: niceMax, 
+                                    ticks: { 
+                                        stepSize: tickSpacing 
+                                    }, 
+                                    beginAtZero: maxVal < 10 
+                                }
+                            },
+                            elements: {
+                                line: {
+                                    tension: activeChartStyle ? activeChartStyle.tension : 0.4,
+                                }
                             }
                         }
-                    }
-                };
+                    };
 
-                if (activeChartStyle) {
-                    const style = activeChartStyle;
-                    chartConfig.data.datasets[0].borderWidth = style.borderWidth;
-                    chartConfig.data.datasets[0].pointRadius = style.pointRadius;
-                    chartConfig.data.datasets[0].borderDash = style.borderDash;
-                    chartConfig.data.datasets[0].tension = style.tension;
-                    chartConfig.data.datasets[0].fill = style.fill;
-                    if (style.fill && style.backgroundColor) {
-                        chartConfig.data.datasets[0].backgroundColor = style.backgroundColor.replace('47, 128, 237', 
-                            chartColor.substring(1).match(/.{2}/g).map(x => parseInt(x, 16)).join(', '));
+                    if (activeChartStyle) {
+                        const style = activeChartStyle;
+                        chartConfig.data.datasets[0].borderWidth = style.borderWidth;
+                        chartConfig.data.datasets[0].pointRadius = style.pointRadius;
+                        chartConfig.data.datasets[0].borderDash = style.borderDash;
+                        chartConfig.data.datasets[0].tension = style.tension;
+                        chartConfig.data.datasets[0].fill = style.fill;
+                        if (style.fill && style.backgroundColor) {
+                            chartConfig.data.datasets[0].backgroundColor = style.backgroundColor.replace('47, 128, 237', 
+                                chartColor.substring(1).match(/.{2}/g).map(x => parseInt(x, 16)).join(', '));
+                        }
+                    }
+
+                    try {
+                        // Create chart with animation
+                        setTimeout(() => {
+                            allCharts[fullKpiName] = new Chart(canvas.getContext("2d"), chartConfig);
+                        }, idx * 100); // Stagger chart creation
+                    } catch (e) {
+                        console.error(`Error creating chart for ${fullKpiName}:`, e);
+                        const errorMsg = document.createElement("div");
+                        errorMsg.style.textAlign = "center";
+                        errorMsg.style.padding = "20px";
+                        errorMsg.style.color = "#D24726";
+                        errorMsg.textContent = "Error creating chart";
+                        card.appendChild(errorMsg);
+                    }
+                });
+                
+                // Add empty placeholders if needed
+                if (remainder > 0 && remainder < 3) {
+                    for (let i = 0; i < (3 - remainder); i++) {
+                        const emptyCard = document.createElement("div");
+                        emptyCard.className = "chart-card";
+                        emptyCard.style.visibility = "hidden";
+                        chartsContainer.appendChild(emptyCard);
                     }
                 }
-
-                try {
-                    allCharts[fullKpiName] = new Chart(canvas.getContext("2d"), chartConfig);
-                } catch (e) {
-                    console.error(`Error creating chart for ${fullKpiName}:`, e);
-                    const errorMsg = document.createElement("div");
-                    errorMsg.style.textAlign = "center";
-                    errorMsg.style.padding = "20px";
-                    errorMsg.style.color = "#D24726";
-                    errorMsg.textContent = "Error creating chart";
-                    card.appendChild(errorMsg);
-                }
+                
+                techGroup.appendChild(chartsContainer);
+                container.appendChild(techGroup);
             });
         }
         
@@ -980,15 +1136,34 @@
             
             updateTechColorButtons();
             
-            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
-            if (dateHeaderName && allData.length > 0) {
-                const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
-                    const [da,ma,ya] = a.split('/').map(Number);
-                    const [db,mb,yb] = b.split('/').map(Number);
-                    return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
-                });
-                renderCharts(timeline);
-            }
+            // Animate style change
+            Object.keys(allCharts).forEach((chartKey, idx) => {
+                const chart = allCharts[chartKey];
+                if (chart) {
+                    const dataset = chart.data.datasets[0];
+                    
+                    // Update chart style with animation
+                    chart.options.elements.line.tension = activeChartStyle.tension;
+                    dataset.borderWidth = activeChartStyle.borderWidth;
+                    dataset.pointRadius = activeChartStyle.pointRadius;
+                    dataset.borderDash = activeChartStyle.borderDash;
+                    dataset.tension = activeChartStyle.tension;
+                    dataset.fill = activeChartStyle.fill;
+                    
+                    if (activeChartStyle.fill && activeChartStyle.backgroundColor) {
+                        const chartColor = dataset.borderColor;
+                        dataset.backgroundColor = activeChartStyle.backgroundColor.replace('47, 128, 237', 
+                            chartColor.substring(1).match(/.{2}/g).map(x => parseInt(x, 16)).join(', '));
+                    }
+                    
+                    // Animate the update
+                    chart.update({
+                        duration: 800,
+                        easing: 'easeOutQuart',
+                        delay: idx * 50
+                    });
+                }
+            });
         }
 
         function updateTechColorButtons() {
@@ -1050,21 +1225,34 @@
                 
                 updateTechColorButtons();
                 
-                const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
-                if (dateHeaderName && allData.length > 0) {
-                    const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
-                        const [da,ma,ya] = a.split('/').map(Number);
-                        const [db,mb,yb] = b.split('/').map(Number);
-                        return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
-                    });
-                    renderCharts(timeline);
-                }
+                // Update existing charts with animation
+                Object.keys(allCharts).forEach((chartKey, idx) => {
+                    const chart = allCharts[chartKey];
+                    if (chart && chartKey.startsWith(selectedTechForColor)) {
+                        const dataset = chart.data.datasets[0];
+                        const oldColor = dataset.borderColor;
+                        dataset.borderColor = selectedColor;
+                        dataset.pointBackgroundColor = selectedColor;
+                        dataset.pointBorderColor = selectedColor;
+                        
+                        if (dataset.backgroundColor !== 'transparent') {
+                            dataset.backgroundColor = selectedColor.replace(')', ', 0.1)').replace('rgb', 'rgba');
+                        }
+                        
+                        // Animate color change
+                        chart.update({
+                            duration: 1000,
+                            easing: 'easeOutQuart',
+                            delay: idx * 100
+                        });
+                    }
+                });
                 
                 closeColorPicker();
             }
         }
 
-        // --- PPT EXPORT FUNCTIONS --- FIXED: Simple mixed technology layout
+        // --- PPT EXPORT FUNCTIONS ---
         function openPPTExport() {
             const charts = document.querySelectorAll("canvas");
             if (charts.length === 0) {
@@ -1200,11 +1388,11 @@
             switch(parseInt(count)) {
                 case 1: rows = 1; cols = 1; break;
                 case 2: rows = 1; cols = 2; break;
-                case 3: rows = 1; cols = 3; break;
+                case 3: rows = 2; cols = 2; break;
                 case 4: rows = 2; cols = 2; break;
                 case 6: rows = 2; cols = 3; break;
                 case 9: rows = 3; cols = 3; break;
-                default: rows = 1; cols = 3;
+                default: rows = 3; cols = 3;
             }
             return { rows, cols };
         }
