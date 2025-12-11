@@ -339,11 +339,14 @@ function loadCsvText(text){
     return;
   }
 
-  allRows = parsed.data.map((r,i)=>{
-    const norm = {};
-    for(const key in r){
-      norm[normalizeKey(key)] = r[key];
-    }
+  allRows = parsed.data.map((r,i)=>{/* your parsing logic */});
+
+  // First populate batch dropdown
+  updateBatchFilterOptions(allRows);
+
+  // Render map with current filter selection
+  renderFilteredRows(); // ✅ call the function that already exists
+}
 
     const enodeb_id = (norm['enodeb_id'] ?? norm['enodeb id'] ?? norm['enodeb'] ?? '') + '';
     const enodeb_name = (norm['enodeb_name'] ?? norm['enodeb name'] ?? '') + '';
