@@ -235,6 +235,7 @@ function dotIcon(color){ return L.divIcon({className:'', html:`<div style="width
 const ICON_PENDING = dotIcon('#1F4E79'); const ICON_DONE = dotIcon('#66ff00');
 let allRows = [], visibleMarkers = {}, pinnedMarker = null;
 let uniqueBatches = new Set();
+let batchMap = new Map(); // Store mapping between normalized value and actual batch name
 
 function normalizeKey(k){ return (k||'').toString().trim().toLowerCase().replace(/\s+/g,'_'); }
 function isDoneStatus(s){
@@ -367,6 +368,7 @@ function updateFilterDropdown() {
       option.value = batch.toLowerCase().replace(/\s+/g, '_');
       option.textContent = batch;
       select.appendChild(option);
+      batchMap.set(option.value, batch);
     });
   
   // Restore previous selection if it still exists
@@ -390,6 +392,7 @@ function loadCsvText(text){
 
   allRows = [];
   uniqueBatches = new Set();
+  batchMap = new Map();
 
   parsed.data.forEach((r,i)=>{
     const norm = {};
@@ -433,7 +436,9 @@ function loadCsvText(text){
       status,
       on_air_date,
       lat: Number.isFinite(lat) ? lat : NaN,
-      lon: Number.isFinite(lon) ? lon : NaN
+      lon: Number.isFinite(lon) ? lon : NaN,
+      // Add normalized batch for easier filtering
+      normalized_batch: (swap_batch || '').toLowerCase().replace(/\s+/g, '_')
     };
 
     allRows.push(row);
@@ -476,14 +481,9 @@ function render(){
   
   let rows = allRows.slice();
   
-  // If not "all", filter by swap_batch (case-insensitive partial match)
+  // If not "all", filter by normalized_batch
   if(view !== 'all' && view !== '') {
-    rows = allRows.filter(r => {
-      const batch = (r.swap_batch || '').toString().toLowerCase();
-      const viewLower = view.toLowerCase();
-      // Check for exact match or contains match
-      return batch === viewLower || batch.includes(viewLower);
-    });
+    rows = allRows.filter(r => r.normalized_batch === view);
   }
 
   let doneCount = 0, pendingCount = 0;
