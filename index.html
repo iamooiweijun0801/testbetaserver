@@ -514,14 +514,14 @@
         let selectedKpis = [];
         let selectedTechForColor = '';
         let selectedColor = '';
-        let pptLayout = 3; // Default: 3 graphs per slide (1 row)
+        let pptLayout = 3; // Default: 3 graphs per slide
         let selectedTechForExport = {
             GSM: true,
             LTE: true,
             NR: true
         };
 
-        // --- KPI Definitions --- FIXED: Added missing comma
+        // --- KPI Definitions ---
         const kpiDefinitions = [
             { tech: "GSM", kpi: "Call setup success rate(%)", initialChecked: true, color: "#2F80ED" },
             { tech: "GSM", kpi: "Call drop rate(%)", initialChecked: true, color: "#2F80ED" },
@@ -556,14 +556,13 @@
 
         // --- Color Palette Options ---
         const colorPalette = [
-            "#2F80ED", "#27AE60", "#D24726", "#8E44AD", // Default tech colors
-            "#3498DB", "#2ECC71", "#E74C3C", "#9B59B6", // Alternatives
-            "#1ABC9C", "#F39C12", "#34495E", "#95A5A6", // More options
-            "#2980B9", "#16A085", "#C0392B", "#8E44AD", // Additional
-            "#2C3E50", "#27AE60", "#E67E22", "#D35400"  // More
+            "#2F80ED", "#27AE60", "#D24726", "#8E44AD",
+            "#3498DB", "#2ECC71", "#E74C3C", "#9B59B6",
+            "#1ABC9C", "#F39C12", "#34495E", "#95A5A6",
+            "#2980B9", "#16A085", "#C0392B", "#8E44AD"
         ];
 
-        // --- Chart Styles (5 styles as requested) ---
+        // --- Chart Styles ---
         const chartStyles = [
             { 
                 name: "Filled Area", 
@@ -631,21 +630,18 @@
             }
         `;
         
-        // Add style for action buttons
         const style = document.createElement('style');
         style.textContent = actionBtnStyle;
         document.head.appendChild(style);
 
         // --- INITIALIZATION ---
         function initDashboard() {
-            // Set initial selected KPIs based on the definitions
             selectedKpis = kpiDefinitions.filter(k => k.initialChecked).map(k => k.tech + " - " + k.kpi);
-            // Apply default chart style: Line with Dots
             applyChartStyle(1);
             fetchData();
         }
 
-        // --- DATA FETCHING --- FIXED: Better error handling
+        // --- DATA FETCHING ---
         async function fetchData(){
             document.getElementById("mainChartContainer").innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>Loading data...</h2>";
             allData = [];
@@ -656,15 +652,9 @@
                     try {
                         const url = sheetUrls[tech] + "&t=" + Date.now();
                         const res = await fetch(url);
-                        if (!res.ok) {
-                            console.warn(`Failed to fetch ${tech} data: ${res.status}`);
-                            continue;
-                        }
+                        if (!res.ok) continue;
                         const text = await res.text();
-                        if (!text || text.trim() === '') {
-                            console.warn(`Empty data for ${tech}`);
-                            continue;
-                        }
+                        if (!text || text.trim() === '') continue;
                         const rows = text.trim().split('\n').map(r => r.split(','));
                         
                         if (rows.length < 2) continue;
@@ -710,7 +700,7 @@
             }
         }
 
-        // --- CHART RENDERING --- FIXED: Better chart creation
+        // --- CHART RENDERING ---
         function renderCharts(timeline = []) {
             const container = document.getElementById("mainChartContainer");
             container.innerHTML = "";
@@ -730,7 +720,6 @@
             const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
             if (!dateHeaderName) return;
 
-            // Filter kpis to show based on `selectedKpis`
             const chartsToRender = kpiDefinitions.filter(k => selectedKpis.includes(k.tech + " - " + k.kpi));
             
             if (chartsToRender.length === 0) {
@@ -764,7 +753,6 @@
                     
                     if (values.length === 0) return null;
                     
-                    // Simple aggregation
                     const kpiLower = kpi.toLowerCase();
                     if (kpiLower.includes('%') || kpiLower.includes('rate') || kpiLower.includes('avg') || kpiLower.includes('average')|| kpiLower.includes('max')) {
                         return values.reduce((a, b) => a + b, 0) / values.length;
@@ -773,7 +761,6 @@
                     }
                 });
 
-                // Check if we have any valid data
                 const validValues = dataPoints.filter(v => v !== null);
                 if (validValues.length === 0) {
                     const noDataMsg = document.createElement("div");
@@ -825,8 +812,6 @@
                 }
                 
                 const { niceMin, niceMax, tickSpacing } = computeYAxis(minVal, maxVal);
-
-                // Chart Color - Use technology-specific color
                 let chartColor = techColors[tech];
 
                 // Chart Config
@@ -890,7 +875,6 @@
                     }
                 };
 
-                // Apply active chart style
                 if (activeChartStyle) {
                     const style = activeChartStyle;
                     chartConfig.data.datasets[0].borderWidth = style.borderWidth;
@@ -904,7 +888,6 @@
                     }
                 }
 
-                // Create chart
                 try {
                     allCharts[fullKpiName] = new Chart(canvas.getContext("2d"), chartConfig);
                 } catch (e) {
@@ -958,7 +941,6 @@
             selectedKpis = Array.from(list.querySelectorAll(".kpi-chk:checked")).map(c => c.value);
             document.getElementById("kpiDrawer").classList.remove("open");
             
-            // Re-render charts with new selection
             const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
             if (dateHeaderName && allData.length > 0) {
                 const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
@@ -996,10 +978,8 @@
                 }
             });
             
-            // Update technology color buttons with current colors
             updateTechColorButtons();
             
-            // Re-render to apply style
             const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
             if (dateHeaderName && allData.length > 0) {
                 const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
@@ -1012,7 +992,6 @@
         }
 
         function updateTechColorButtons() {
-            // Update the tech color buttons with current colors
             const gsmBtn = document.querySelector('.tech-color-btn.gsm');
             const lteBtn = document.querySelector('.tech-color-btn.lte');
             const nrBtn = document.querySelector('.tech-color-btn.nr');
@@ -1028,7 +1007,6 @@
             selectedColor = techColors[tech];
             document.getElementById('colorPickerTitle').textContent = `Select Color for ${tech}`;
             
-            // Populate color grid
             const colorGrid = document.getElementById('colorPickerGrid');
             colorGrid.innerHTML = '';
             
@@ -1043,11 +1021,9 @@
                 }
                 
                 colorOption.onclick = () => {
-                    // Remove selected class from all options
                     document.querySelectorAll('.color-option').forEach(opt => {
                         opt.classList.remove('selected');
                     });
-                    // Add selected class to clicked option
                     colorOption.classList.add('selected');
                     selectedColor = color;
                 };
@@ -1066,17 +1042,14 @@
             if (selectedTechForColor && selectedColor) {
                 techColors[selectedTechForColor] = selectedColor;
                 
-                // Update the KPI definitions with new color
                 kpiDefinitions.forEach(kpi => {
                     if (kpi.tech === selectedTechForColor) {
                         kpi.color = selectedColor;
                     }
                 });
                 
-                // Update the color button
                 updateTechColorButtons();
                 
-                // Re-render charts
                 const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
                 if (dateHeaderName && allData.length > 0) {
                     const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
@@ -1091,7 +1064,7 @@
             }
         }
 
-        // --- PPT EXPORT FUNCTIONS --- FIXED: Technology grouping logic
+        // --- PPT EXPORT FUNCTIONS --- FIXED: Simple mixed technology layout
         function openPPTExport() {
             const charts = document.querySelectorAll("canvas");
             if (charts.length === 0) {
@@ -1099,7 +1072,6 @@
                 return;
             }
             
-            // Populate technology selection options
             const techOptions = document.getElementById('techExportOptions');
             techOptions.innerHTML = '';
             
@@ -1114,7 +1086,6 @@
                 techOptions.appendChild(div);
             }
             
-            // Update layout buttons
             document.querySelectorAll('.graph-options button').forEach(btn => {
                 if (parseInt(btn.dataset.count) === pptLayout) {
                     btn.classList.add('active');
@@ -1123,10 +1094,7 @@
                 }
             });
             
-            // Generate preview
             updatePPTPreview(pptLayout);
-            
-            // Show modal
             document.getElementById('pptModal').style.display = 'flex';
         }
 
@@ -1142,7 +1110,6 @@
         function updatePPTPreview(layoutCount) {
             pptLayout = layoutCount;
             
-            // Update active layout button
             document.querySelectorAll('.graph-options button').forEach(btn => {
                 if (parseInt(btn.dataset.count) === layoutCount) {
                     btn.classList.add('active');
@@ -1151,8 +1118,8 @@
                 }
             });
             
-            // Get charts grouped by technology
-            const chartsByTech = {};
+            // Get ALL selected charts mixed together
+            const allChartsForExport = [];
             const chartElements = document.querySelectorAll("canvas");
             
             chartElements.forEach((canvas, index) => {
@@ -1162,10 +1129,7 @@
                     const tech = title.split(' - ')[0];
                     
                     if (selectedTechForExport[tech]) {
-                        if (!chartsByTech[tech]) {
-                            chartsByTech[tech] = [];
-                        }
-                        chartsByTech[tech].push({
+                        allChartsForExport.push({
                             canvas: canvas,
                             chart: chart,
                             title: title,
@@ -1175,70 +1139,74 @@
                 }
             });
             
-            // Check if any charts are selected
-            const totalCharts = Object.values(chartsByTech).reduce((sum, arr) => sum + arr.length, 0);
-            if (totalCharts === 0) {
+            if (allChartsForExport.length === 0) {
                 document.getElementById('previewBody').innerHTML = 
-                    '<div style="text-align:center;padding:40px;color:#666;">No charts selected for export. Please select at least one technology.</div>';
+                    '<div style="text-align:center;padding:40px;color:#666;">No charts selected for export.</div>';
                 return;
             }
             
-            // Generate preview with technology grouping
             const previewBody = document.getElementById('previewBody');
             previewBody.innerHTML = '';
             
-            let slideCounter = 1;
+            // Calculate grid layout based on selected layout
+            const layout = getLayoutConfig(layoutCount);
+            const gridTemplateCols = `repeat(${layout.cols}, 1fr)`;
+            const gridTemplateRows = `repeat(${layout.rows}, 1fr)`;
             
-            // Process each technology
-            for (const tech in chartsByTech) {
-                const techCharts = chartsByTech[tech];
+            for (let i = 0; i < allChartsForExport.length; i += layoutCount) {
+                const slideDiv = document.createElement('div');
+                slideDiv.className = 'preview-slide';
                 
-                // Calculate rows for this technology (3 charts per row)
-                const totalRows = Math.ceil(techCharts.length / 3);
+                const slideTitle = document.createElement('div');
+                slideTitle.className = 'preview-slide-title';
+                slideTitle.textContent = `Slide ${Math.floor(i/layoutCount) + 1}`;
+                slideDiv.appendChild(slideTitle);
                 
-                for (let row = 0; row < totalRows; row++) {
-                    const slideDiv = document.createElement('div');
-                    slideDiv.className = 'preview-slide';
-                    
-                    const slideTitle = document.createElement('div');
-                    slideTitle.className = 'preview-slide-title';
-                    slideTitle.textContent = `Slide ${slideCounter++} - ${tech}`;
-                    slideDiv.appendChild(slideTitle);
-                    
-                    const grid = document.createElement('div');
-                    grid.className = 'preview-grid';
-                    grid.style.display = 'grid';
-                    grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
-                    grid.style.gap = '10px';
-                    grid.style.height = '100%';
-                    grid.style.paddingTop = '30px';
-                    grid.style.alignContent = 'start';
-                    
-                    // Get charts for this row (max 3)
-                    const startIdx = row * 3;
-                    const endIdx = Math.min(startIdx + 3, techCharts.length);
-                    const rowCharts = techCharts.slice(startIdx, endIdx);
-                    
-                    // Add charts to this row
-                    rowCharts.forEach(chartData => {
+                const grid = document.createElement('div');
+                grid.className = 'preview-grid';
+                grid.style.display = 'grid';
+                grid.style.gridTemplateColumns = gridTemplateCols;
+                grid.style.gridTemplateRows = gridTemplateRows;
+                grid.style.gap = '10px';
+                grid.style.height = '100%';
+                grid.style.paddingTop = '30px';
+                grid.style.alignContent = 'start';
+                
+                // Fill the grid
+                for (let j = 0; j < layoutCount; j++) {
+                    const cellIndex = i + j;
+                    if (cellIndex < allChartsForExport.length) {
+                        const chartData = allChartsForExport[cellIndex];
                         const box = createPreviewBox(chartData.canvas, chartData.title);
                         grid.appendChild(box);
-                    });
-                    
-                    // If less than 3 charts in this row, add empty placeholders
-                    for (let i = rowCharts.length; i < 3; i++) {
+                    } else {
+                        // Empty cell for 1-0-0 layout
                         const emptyBox = document.createElement('div');
                         emptyBox.className = 'preview-img-box';
                         emptyBox.style.border = '1px dashed #eee';
                         emptyBox.style.background = '#f9f9f9';
-                        emptyBox.innerHTML = '<div style="color:#999;font-size:12px;">Empty</div>';
+                        emptyBox.innerHTML = '<div style="color:#999;font-size:12px;"></div>';
                         grid.appendChild(emptyBox);
                     }
-                    
-                    slideDiv.appendChild(grid);
-                    previewBody.appendChild(slideDiv);
                 }
+                
+                slideDiv.appendChild(grid);
+                previewBody.appendChild(slideDiv);
             }
+        }
+
+        function getLayoutConfig(count) {
+            let rows, cols;
+            switch(parseInt(count)) {
+                case 1: rows = 1; cols = 1; break;
+                case 2: rows = 1; cols = 2; break;
+                case 3: rows = 1; cols = 3; break;
+                case 4: rows = 2; cols = 2; break;
+                case 6: rows = 2; cols = 3; break;
+                case 9: rows = 3; cols = 3; break;
+                default: rows = 1; cols = 3;
+            }
+            return { rows, cols };
         }
 
         function createPreviewBox(canvas, title) {
@@ -1246,13 +1214,10 @@
             box.className = 'preview-img-box';
             
             try {
-                // Create a copy of the canvas for preview
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = canvas.width;
                 tempCanvas.height = canvas.height;
                 const tempCtx = tempCanvas.getContext('2d');
-                
-                // Draw the chart
                 tempCtx.drawImage(canvas, 0, 0);
                 const imgData = tempCanvas.toDataURL("image/png");
                 
@@ -1282,7 +1247,7 @@
             const pptx = new PptxGenJS();
             pptx.layout = 'LAYOUT_16x9';
             
-            // Add title slide
+            // Title slide
             const titleSlide = pptx.addSlide();
             titleSlide.addText('KPI Dashboard Report', {
                 x: 0.5, y: 1, w: 9, h: 1,
@@ -1295,8 +1260,8 @@
                 fontSize: 16, color: '666666'
             });
             
-            // Get charts grouped by technology
-            const chartsByTech = {};
+            // Get all selected charts mixed together
+            const allChartsForExport = [];
             const chartElements = document.querySelectorAll("canvas");
             
             chartElements.forEach((canvas, index) => {
@@ -1306,10 +1271,7 @@
                     const tech = title.split(' - ')[0];
                     
                     if (selectedTechForExport[tech]) {
-                        if (!chartsByTech[tech]) {
-                            chartsByTech[tech] = [];
-                        }
-                        chartsByTech[tech].push({
+                        allChartsForExport.push({
                             canvas: canvas,
                             chart: chart,
                             title: title,
@@ -1319,57 +1281,40 @@
                 }
             });
             
-            // Check if any charts are selected
-            const totalCharts = Object.values(chartsByTech).reduce((sum, arr) => sum + arr.length, 0);
-            if (totalCharts === 0) {
+            if (allChartsForExport.length === 0) {
                 alert("No charts selected for export.");
                 return;
             }
             
-            // PowerPoint layout settings
+            // PPT layout calculations
+            const layout = getLayoutConfig(pptLayout);
             const slideWidth = 10.0;
             const slideHeight = 5.625;
-            const marginX = 0.2;
-            const marginTop = 0.9;
-            const marginBottom = 0.2;
-            const gap = 0.15;
+            const marginX = 0.5;
+            const marginTop = 0.8;
+            const marginBottom = 0.5;
+            const gap = 0.2;
             
-            // Always 3 charts per row
-            const cols = 3;
-            const rows = 1;
             const usableW = slideWidth - (marginX * 2);
             const usableH = slideHeight - marginTop - marginBottom;
-            const chartW = (usableW - ((cols - 1) * gap)) / cols;
-            const chartH = (usableH - ((rows - 1) * gap)) / rows;
+            const chartW = (usableW - ((layout.cols - 1) * gap)) / layout.cols;
+            const chartH = (usableH - ((layout.rows - 1) * gap)) / layout.rows;
             
-            let slideCounter = 1;
-            
-            // Add chart slides grouped by technology
-            for (const tech in chartsByTech) {
-                const techCharts = chartsByTech[tech];
-                const totalRowsForTech = Math.ceil(techCharts.length / 3);
+            // Add chart slides
+            for (let i = 0; i < allChartsForExport.length; i += pptLayout) {
+                const slide = pptx.addSlide();
                 
-                for (let row = 0; row < totalRowsForTech; row++) {
-                    const slide = pptx.addSlide();
-                    
-                    // Add slide title
-                    slide.addText(`${tech} KPIs`, {
-                        x: 0.5, y: 0.1, w: 9, h: 0.3,
-                        fontSize: 16, bold: true, color: techColors[tech]
-                    });
-                    
-                    // Get charts for this row (max 3)
-                    const startIdx = row * 3;
-                    const endIdx = Math.min(startIdx + 3, techCharts.length);
-                    const rowCharts = techCharts.slice(startIdx, endIdx);
-                    
-                    // Add charts to this row
-                    rowCharts.forEach((chartData, colIndex) => {
+                for (let j = 0; j < pptLayout; j++) {
+                    const chartIndex = i + j;
+                    if (chartIndex < allChartsForExport.length) {
+                        const chartData = allChartsForExport[chartIndex];
+                        const rowIndex = Math.floor(j / layout.cols);
+                        const colIndex = j % layout.cols;
+                        
                         const xPos = marginX + (colIndex * (chartW + gap));
-                        const yPos = marginTop;
+                        const yPos = marginTop + (rowIndex * (chartH + gap));
                         
                         try {
-                            // Add chart image
                             slide.addImage({
                                 data: chartData.canvas.toDataURL("image/png"),
                                 x: xPos,
@@ -1378,41 +1323,44 @@
                                 h: chartH
                             });
                             
-                            // Add chart title (truncated if too long)
-                            const shortTitle = chartData.title.length > 50 ? 
-                                chartData.title.substring(0, 50) + '...' : chartData.title;
+                            // Add chart title
+                            const shortTitle = chartData.title.length > 40 ? 
+                                chartData.title.substring(0, 40) + '...' : chartData.title;
                             slide.addText(shortTitle, {
                                 x: xPos,
-                                y: yPos - 0.3,
+                                y: yPos - 0.25,
                                 w: chartW,
-                                h: 0.3,
-                                fontSize: 8,
+                                h: 0.25,
+                                fontSize: 7,
                                 bold: true,
                                 color: '333333'
                             });
                         } catch (e) {
                             console.error(`Error adding chart to PPT:`, e);
                         }
-                    });
-                    
-                    slideCounter++;
+                    }
                 }
             }
             
-            // Add summary slide
+            // Summary slide
             const summarySlide = pptx.addSlide();
             summarySlide.addText('Summary', {
                 x: 0.5, y: 0.5, w: 9, h: 0.5,
                 fontSize: 28, bold: true, color: '2F80ED'
             });
             
-            let summaryText = `Total Charts: ${totalCharts}\n`;
-            summaryText += `Layout: 3 charts per row\n`;
-            summaryText += `Total Slides: ${slideCounter}\n\n`;
+            let summaryText = `Total Charts: ${allChartsForExport.length}\n`;
+            summaryText += `Layout: ${layout.rows}x${layout.cols} (${pptLayout} per slide)\n`;
+            summaryText += `Total Slides: ${Math.ceil(allChartsForExport.length / pptLayout) + 2}\n\n`;
             
-            // Add technology breakdown
-            for (const tech in chartsByTech) {
-                summaryText += `${tech}: ${chartsByTech[tech].length} charts\n`;
+            // Count by technology
+            const techCount = {};
+            allChartsForExport.forEach(chart => {
+                techCount[chart.tech] = (techCount[chart.tech] || 0) + 1;
+            });
+            
+            for (const tech in techCount) {
+                summaryText += `${tech}: ${techCount[tech]} charts\n`;
             }
             
             summarySlide.addText(summaryText, {
