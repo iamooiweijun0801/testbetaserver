@@ -1,225 +1,727 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8"/>
-<title>Dynamic Batch Filter Map</title>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta charset="utf-8" />
+<title>Interactive Sites Map — Dynamic Filter</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-
 <style>
-  body,html { margin:0; height:100%; font-family:Arial; }
-  #app { display:grid; grid-template-columns:360px 1fr; height:100vh; }
-  #panel { padding:12px; overflow:auto; background:#f2f5ff; }
-  #map { height:100%; }
-  .statbox { padding:12px; background:white; border-radius:8px; margin-bottom:8px; }
-  select,input { padding:6px; width:100%; margin-bottom:10px; }
-  button { width:100%; padding:10px; background:#0066ff; border:none; color:white; border-radius:8px; cursor:pointer; }
-</style>
+  :root{
+    --bg:#e0eaff;
+    --card:#ffffff80;
+    --accent:#2F80ED;
+    --accent-hover:#1C60B3;
+    --pending:#1F4E79;
+    --done:#66ff00;
+    --shadow:0 8px 30px rgba(0,0,0,0.12);
+    --radius:12px;
+  }
 
+  html, body {
+    margin:0;
+    height:100%;
+    font-family: 'Inter', system-ui, Arial;
+    background: linear-gradient(to bottom right, #e0eaff, #ffffff);
+    color:#222;
+    font-size:14px;
+    line-height:1.5;
+  }
+
+  .app{
+    display:grid;
+    grid-template-columns:380px 1fr;
+    gap:16px;
+    height:100vh;
+    padding:16px;
+    box-sizing:border-box;
+  }
+
+  .panel{
+    background:var(--card);
+    backdrop-filter: blur(12px);
+    border-radius:var(--radius);
+    padding:16px;
+    box-shadow:var(--shadow);
+    display:flex;
+    flex-direction:column;
+    overflow:auto;
+    border:1px solid rgba(255,255,255,0.3);
+  }
+
+  #map{
+    height:100%;
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    border:2px solid rgba(255,255,255,0.3);
+  }
+
+  h2{
+    margin-bottom:12px;
+    font-weight:700;
+    font-size:1.4em;
+    color:#1a1a1a;
+  }
+
+  label{
+    font-weight:600;
+    color:#333;
+  }
+
+  .controls{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .row{
+    display:flex;
+    gap:12px;
+    align-items:center;
+  }
+
+  select,input[type=text]{
+    padding:8px 10px;
+    border-radius:var(--radius);
+    border:1px solid #ccc;
+    transition:0.2s;
+  }
+  select:focus, input:focus{
+    border-color:var(--accent);
+    outline:none;
+    box-shadow:0 0 8px rgba(47,128,237,0.3);
+  }
+
+  .btn{
+    padding:10px 16px;
+    border-radius:var(--radius);
+    border:none;
+    font-weight:600;
+    cursor:pointer;
+    color:#fff;
+    background: linear-gradient(135deg,var(--accent),#1e5fc1);
+    transition:0.3s;
+    box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  }
+  .btn:hover{
+    background:var(--accent-hover);
+    transform:translateY(-2px);
+    box-shadow:0 6px 16px rgba(0,0,0,0.25);
+  }
+
+  .stat{
+    background:rgba(255,255,255,0.85);
+    flex:1;
+    padding:12px;
+    border-radius:var(--radius);
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+    text-align:center;
+    transition:0.2s;
+  }
+  .stat:hover{
+    box-shadow:0 6px 18px rgba(0,0,0,0.15);
+    transform:translateY(-2px);
+  }
+
+  .stat .small{
+    font-weight:500;
+    color:#555;
+    margin-bottom:4px;
+  }
+
+  .stat div[id]{
+    font-weight:700;
+    font-size:20px;
+    margin-top:4px;
+  }
+
+  .legend .sw{
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    display:inline-block;
+    margin-right:8px;
+    border:2px solid #fff;
+    box-shadow:0 0 4px rgba(0,0,0,0.25);
+  }
+
+  #details{
+    font-size:14px;
+    color:#222;
+    margin-top:8px;
+    padding:8px;
+    border-radius:var(--radius);
+    background:rgba(255,255,255,0.7);
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+    min-height:64px;
+  }
+
+  .search-wrap{
+    display:flex;
+    gap:8px;
+  }
+.map-sniper-btn{position:absolute;bottom:20px;right:20px;z-index:9999;width:50px;height:50px;border-radius:50%;background:white;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid #444;box-shadow:0 2px 8px rgba(0,0,0,0.25);}
+.map-sniper-btn img{width:28px;height:28px;}
+.map-sniper-btn:hover{transform:translateY(-4px);box-shadow:0 6px 18px rgba(0,0,0,0.28);}
+hr{border:none;border-top:1px solid #eee;margin:12px 0;}
+  @media(max-width:950px){
+    .app{
+      grid-template-columns:1fr;
+      grid-template-rows:320px 1fr;
+    }
+  }
+</style>
 </head>
 <body>
+<div class="app">
+  <div class="panel">
+    <h2>Site Map Dashboard</h2>
+    <div class="controls">
+      <div class="row">
+        <label for="viewSelect">View</label>
+        <select id="viewSelect">
+          <option value="all">All Sites</option>
+          <!-- Options will be dynamically populated -->
+        </select>
+      </div>
 
-<div id="app">
-  <div id="panel">
-    <h2>Map Dashboard</h2>
+      <div class="row">
+        <div class="stat">
+          <div class="small">Done / Total</div>
+          <div id="doneTotal">0 / 0</div>
+          <div class="small" id="donePct">0%</div>
+        </div>
+        <div class="stat">
+          <div class="small">Pending</div>
+          <div id="pendingCount">0</div>
+          <div class="small" id="totalCount">Total: 0</div>
+        </div>
+      </div>
 
-    <label>Batch Filter</label>
-    <select id="viewSelect"></select>
+      <div class="row legend small">
+        <span class="sw" style="background:var(--done)"></span>Done
+        <span class="sw" style="background:var(--pending)"></span>Pending
+      </div>
 
-    <div class="statbox">
-      <div><b>Done / Total:</b> <span id="doneTotal">0 / 0</span></div>
-      <div><b>Pending:</b> <span id="pendingCount">0</span></div>
-      <div><b>% Done:</b> <span id="donePct">0%</span></div>
-    </div>
+      <hr/>
 
-    <input id="searchInput" type="text" placeholder="Search eNodeB or Name"/>
-    <button id="searchBtn">Search</button>
+      <div class="row search-wrap">
+        <input id="searchInput" type="text" placeholder="Search eNodeB ID / Site name"/>
+        <button id="searchBtn" class="btn">Find</button>
+      </div>
 
-    <div id="details" style="padding:10px; background:white; border-radius:8px; min-height:40px;">
-      Details appear here.
+      <div id="details">Hover a marker or search to see details here.</div>
+
     </div>
   </div>
 
-  <div id="map"></div>
+ <div class="panel" style="padding:0;">
+    <div id="map">
+      <div id="sniperBtn" class="map-sniper-btn" title="Reset view to current filter bounds">
+        <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="sniper">
+      </div>
+    </div>
+  </div>
 </div>
-
 
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-/* --------------------------------------------------
-   MAP SETUP
--------------------------------------------------- */
-const map = L.map('map').setView([3, 101], 6);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+const map = L.map('map', { preferCanvas: true }).setView([3.0, 101.5], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 const markersLayer = L.layerGroup().addTo(map);
 
-function dot(color){
-  return L.divIcon({
-    html:`<div style="width:12px;height:12px;background:${color};border:2px solid white;border-radius:50%"></div>`,
-    className:"",
-    iconSize:[12,12],
-    iconAnchor:[6,6]
-  });
-}
-const ICON_DONE = dot("#3aff00");
-const ICON_PENDING = dot("#003d87");
+function dotIcon(color){ return L.divIcon({className:'', html:`<div style="width:10px;height:10px;background:${color};border-radius:50%;border:2px solid white;box-shadow:0 0 4px rgba(0,0,0,0.25);"></div>`, iconSize:[14,14], iconAnchor:[7,7], popupAnchor:[0,-10]}); }
+const ICON_PENDING = dotIcon('#1F4E79'); const ICON_DONE = dotIcon('#66ff00');
+let allRows = [], visibleMarkers = {}, pinnedMarker = null;
+let uniqueBatches = new Set();
 
-/* --------------------------------------------------
-   GLOBAL STORAGE
--------------------------------------------------- */
-let allRows = [];
-let visibleMarkers = {};
-let pinnedMarker = null;
-
-/* --------------------------------------------------
-   CLEAN HELPERS
--------------------------------------------------- */
-function escapeHtml(s){
-  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;");
-}
-
+function normalizeKey(k){ return (k||'').toString().trim().toLowerCase().replace(/\s+/g,'_'); }
 function isDoneStatus(s){
   if(!s) return false;
-  s = s.toLowerCase();
-  return /done|on.?air|live|accepted|active/.test(s);
+  s = s.toString().toLowerCase();
+  return /on\s*-?\s*air|onair|done|live|activated|active|\bon\b/.test(s);
 }
 
-/* --------------------------------------------------
-   BATCH FILTER DROPDOWN
--------------------------------------------------- */
-function updateBatchFilterOptions(rows){
-  const sel = document.getElementById("viewSelect");
-  sel.innerHTML = "";
-
-  const batches = [...new Set(rows.map(r => r.swap_batch).filter(Boolean))].sort();
-
-  sel.appendChild(new Option("All Sites", "__ALL__"));
-
-  batches.forEach(b => sel.appendChild(new Option(b, b)));
+/* find a key in a normalized-row object that roughly matches 'on air date' */
+function findOnAirKey(normObj){
+  for(const k of Object.keys(normObj)){
+    const compact = k.replace(/[^a-z0-9]/g,'');
+    if(compact === 'onairdate' || compact === 'onair' || compact.includes('onair')) return k;
+  }
+  // fallback common names
+  if('on-air_date' in normObj) return 'on-air_date';
+  if('on_air_date' in normObj) return 'on_air_date';
+  if('on_air' in normObj) return 'on_air';
+  if('onairdate' in normObj) return 'onairdate';
+  return null;
 }
 
-/* --------------------------------------------------
-   MAIN RENDER FUNCTION (ALWAYS CALLED)
--------------------------------------------------- */
-function renderFilteredRows(){
-  const batch = document.getElementById("viewSelect").value;
-  markersLayer.clearLayers();
-  visibleMarkers = {};
+/* basic Levenshtein distance - small and fast enough for our lists */
+function levenshtein(a,b){
+  a = a||''; b = b||'';
+  const m = a.length, n = b.length;
+  if(m===0) return n;
+  if(n===0) return m;
+  const dp = Array(n+1).fill(0).map((_,i)=>i);
+  for(let i=1;i<=m;i++){
+    let prev = dp[0];
+    dp[0] = i;
+    for(let j=1;j<=n;j++){
+      const temp = dp[j];
+      const cost = a[i-1] === b[j-1] ? 0 : 1;
+      dp[j] = Math.min(dp[j] + 1, dp[j-1] + 1, prev + cost);
+      prev = temp;
+    }
+  }
+  return dp[n];
+}
 
-  let rows = allRows;
-  if(batch !== "__ALL__"){
-    rows = rows.filter(r => (r.swap_batch||"") === batch);
+/* normalize string for searching */
+function normForSearch(s){
+  if(!s) return '';
+  return s.toString().toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+}
+
+/* find best match (exact -> substring -> fuzzy) among a field: returns object {row,score,type} or null */
+function fuzzyFindInRows(term, rows){
+  term = term || '';
+  const tNorm = normForSearch(term);
+  if(!tNorm) return null;
+
+  // 1) exact match on enodeb_id or enodeb_name or site_name
+  let exact = rows.find(r => (r.enodeb_id && r.enodeb_id.toString().trim() === term));
+  if(exact) return { row: exact, score: 0, type: 'exact-id' };
+
+  // 2) exact (case-insensitive) match for names
+  exact = rows.find(r => (r.site_name && normForSearch(r.site_name) === tNorm) || (r.enodeb_name && normForSearch(r.enodeb_name) === tNorm));
+  if(exact) return { row: exact, score: 0, type: 'exact-name' };
+
+  // 3) substring match (contains)
+  const substringMatches = rows.filter(r =>(r.enodeb_id && r.enodeb_id.toString().toLowerCase().includes(term.toLowerCase()))
+    || (r.site_name && r.site_name.toString().toLowerCase().includes(term.toLowerCase()))
+    || (r.enodeb_name && r.enodeb_name.toString().toLowerCase().includes(term.toLowerCase())));
+  if(substringMatches.length === 1) return { row: substringMatches[0], score: 1, type: 'substring' };
+  if(substringMatches.length > 1) {
+    // pick the one with shortest name (likely best)
+    substringMatches.sort((a,b) => ( (a.site_name||a.enodeb_name||'').length - (b.site_name||b.enodeb_name||'').length ));
+    return { row: substringMatches[0], score: 2, type: 'substring-multiple' };
   }
 
-  let bounds = [];
-  let done = 0, pending = 0;
+  // 4) fuzzy: use levenshtein on normalized names, pick best with threshold
+  let best = null;
+  for(const r of rows){
+    const candidates = [
+      normForSearch(r.site_name || ''),
+      normForSearch(r.enodeb_name || ''),
+      normForSearch(r.enodeb_id || '')
+    ];
+    for(const c of candidates){
+      if(!c) continue;
+      const dist = levenshtein(tNorm, c);
+      // compute relative threshold: allow up to ~20% of length (min 1-3)
+      const maxAllowed = Math.max(1, Math.floor(Math.min(3, c.length * 0.2)));
+      if(dist <= maxAllowed){
+        const score = dist; // lower is better
+        if(!best || score < best.score){
+          best = { row: r, score, type: 'fuzzy' };
+        }
+      }
+    }
+  }
+  return best;
+}
+
+/* animate numbers */
+function animateValue(id, start, end, total) {
+  const obj = document.getElementById(id);
+  if(!obj) return;
+  let startTimestamp = null;
+  const duration = 500;
+  const step = (timestamp) => {
+    if (!startTimestamp) startTimestamp = timestamp;
+    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+    const current = Math.floor(progress * (end - start) + start);
+    obj.textContent = total ? `${current} / ${total}` : current;
+    if (progress < 1) window.requestAnimationFrame(step);
+  };
+  window.requestAnimationFrame(step);
+}
+
+/* -------------------------
+   Update filter dropdown with unique batches
+   ------------------------- */
+function updateFilterDropdown() {
+  const select = document.getElementById('viewSelect');
+  const currentValue = select.value;
+  
+  // Clear existing options except "All Sites"
+  select.innerHTML = '<option value="all">All Sites</option>';
+  
+  // Add unique batches as options
+  Array.from(uniqueBatches)
+    .filter(batch => batch && batch.trim() !== '')
+    .sort()
+    .forEach(batch => {
+      const option = document.createElement('option');
+      option.value = batch.toLowerCase().replace(/\s+/g, '_');
+      option.textContent = batch;
+      select.appendChild(option);
+    });
+  
+  // Restore previous selection if it still exists
+  if (currentValue) {
+    const optionExists = Array.from(select.options).some(opt => opt.value === currentValue);
+    if (optionExists) {
+      select.value = currentValue;
+    }
+  }
+}
+
+/* -------------------------
+   CSV parsing (adds on_air_date)
+   ------------------------- */
+function loadCsvText(text){
+  const parsed = Papa.parse(text,{header:true, skipEmptyLines:true});
+  if(!parsed || !parsed.data){
+    alert('CSV parse error or no data found.');
+    return;
+  }
+
+  allRows = [];
+  uniqueBatches = new Set();
+
+  parsed.data.forEach((r,i)=>{
+    const norm = {};
+    // normalized keys -> original values
+    for(const key in r){
+      norm[normalizeKey(key)] = r[key];
+    }
+
+    // site fields (keep original values too)
+    const enodeb_id = (norm['enodeb_id'] ?? norm['enodeb id'] ?? norm['enodeb'] ?? '') + '';
+    const enodeb_name = (norm['enodeb_name'] ?? norm['enodeb name'] ?? '') + '';
+    const site_name = (norm['site_name'] ?? norm['site name'] ?? '') + '';
+    const swap_batch = (norm['swap_batch'] ?? norm['swap batch'] ?? '') + '';
+    const status = (norm['status'] ?? '') + '';
+    const lat = parseFloat((norm['latitude'] ?? norm['lat'] ?? '').toString().replace(/,/g,'.'));
+    const lon = parseFloat((norm['longitude'] ?? norm['lon'] ?? norm['lng'] ?? '').toString().replace(/,/g,'.'));
+
+    // Attempt to find on-air date value robustly:
+    let on_air_date = '';
+    if('on-air_date' in norm) on_air_date = norm['on-air_date'];
+    else if('on_air_date' in norm) on_air_date = norm['on_air_date'];
+    else if('on_air' in norm) on_air_date = norm['on_air'];
+    else {
+      for(const originalKey in r){
+        if(!originalKey) continue;
+        const compact = originalKey.toString().toLowerCase().replace(/[^a-z0-9]/g,'');
+        if(compact === 'onairdate' || compact === 'onair' || compact.indexOf('onair') !== -1){
+          on_air_date = r[originalKey];
+          break;
+        }
+      }
+    }
+    on_air_date = (on_air_date ?? '') + '';
+
+    const row = {
+      _rowIndex: i,
+      enodeb_id,
+      enodeb_name: enodeb_name || site_name,
+      site_name,
+      swap_batch,
+      status,
+      on_air_date,
+      lat: Number.isFinite(lat) ? lat : NaN,
+      lon: Number.isFinite(lon) ? lon : NaN
+    };
+
+    allRows.push(row);
+    
+    // Add batch to unique batches set
+    if (swap_batch && swap_batch.trim() !== '') {
+      uniqueBatches.add(swap_batch.trim());
+    }
+  });
+
+  // Update filter dropdown with new batches
+  updateFilterDropdown();
+  
+  render();
+}
+
+/* -------------------------
+   fetch CSV from Google Sheets (CSV export URL)
+   - make sure sheet is 'Anyone with link can view' and use the CSV export link
+   ------------------------- */
+function fetchFullList() {
+  const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/10UMN4MqTENsbHqdp2XdH7wDuNcbKtHdQhB3rKrd7fhg/export?format=csv&id=10UMN4MqTENsbHqdp2XdH7wDuNcbKtHdQhB3rKrd7fhg&gid=0';
+
+  fetch(SHEET_CSV_URL)
+    .then(r => {
+      if(!r.ok) throw new Error('Network response not ok');
+      return r.text();
+    })
+    .then(text => loadCsvText(text))
+    .catch(err => alert('Could not fetch data from Google Sheets: ' + err));
+}
+
+/* -------------------------
+   Render markers (popup includes On-Air Date)
+   ------------------------- */
+function render(){
+  markersLayer.clearLayers();
+  visibleMarkers = {};
+  const view = document.getElementById('viewSelect').value;
+  
+  let rows = allRows.slice();
+  
+  // If not "all", filter by swap_batch (case-insensitive partial match)
+  if(view !== 'all' && view !== '') {
+    rows = allRows.filter(r => {
+      const batch = (r.swap_batch || '').toString().toLowerCase();
+      const viewLower = view.toLowerCase();
+      // Check for exact match or contains match
+      return batch === viewLower || batch.includes(viewLower);
+    });
+  }
+
+  let doneCount = 0, pendingCount = 0;
+  const bounds = [];
 
   rows.forEach(r=>{
     if(!Number.isFinite(r.lat) || !Number.isFinite(r.lon)) return;
+    const done = isDoneStatus(r.status);
+    if(done) doneCount++; else pendingCount++;
+    const icon = done ? ICON_DONE : ICON_PENDING;
 
-    const isDone = isDoneStatus(r.status);
-    if(isDone) done++; else pending++;
+    const popupHtml = `<div style="min-width:240px">
+      <strong>${escapeHtml(r.enodeb_name)}</strong><br/>
+      <em>Site Name:</em> ${escapeHtml(r.site_name)}<br/>
+      <em>eNodeB ID:</em> ${escapeHtml(r.enodeb_id)}<br/>
+      <em>Swap Batch:</em> ${escapeHtml(r.swap_batch)}<br/>
+      <em>Status:</em> ${escapeHtml(r.status)}<br/>
+      <em>On-Air Date:</em> ${escapeHtml(r.on_air_date || '—')}
+    </div>`;
 
-    const marker = L.marker([r.lat, r.lon], {
-      icon: isDone ? ICON_DONE : ICON_PENDING
-    }).addTo(markersLayer);
+    const m = L.marker([r.lat, r.lon], { icon });
+    m.bindPopup(popupHtml, { autoClose:false, closeOnClick:false });
 
-    const popup = `
-      <div><b>${escapeHtml(r.enodeb_name)}</b><br>
-      ID: ${escapeHtml(r.enodeb_id)}<br>
-      Batch: ${escapeHtml(r.swap_batch)}<br>
-      Status: ${escapeHtml(r.status)}</div>
-    `;
+    m.on('mouseover', () => {
+      if(pinnedMarker && pinnedMarker !== m) pinnedMarker.closePopup();
+      pinnedMarker = null;
+      m.openPopup();
+      document.getElementById('details').innerHTML = popupHtml;
+    });
 
-    marker.bindPopup(popup);
-    visibleMarkers[r.enodeb_id] = marker;
+    m.on('mouseout', () => { if(pinnedMarker !== m) m.closePopup(); });
+
+    m.on('click', () => {
+      if(pinnedMarker && pinnedMarker !== m) pinnedMarker.closePopup();
+      pinnedMarker = m;
+      m.openPopup();
+      document.getElementById('details').innerHTML = popupHtml;
+      map.setView(m.getLatLng(), 16);
+    });
+
+    m.addTo(markersLayer);
+    const key = (r.enodeb_id || ('row' + r._rowIndex)).toString();
+    visibleMarkers[key] = m;
     bounds.push([r.lat, r.lon]);
-
-    marker.on("mouseover",()=>{ marker.openPopup(); });
-    marker.on("click",()=>{ map.setView([r.lat,r.lon], 15); });
   });
 
+  // animate with total shown as "done / total" for doneTotal
+  animateValue('doneTotal', 0, doneCount, rows.length);
+  animateValue('pendingCount', 0, pendingCount);
+  document.getElementById('donePct').textContent = rows.length ? (Math.round(doneCount/rows.length*10000)/100) + '%' : '0%';
+  document.getElementById('totalCount').textContent = `Total: ${rows.length}`;
+
   if(bounds.length){
-    map.fitBounds(bounds, {padding:[40,40]});
+    const b = L.latLngBounds(bounds);
+    if(b.isValid()) map.fitBounds(b.pad(0.2));
   }
-
-  document.getElementById("doneTotal").textContent = `${done} / ${rows.length}`;
-  document.getElementById("pendingCount").textContent = pending;
-  document.getElementById("donePct").textContent =
-    rows.length ? Math.round(done/rows.length*100)+"%" : "0%";
 }
 
-/* --------------------------------------------------
-   SEARCH FUNCTION
--------------------------------------------------- */
+/* -------------------------
+   Legend color picker for markers
+   ------------------------- */
+const statusColors = {
+  done: getComputedStyle(document.documentElement).getPropertyValue('--done').trim(),
+  pending: getComputedStyle(document.documentElement).getPropertyValue('--pending').trim()
+};
+
+// click legend dot to pick a color
+document.querySelectorAll('.legend .sw').forEach((el, idx) => {
+  const status = idx === 0 ? 'done' : 'pending';
+  el.addEventListener('click', async () => {
+    const newColor = await pickColor(statusColors[status]);
+    if (!newColor) return;
+    statusColors[status] = newColor;
+    el.style.background = newColor;
+    updateMarkerColors(status, newColor);
+  });
+});
+
+// color picker popup
+function pickColor(current) {
+  return new Promise(resolve => {
+    const input = document.createElement('input');
+    input.type = 'color';
+    input.value = rgbToHex(current);
+    input.style.position = 'fixed';
+    input.style.left = '-9999px';
+    document.body.appendChild(input);
+    input.click();
+    input.addEventListener('input', () => resolve(input.value));
+    input.addEventListener('change', () => { resolve(input.value); document.body.removeChild(input); });
+    input.addEventListener('blur', () => { resolve(null); document.body.removeChild(input); });
+  });
+}
+
+// convert rgb() to hex if needed
+function rgbToHex(rgb){
+  if(rgb.startsWith('#')) return rgb;
+  const nums = rgb.match(/\d+/g).map(Number);
+  return "#" + nums.map(n => n.toString(16).padStart(2,'0')).join('');
+}
+
+// regenerate marker icons with new color
+function updateMarkerColors(status, color){
+  for(const key in visibleMarkers){
+    const m = visibleMarkers[key];
+    const row = allRows.find(r => (r.enodeb_id || ('row'+r._rowIndex)).toString() === key);
+    if(!row) continue;
+
+    const done = isDoneStatus(row.status);
+    if ((status === 'done' && done) || (status === 'pending' && !done)){
+      const icon = dotIcon(color);
+      m.setIcon(icon);
+    }
+  }
+}
+
+/* -------------------------
+   Escape HTML utility
+   ------------------------- */
+function escapeHtml(s){
+  if(s === null || s === undefined) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* -------------------------
+   Search: supports id exact and fuzzy name search
+   ------------------------- */
 function searchAndZoom(term){
-  term = (term||"").toLowerCase();
+  if(!term || !term.toString().trim()){ alert('Enter a eNodeB ID, or Site name'); return; }
+  term = term.toString().trim();
 
-  const row = allRows.find(r =>
-    r.enodeb_id.toLowerCase() === term ||
-    r.site_name.toLowerCase().includes(term) ||
-    r.enodeb_name.toLowerCase().includes(term)
-  );
-
-  if(!row){ alert("Not found."); return; }
-
-  const batch = row.swap_batch || "__ALL__";
-  document.getElementById("viewSelect").value = batch;
-  renderFilteredRows();
-
-  const m = visibleMarkers[row.enodeb_id];
-  if(m){
+  // 1) exact key in visibleMarkers
+  if(visibleMarkers[term]){
+    const m = visibleMarkers[term];
+    map.setView(m.getLatLng(), 16);
+    document.getElementById('details').innerHTML = m.getPopup() ? m.getPopup().getContent() : '';
     m.openPopup();
-    map.setView(m.getLatLng(), 15);
+    pinnedMarker = m;
+    return;
   }
 
-  document.getElementById("details").innerHTML =
-    `<b>${row.enodeb_name}</b><br>ID: ${row.enodeb_id}`;
+  // 2) try exact matches in allRows (enodeb_id)
+  const exact = allRows.find(r => (r.enodeb_id && r.enodeb_id.toString().trim() === term));
+  if(exact && Number.isFinite(exact.lat) && Number.isFinite(exact.lon)){
+    map.setView([exact.lat, exact.lon], 16);
+    const key = (exact.enodeb_id || ('row' + exact._rowIndex)).toString();
+    if(visibleMarkers[key]){
+      const m = visibleMarkers[key];
+      document.getElementById('details').innerHTML = m.getPopup() ? m.getPopup().getContent() : '';
+      m.openPopup();
+      pinnedMarker = m;
+    } else {
+      // not visible in current filter — just show details in panel
+      const popupHtml = `<div style="min-width:220px"><strong>${escapeHtml(exact.enodeb_name)}</strong><br/>
+        <em>Site Name:</em> ${escapeHtml(exact.site_name)}<br/>
+        <em>eNodeB ID:</em> ${escapeHtml(exact.enodeb_id)}<br/>
+        <em>Swap Batch:</em> ${escapeHtml(exact.swap_batch)}<br/>
+        <em>Status:</em> ${escapeHtml(exact.status)}<br/>
+        <em>On-Air Date:</em> ${escapeHtml(exact.on_air_date || '—')}</div>`;
+      document.getElementById('details').innerHTML = popupHtml;
+    }
+    return;
+  }
+
+  // 3) fuzzy / partial search across site_name / enodeb_name / enodeb_id
+  const result = fuzzyFindInRows(term, allRows);
+  if(result && result.row){
+    const found = result.row;
+    if(Number.isFinite(found.lat) && Number.isFinite(found.lon)){
+      // if marker is visible, open; otherwise show details
+      const key = (found.enodeb_id || ('row' + found._rowIndex)).toString();
+      if(visibleMarkers[key]){
+        const m = visibleMarkers[key];
+        map.setView(m.getLatLng(),16);
+        document.getElementById('details').innerHTML = m.getPopup() ? m.getPopup().getContent() : '';
+        m.openPopup();
+        pinnedMarker = m;
+      } else {
+        // show details and zoom map
+        map.setView([found.lat, found.lon], 16);
+        const popupHtml = `<div style="min-width:220px"><strong>${escapeHtml(found.enodeb_name)}</strong><br/>
+          <em>Site Name:</em> ${escapeHtml(found.site_name)}<br/>
+          <em>eNodeB ID:</em> ${escapeHtml(found.enodeb_id)}<br/>
+          <em>Swap Batch:</em> ${escapeHtml(found.swap_batch)}<br/>
+          <em>Status:</em> ${escapeHtml(found.status)}<br/>
+          <em>On-Air Date:</em> ${escapeHtml(found.on_air_date || '—')}</div>`;
+        document.getElementById('details').innerHTML = popupHtml;
+        pinnedMarker = null;
+      }
+      return;
+    }
+  }
+
+  alert('Site not found (try exact eNodeB ID, or part of the Site Name).');
 }
 
-/* --------------------------------------------------
-   LOAD CSV
--------------------------------------------------- */
-function loadCsvText(text){
-  const parsed = Papa.parse(text, {header:true, skipEmptyLines:true});
-  allRows = parsed.data.map(r => ({
-    enodeb_id: r.enodeb_id || "",
-    enodeb_name: r.enodeb_name || r.site_name || "",
-    site_name: r.site_name || "",
-    swap_batch: r.swap_batch || "",
-    status: r.status || "",
-    lat: parseFloat((r.latitude||"").replace(",", ".")),
-    lon: parseFloat((r.longitude||"").replace(",", "."))
-  }));
+/* -------------------------
+   Event listeners
+   ------------------------- */
+document.getElementById('viewSelect').addEventListener('change', render);
+document.getElementById('searchBtn').addEventListener('click', ()=> searchAndZoom(document.getElementById('searchInput').value));
+document.getElementById('searchInput').addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); searchAndZoom(e.target.value); }});
+document.getElementById('sniperBtn').addEventListener('click',()=>render());
+  
+window.addEventListener('load', ()=>{ fetchFullList(); setTimeout(()=>map.invalidateSize(),300); });
 
-  updateBatchFilterOptions(allRows);
-  renderFilteredRows();
-}
+// -------------------------
+// Auto-refresh CSV every 30 seconds
+// -------------------------
+let lastCsvText = null;
+const REFRESH_INTERVAL_MS = 0.5 * 60 * 1000; // 30 seconds
 
-/* --------------------------------------------------
-   FETCH LIVE CSV
--------------------------------------------------- */
-const CSV_URL =
-  "https://docs.google.com/spreadsheets/d/10UMN4MqTENsbHqdp2XdH7wDuNcbKtHdQhB3rKrd7fhg/export?format=csv";
+async function smartFetchCsv() {
+  try {
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/10UMN4MqTENsbHqdp2XdH7wDuNcbKtHdQhB3rKrd7fhg/export?format=csv&id=10UMN4MqTENsbHqdp2XdH7wDuNcbKtHdQhB3rKrd7fhg&gid=0';
+    const response = await fetch(SHEET_CSV_URL);
+    if (!response.ok) throw new Error('Network response not ok');
+    const csvText = await response.text();
 
-async function fetchCsv(){
-  try{
-    const res = await fetch(CSV_URL);
-    if(!res.ok) throw new Error();
-    const text = await res.text();
-    loadCsvText(text);
-  }catch(e){
-    alert("Cannot load CSV.");
+    if (csvText !== lastCsvText) {
+      console.log('CSV changed, reloading map...');
+      lastCsvText = csvText;
+      loadCsvText(csvText);
+    } else {
+      console.log('CSV unchanged, no update needed.');
+    }
+  } catch (err) {
+    console.error('Error fetching CSV:', err);
   }
 }
 
-document.getElementById("searchBtn").onclick = ()=> searchAndZoom(document.getElementById("searchInput").value);
-document.getElementById("viewSelect").onchange = renderFilteredRows;
+// Initial load
+smartFetchCsv();
 
-fetchCsv();
+// Auto-refresh every 30 seconds
+setInterval(smartFetchCsv, REFRESH_INTERVAL_MS);
+
 </script>
-
 </body>
 </html>
