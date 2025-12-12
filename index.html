@@ -298,6 +298,14 @@ button.ppt-btn:hover { background:#a8381e; }
     <div id="siteDropdownList"></div>
   </div>
 
+  <div class="toggle-switch" id="sheetToggle">
+  <span class="toggle-label">Group Level</span>
+  <div class="switch" onclick="switchSheetToggle()">
+    <div class="circle"></div>
+  </div>
+  <span class="toggle-label">Site Level</span>
+</div>
+
   <button onclick="fetchData()" class="action-btn">Refresh</button>
   <button onclick="openPreview()" class="action-btn ppt-btn">Export PPT</button>
 </div>
@@ -425,6 +433,9 @@ let graphsPerSlide = 2;
 let chartExportColor = '#2F80ED'; // Default Line/Dot Color (Dark Blue)
 let chartExportTitleColor = '#333333'; // Default Title Color (Dark Gray/Black)
 
+let currentSheet = 'site'; // Default: Site Level
+const sheetToggle = document.getElementById("sheetToggle");
+
 // Chart Styling
 let activeChartStyle = null;
 let activeCustomColor = null;
@@ -470,12 +481,33 @@ function switchTab(tab) {
     renderCharts(); 
 }
 
+function switchSheetToggle() {
+    if(currentSheet === 'site') {
+        currentSheet = 'group';
+        sheetToggle.classList.add('active');
+    } else {
+        currentSheet = 'site';
+        sheetToggle.classList.remove('active');
+    }
+    fetchData();
+}
+
 // --- DATA FETCHING & MAPPING ---
 async function fetchData(){
   try {
-    // URLs for NR and NSA data
-    const NR_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1617739873&single=true&output=csv";
-    const NSA_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=670588387&single=true&output=csv";
+    // URLs for NR and NSA data - with group/site level sheets
+    const sheetUrls = {
+        site: {
+            nr: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1617739873&single=true&output=csv",
+            nsa: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=670588387&single=true&output=csv"
+        },
+        group: {
+            // You'll need to update these URLs with your actual group-level sheet URLs
+            nr: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1372365834&single=true&output=csv",
+            nsa: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1503870746&single=true&output=csv"
+        }
+    };
+    
     const CUTOVER_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=19616562&single=true&output=csv";
     
     const t = Date.now();
@@ -496,8 +528,9 @@ async function fetchData(){
         }
     });
 
-    // 2. Fetch NR Data
-    const nrRes = await fetch(NR_CSV_URL + "&t=" + t);
+    // 2. Fetch NR Data (site or group level based on currentSheet)
+    const nrUrl = sheetUrls[currentSheet].nr + "&t=" + t;
+    const nrRes = await fetch(nrUrl);
     const nrText = await nrRes.text();
     const nrRows = nrText.trim().split('\n').map(r=>r.split(','));
     const nrHeaders = nrRows.shift().map(h=>h.trim());
@@ -510,8 +543,9 @@ async function fetchData(){
       return obj; 
     });
 
-    // 3. Fetch NSA Data
-    const nsaRes = await fetch(NSA_CSV_URL + "&t=" + t);
+    // 3. Fetch NSA Data (site or group level based on currentSheet)
+    const nsaUrl = sheetUrls[currentSheet].nsa + "&t=" + t;
+    const nsaRes = await fetch(nsaUrl);
     const nsaText = await nsaRes.text();
     const nsaRows = nsaText.trim().split('\n').map(r=>r.split(','));
     const nsaHeaders = nsaRows.shift().map(h=>h.trim());
@@ -524,9 +558,12 @@ async function fetchData(){
       return obj; 
     });
 
-    // 4. Determine all sites present in both NR and NSA data
-    const nrSites = [...new Set(nrData.map(d=>d["eNodeB Name"]))].filter(s=>s).sort();
-    const nsaSites = [...new Set(nsaData.map(d=>d["eNodeB Name"]))].filter(s=>s).sort();
+    // 4. Determine all sites/groups present in both NR and NSA data
+    // For site level: use "eNodeB Name", for group level: use appropriate field name
+    const identifierField = currentSheet === 'site' ? 'eNodeB Name' : 'Group Name'; // Adjust as needed
+    
+    const nrSites = [...new Set(nrData.map(d=>d[identifierField]))].filter(s=>s).sort();
+    const nsaSites = [...new Set(nsaData.map(d=>d[identifierField]))].filter(s=>s).sort();
     allSites = [...new Set([...nrSites, ...nsaSites])].sort();
 
     // 5. Initialize Date Filter Options and State
@@ -622,7 +659,7 @@ function updateDateFilterUI(options = {close: true}) {
     }
 }
 
-// --- FILTER UI LOGIC (eNodeB Name) ---
+// --- FILTER UI LOGIC (eNodeB Name / Group Name) ---
 function setupSiteDropdown(){
   const list = document.getElementById("siteDropdownList");
   const btn = document.getElementById("siteDropdownBtn");
@@ -734,9 +771,12 @@ function renderCharts(){
       finalSiteList = sitesFromDate;
   }
   
-  // Filter data based on selected sites
-  let filteredNRData = nrData.filter(d => finalSiteList.includes(d["eNodeB Name"]));
-  let filteredNSAData = nsaData.filter(d => finalSiteList.includes(d["eNodeB Name"]));
+  // Determine identifier field based on current sheet level
+  const identifierField = currentSheet === 'site' ? 'eNodeB Name' : 'Group Name';
+  
+  // Filter data based on selected sites/groups
+  let filteredNRData = nrData.filter(d => finalSiteList.includes(d[identifierField]));
+  let filteredNSAData = nsaData.filter(d => finalSiteList.includes(d[identifierField]));
 
   // Get timeline from both datasets
   const nrTimeline = [...new Set(filteredNRData.map(d=>d["Date"]))].filter(Boolean);
@@ -873,7 +913,8 @@ function renderCharts(){
       data: {
         labels: timelineLabels,
         datasets: [{
-          label: (finalSiteList.length > 0 && dataPoints.some(p => p !== null)) ? `${type.toUpperCase()} Aggregate` : "No Data",
+          label: (finalSiteList.length > 0 && dataPoints.some(p => p !== null)) ? 
+                 `${currentSheet === 'site' ? 'Site' : 'Group'} Aggregate` : "No Data",
           data: dataPoints,
           borderColor: chartColor,
           backgroundColor: 'transparent',
