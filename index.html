@@ -423,15 +423,15 @@ button.ppt-btn:hover { background:#a8381e; }
 let nrData = [];
 let nsaData = [];
 let allSites = [];
-let siteCutoverMap = {}; // Maps eNodeB Name -> On-Air Date
+let siteCutoverMap = {}; // Maps eNodeB/Group Name -> On-Air Date
 let allOnAirDates = [];
 let selectedOnAirDates = [];
 let selectedSites = [];
-let currentTab = "both"; // DEFAULT IS NOW 'BOTH'
+let currentTab = "both";
 let graphsPerSlide = 2; 
 
-let chartExportColor = '#2F80ED'; // Default Line/Dot Color (Dark Blue)
-let chartExportTitleColor = '#333333'; // Default Title Color (Dark Gray/Black)
+let chartExportColor = '#2F80ED';
+let chartExportTitleColor = '#333333';
 
 let currentSheet = 'site'; // Default: Site Level
 const sheetToggle = document.getElementById("sheetToggle");
@@ -498,13 +498,12 @@ async function fetchData(){
     // URLs for NR and NSA data - with group/site level sheets
     const sheetUrls = {
         site: {
-            nr: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1617739873&single=true&output=csv",
-            nsa: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=670588387&single=true&output=csv"
-        },
-        group: {
-            // You'll need to update these URLs with your actual group-level sheet URLs
             nr: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1372365834&single=true&output=csv",
             nsa: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1503870746&single=true&output=csv"
+        },
+        group: {
+            nr: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1617739873&single=true&output=csv",
+            nsa: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=670588387&single=true&output=csv"
         }
     };
     
@@ -512,7 +511,7 @@ async function fetchData(){
     
     const t = Date.now();
     
-    // 1. Fetch Cutover Data
+    // 1. Fetch Cutover Data (same for both site and group)
     const cutoverRes = await fetch(CUTOVER_CSV_URL + "&t=" + t);
     const cutoverText = await cutoverRes.text();
     
@@ -559,8 +558,8 @@ async function fetchData(){
     });
 
     // 4. Determine all sites/groups present in both NR and NSA data
-    // For site level: use "eNodeB Name", for group level: use appropriate field name
-    const identifierField = currentSheet === 'site' ? 'eNodeB Name' : 'Group Name'; // Adjust as needed
+    // Both use "eNodeB Name" column for identification
+    const identifierField = 'eNodeB Name';
     
     const nrSites = [...new Set(nrData.map(d=>d[identifierField]))].filter(s=>s).sort();
     const nsaSites = [...new Set(nsaData.map(d=>d[identifierField]))].filter(s=>s).sort();
@@ -590,8 +589,13 @@ function setupOnAirDateDropdown(){
   
   const setAll = () => { 
     selectedOnAirDates = [...allOnAirDates]; 
-    const allActiveSites = allSites.filter(site => siteCutoverMap[site] && allOnAirDates.includes(siteCutoverMap[site]));
-    selectedSites = [...allActiveSites]; 
+    // For group level, we should include all groups regardless of date
+    if (currentSheet === 'group') {
+      selectedSites = [...allSites];
+    } else {
+      const allActiveSites = allSites.filter(site => siteCutoverMap[site] && allOnAirDates.includes(siteCutoverMap[site]));
+      selectedSites = [...allActiveSites]; 
+    }
     updateDateFilterUI({close: false}); 
     setupSiteDropdown();
   };
@@ -633,11 +637,16 @@ function updateSelectedDates() {
     const list = document.getElementById("onAirDateDropdownList");
     selectedOnAirDates = Array.from(list.querySelectorAll(".date-chk:checked")).map(c => c.value);
     
-    let activeSites = allSites.filter(site => {
-        const date = siteCutoverMap[site];
-        return date && selectedOnAirDates.includes(date);
-    });
-    selectedSites = [...activeSites]; 
+    // For group level, don't filter by date (groups don't have dates)
+    if (currentSheet === 'group') {
+      selectedSites = [...allSites];
+    } else {
+      let activeSites = allSites.filter(site => {
+          const date = siteCutoverMap[site];
+          return date && selectedOnAirDates.includes(date);
+      });
+      selectedSites = [...activeSites]; 
+    }
     
     updateDateFilterUI({close: false}); 
     setupSiteDropdown(); 
@@ -648,7 +657,12 @@ function updateDateFilterUI(options = {close: true}) {
     const span = document.getElementById("onAirDateBtnLabel");
     const list = document.getElementById("onAirDateDropdownList");
     
-    span.textContent = selectedOnAirDates.length === 0 ? "No Dates Selected" : (selectedOnAirDates.length === allOnAirDates.length ? "All On-Air Dates" : `Selected (${selectedOnAirDates.length})`);
+    // For group level, show different label
+    if (currentSheet === 'group') {
+      span.textContent = "Groups (No Date Filter)";
+    } else {
+      span.textContent = selectedOnAirDates.length === 0 ? "No Dates Selected" : (selectedOnAirDates.length === allOnAirDates.length ? "All On-Air Dates" : `Selected (${selectedOnAirDates.length})`);
+    }
     
     list.querySelectorAll(".date-chk").forEach(c => c.checked = selectedOnAirDates.includes(c.value));
     
@@ -665,12 +679,15 @@ function setupSiteDropdown(){
   const btn = document.getElementById("siteDropdownBtn");
   list.innerHTML = "";
 
-  let activeSites = allSites.filter(site => {
-      const date = siteCutoverMap[site];
-      return date && selectedOnAirDates.includes(date);
-  });
+  // For group level, all groups are active (no date filtering)
+  let activeSites;
+  if (currentSheet === 'group') {
+    activeSites = [...allSites];
+  } else {
+    activeSites = allSites.filter(s => !selectedOnAirDates.length || selectedOnAirDates.includes(siteCutoverMap[s]));
+  }
   
-  selectedSites = selectedSites.filter(site => activeSites.includes(site));
+  selectedSites = selectedSites.filter(s => activeSites.includes(s));
   
   const setAll = () => { 
     selectedSites = [...activeSites]; 
@@ -684,6 +701,7 @@ function setupSiteDropdown(){
     renderCharts(); 
   };
   
+  const label = currentSheet === 'site' ? 'Sites' : 'Groups';
   list.innerHTML += `<div onclick="window.siteSetAll()"><b>Select All (${activeSites.length})</b></div>`;
   list.innerHTML += `<div onclick="window.siteClearAll()"><b>Clear All</b></div>`;
 
@@ -722,13 +740,11 @@ function updateSiteFilterUI(options = {close: true}) {
     const span = document.getElementById("siteBtnLabel");
     const list = document.getElementById("siteDropdownList");
     
-    let activeSites = allSites.filter(site => {
-        const date = siteCutoverMap[site];
-        return selectedOnAirDates.includes(date);
-    });
-
-    if(selectedSites.length === 0) span.textContent = "All Active Sites";
-    else if(selectedSites.length === activeSites.length) span.textContent = `All Active Sites (${selectedSites.length})`;
+    const label = currentSheet === 'site' ? 'Sites' : 'Groups';
+    const activeSites = currentSheet === 'group' ? allSites : allSites.filter(s => !selectedOnAirDates.length || selectedOnAirDates.includes(siteCutoverMap[s]));
+    
+    if(selectedSites.length === 0) span.textContent = `All ${label}`;
+    else if(selectedSites.length === activeSites.length) span.textContent = `All ${label} (${selectedSites.length})`;
     else if(selectedSites.length === 1) span.textContent = selectedSites[0];
     else span.textContent = `Selected (${selectedSites.length})`;
 
@@ -759,22 +775,23 @@ function renderCharts(){
     ];
   }
 
-  let sitesFromDate = allSites.filter(site => {
-      const date = siteCutoverMap[site];
-      return selectedOnAirDates.includes(date);
-  });
-
+  // For group level, all groups are available
+  // For site level, filter by date
   let finalSiteList;
-  if (selectedSites.length > 0) {
-      finalSiteList = selectedSites;
+  if (currentSheet === 'group') {
+    finalSiteList = selectedSites.length > 0 ? selectedSites : [...allSites];
   } else {
-      finalSiteList = sitesFromDate;
+    let sitesFromDate = allSites.filter(site => {
+        const date = siteCutoverMap[site];
+        return selectedOnAirDates.includes(date);
+    });
+    finalSiteList = selectedSites.length > 0 ? selectedSites : sitesFromDate;
   }
   
-  // Determine identifier field based on current sheet level
-  const identifierField = currentSheet === 'site' ? 'eNodeB Name' : 'Group Name';
-  
   // Filter data based on selected sites/groups
+  // Both use "eNodeB Name" column
+  const identifierField = 'eNodeB Name';
+  
   let filteredNRData = nrData.filter(d => finalSiteList.includes(d[identifierField]));
   let filteredNSAData = nsaData.filter(d => finalSiteList.includes(d[identifierField]));
 
@@ -841,8 +858,7 @@ function renderCharts(){
     let minVal = validValues.length ? Math.min(...validValues) : 0;
     let maxVal = validValues.length ? Math.max(...validValues) : 100;
 
-    // Smart Y-axis scaling (from first code)
-    // Helper: nice rounding function for axis
+    // Smart Y-axis scaling
     function niceNumber(value, round) {
       const exponent = Math.floor(Math.log10(value));
       const fraction = value / Math.pow(10, exponent);
@@ -863,7 +879,6 @@ function renderCharts(){
       return niceFraction * Math.pow(10, exponent);
     }
 
-    // Compute smart Y-axis
     function computeYAxis(minVal, maxVal) {
       // ⭐ Special rule: if min >= 98 and max <= 100
       if (minVal >= 97 && maxVal <= 100) {
