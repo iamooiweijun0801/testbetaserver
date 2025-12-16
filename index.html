@@ -355,7 +355,7 @@
             display: flex; 
             flex-direction: column; 
             gap: 5px; 
-        }
+}
         .tech-export-option { 
             display: flex; 
             align-items: center; 
@@ -669,7 +669,7 @@
             
             // Update site dropdown when tech filters change
             setupSiteDropdown();
-            fetchData();
+            renderCharts(); // Use renderCharts instead of fetchData
         }
 
         // --- DATA FETCHING & MAPPING ---
@@ -809,7 +809,7 @@
                 }
                 updateDateFilterUI({close: false}); 
                 setupSiteDropdown();
-                fetchData();
+                renderCharts(); // FIXED: Use renderCharts instead of fetchData
             };
 
             const clearAll = () => { 
@@ -817,7 +817,7 @@
                 selectedSites = []; 
                 updateDateFilterUI({close: false}); 
                 setupSiteDropdown(); 
-                fetchData();
+                renderCharts(); // FIXED: Use renderCharts instead of fetchData
             };
             
             // Actions
@@ -1547,7 +1547,7 @@
                         const rowIndex = Math.floor(j / layout.cols);
 
                         const xPos = layout.marginX + (colIndex * (layout.chartW + layout.gap));
-                        const yPos = effectiveMarginTop + (rowIndex * (layout.chartH + layout.gap));
+                        const yPos = effectiveMarginTop + (rowIndex * (layout.chartW + layout.gap));
                         
                         const imgData = c.toDataURL("image/png");
                         slide.addImage({	
