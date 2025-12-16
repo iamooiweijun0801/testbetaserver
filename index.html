@@ -9,10 +9,18 @@
         body { font-family:'Segoe UI', sans-serif; margin:0; padding:0; background:#f4f7f6; }
         header { text-align:center; padding:15px 0; font-size:28px; font-weight:700; color:#333; background:white; box-shadow:0 2px 4px rgba(0,0,0,0.05); margin-bottom:15px; }
         
-        /* --- IMPROVED CONTROLS --- */
-        .controls { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+        /* --- UNIFIED CONTROLS --- */
+        .controls { 
+            display: flex; 
+            justify-content: center; 
+            gap: 15px; 
+            margin-bottom: 20px; 
+            flex-wrap: wrap; 
+            align-items: center;
+            padding: 0 20px;
+        }
         
-        /* Improved Toggle Switch */
+        /* Toggle Switch */
         .toggle-switch {
             display: flex;
             align-items: center;
@@ -20,14 +28,16 @@
             font-size: 14px;
             cursor: pointer;
             background: white;
-            padding: 6px 12px;
+            padding: 8px 16px;
             border-radius: 20px;
             border: 1px solid #ddd;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            min-width: 140px;
         }
         .toggle-switch .toggle-label {
             user-select: none;
             font-weight: 500;
+            color: #666;
         }
         .toggle-switch .switch {
             width: 50px;
@@ -53,8 +63,16 @@
         .toggle-switch.active .switch .circle {
             left: 28px;
         }
+        .toggle-switch.active .toggle-label:first-child {
+            color: #333;
+            font-weight: 600;
+        }
+        .toggle-switch:not(.active) .toggle-label:last-child {
+            color: #333;
+            font-weight: 600;
+        }
         
-        /* Improved Tech Filters */
+        /* Tech Filters */
         .tech-filters { 
             display: flex; 
             gap: 8px; 
@@ -87,16 +105,16 @@
         .tech-filter-btn.lte:before { background: #27AE60; }
         .tech-filter-btn.nr:before { background: #D24726; }
         .tech-filter-btn.active { 
-            background: #2F80ED; 
             color: white; 
         }
         .tech-filter-btn.gsm.active { background: #2F80ED; }
         .tech-filter-btn.lte.active { background: #27AE60; }
         .tech-filter-btn.nr.active { background: #D24726; }
         
-        /* Improved Dropdowns */
+        /* Unified Dropdowns (always visible) */
         .control-group {
             position: relative;
+            min-width: 200px;
         }
         .dropdown-btn {
             padding: 10px 16px;
@@ -104,7 +122,7 @@
             color: #333;
             border: 1px solid #ddd;
             border-radius: 6px;
-            width: 250px;
+            width: 100%;
             text-align: left;
             display: flex;
             justify-content: space-between;
@@ -146,6 +164,27 @@
             margin: 0;
         }
         
+        /* Search bar */
+        .search-container {
+            position: relative;
+            width: 100%;
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        
         /* Action Buttons */
         .action-btn { 
             padding: 10px 20px; 
@@ -159,6 +198,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            white-space: nowrap;
         }
         .action-btn:hover { background: #1f5ab5; }
         .ppt-btn { background: #D24726 !important; }
@@ -170,7 +210,20 @@
         @media (max-width: 768px) { .chart-grid { grid-template-columns: 1fr; } }
         .chart-card { background:white; border-radius:8px; padding:15px; box-shadow:0 2px 8px rgba(0,0,0,0.08); display:flex; flex-direction:column; }
         .chart-container { position: relative; height: 280px; width: 100%; }
-        .chart-site-info { font-size: 12px; color: #666; margin-bottom: 10px; padding: 5px 10px; background: #f5f5f5; border-radius: 4px; }
+        .chart-site-info { 
+            font-size: 12px; 
+            color: #666; 
+            margin-bottom: 10px; 
+            padding: 5px 10px; 
+            background: #f5f5f5; 
+            border-radius: 4px; 
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .chart-site-info:before {
+            content: '📊';
+        }
         
         /* Drawers */
         .drawer-toggle-buttons { position: fixed; top: 20px; right: 0; display: flex; flex-direction: column; gap: 8px; z-index: 900; }
@@ -182,10 +235,11 @@
         
         .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
         .kpi-options-body, .style-options-body { flex-grow: 1; overflow-y: auto; padding-right: 5px; padding-bottom: 40px; }
-        .drawer-controls { display: flex; gap: 5px; align-items: center; }
+        .drawer-controls { display: flex; gap: 5px; align-items: center; margin-bottom: 15px; }
         .drawer-controls .action-btn { padding: 6px 10px; font-size: 13px; }
         .kpi-group-title { font-weight: bold; color: #2F80ED; margin-top: 15px; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 3px; }
-        .kpi-option { display: block; margin-bottom: 5px; cursor: pointer; user-select: none; }
+        .kpi-option { display: block; margin-bottom: 5px; cursor: pointer; user-select: none; padding: 5px; border-radius: 4px; }
+        .kpi-option:hover { background: #f5f5f5; }
         .kpi-option input[type="checkbox"] { margin-right: 8px; }
         .style-button { padding: 10px 12px; margin: 6px 0; background: #f5f5f5; border-radius: 6px; cursor: pointer; font-weight: 500; border: 1px solid #ddd; transition: 0.2s; }
         .style-button:hover { background: #e9e9e9; }
@@ -217,6 +271,21 @@
         .tech-export-option { display: flex; align-items: center; gap: 8px; }
         .tech-export-option input { margin: 0; }
         .modal-footer { padding: 15px 20px; border-top: 1px solid #eee; text-align: right; flex-shrink: 0; }
+        
+        /* Loading state */
+        .loading { text-align: center; padding: 40px; color: #666; }
+        
+        /* Site tech indicators */
+        .site-tech-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .site-tech-gsm { background: #2F80ED; }
+        .site-tech-lte { background: #27AE60; }
+        .site-tech-nr { background: #D24726; }
     </style>
 </head>
 <body onload="initDashboard()">
@@ -225,11 +294,11 @@
     <div class="controls">
         <!-- Level Toggle Switch -->
         <div class="toggle-switch" id="levelToggle" onclick="switchLevel()">
-            <span class="toggle-label">Group</span>
+            <span class="toggle-label">Group Level</span>
             <div class="switch">
                 <div class="circle"></div>
             </div>
-            <span class="toggle-label">Site</span>
+            <span class="toggle-label">Site Level</span>
         </div>
         
         <!-- Technology Filters -->
@@ -239,28 +308,37 @@
             <button class="tech-filter-btn nr active" onclick="toggleTechFilter('NR')">NR</button>
         </div>
         
-        <!-- Site Dropdown (only visible in site level) -->
-        <div class="control-group" id="siteDropdownContainer" style="display: none;">
-            <button class="dropdown-btn" id="siteDropdownBtn">
-                <span id="siteBtnLabel">Select Sites</span>
-                <span>▼</span>
-            </button>
-            <div class="dropdown-list" id="siteDropdownList">
-                <!-- Sites will be populated here -->
-            </div>
-        </div>
-        
-        <!-- On-Air Date Dropdown (only visible in site level) -->
-        <div class="control-group" id="dateDropdownContainer" style="display: none;">
+        <!-- Date Dropdown (always visible) -->
+        <div class="control-group">
             <button class="dropdown-btn" id="dateDropdownBtn">
                 <span id="dateBtnLabel">All Dates</span>
                 <span>▼</span>
             </button>
             <div class="dropdown-list" id="dateDropdownList">
+                <div class="search-container">
+                    <div class="search-icon">🔍</div>
+                    <input type="text" class="search-input" placeholder="Search dates..." id="dateSearch" onkeyup="filterDropdown('date')">
+                </div>
                 <!-- Dates will be populated here -->
             </div>
         </div>
         
+        <!-- Site Dropdown (always visible but content changes based on date selection) -->
+        <div class="control-group">
+            <button class="dropdown-btn" id="siteDropdownBtn">
+                <span id="siteBtnLabel">All Sites</span>
+                <span>▼</span>
+            </button>
+            <div class="dropdown-list" id="siteDropdownList">
+                <div class="search-container">
+                    <div class="search-icon">🔍</div>
+                    <input type="text" class="search-input" placeholder="Search sites..." id="siteSearch" onkeyup="filterDropdown('site')">
+                </div>
+                <!-- Sites will be populated here -->
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
         <button class="action-btn" onclick="openPPTExport()">
             <span>📊</span> Export PPT
         </button>
@@ -398,23 +476,27 @@
         let activeChartStyle = null;
         let techColors = { GSM: "#2F80ED", LTE: "#27AE60", NR: "#D24726" };
         
-        // New state for site management
-        let allSites = []; // Array of site objects from cutover data
-        let siteCutoverMap = {}; // Maps eNodeB names to their on-air dates
+        // Site management state
+        let allSites = []; // All sites from cutover sheet: {name, tech, onAirDate, linkedSites}
+        let siteCutoverMap = {}; // site name -> onAirDate
         let selectedSites = [];
         let allOnAirDates = [];
         let selectedOnAirDates = [];
+        let sitesByDate = {}; // date -> [sites]
 
         // --- INIT ---
-        function initDashboard() {
+        async function initDashboard() {
             selectedKpis = kpiDefinitions.filter(k => k.initialChecked).map(k => k.tech + " - " + k.kpi);
             applyChartStyle(1);
             
             // Setup dropdown event listeners
             setupDropdowns();
             
-            // Load cutover data and fetch KPI data
-            loadCutoverData();
+            // Load cutover data first
+            await loadCutoverData();
+            
+            // Then fetch KPI data
+            await fetchData();
         }
 
         // --- LEVEL MANAGEMENT ---
@@ -423,16 +505,11 @@
             if (currentLevel === 'group') {
                 currentLevel = 'site';
                 toggle.classList.add('active');
-                document.getElementById('siteDropdownContainer').style.display = 'block';
-                document.getElementById('dateDropdownContainer').style.display = 'block';
-                // Show current selection
-                setupSiteDropdown();
-                setupDateDropdown();
+                document.getElementById('siteBtnLabel').textContent = 'Select Sites';
             } else {
                 currentLevel = 'group';
                 toggle.classList.remove('active');
-                document.getElementById('siteDropdownContainer').style.display = 'none';
-                document.getElementById('dateDropdownContainer').style.display = 'none';
+                document.getElementById('siteBtnLabel').textContent = 'All Sites';
             }
             fetchData();
         }
@@ -443,30 +520,26 @@
             btn.classList.toggle('active', techFilters[tech]);
             
             // Update site dropdown when tech filters change
-            if (currentLevel === 'site') {
-                setupSiteDropdown();
-            }
+            updateSiteDropdown();
             fetchData();
         }
 
         // --- DROPDOWN SETUP ---
         function setupDropdowns() {
-            // Site dropdown
-            document.getElementById('siteDropdownBtn').onclick = function(e) {
-                e.stopPropagation();
-                const list = document.getElementById('siteDropdownList');
-                list.style.display = list.style.display === 'block' ? 'none' : 'block';
-                // Close date dropdown if open
-                document.getElementById('dateDropdownList').style.display = 'none';
-            };
-            
             // Date dropdown
             document.getElementById('dateDropdownBtn').onclick = function(e) {
                 e.stopPropagation();
                 const list = document.getElementById('dateDropdownList');
                 list.style.display = list.style.display === 'block' ? 'none' : 'block';
-                // Close site dropdown if open
                 document.getElementById('siteDropdownList').style.display = 'none';
+            };
+            
+            // Site dropdown
+            document.getElementById('siteDropdownBtn').onclick = function(e) {
+                e.stopPropagation();
+                const list = document.getElementById('siteDropdownList');
+                list.style.display = list.style.display === 'block' ? 'none' : 'block';
+                document.getElementById('dateDropdownList').style.display = 'none';
             };
             
             // Close dropdowns when clicking outside
@@ -475,6 +548,18 @@
                     document.getElementById('siteDropdownList').style.display = 'none';
                     document.getElementById('dateDropdownList').style.display = 'none';
                 }
+            });
+        }
+
+        function filterDropdown(type) {
+            const searchId = type === 'date' ? 'dateSearch' : 'siteSearch';
+            const listId = type === 'date' ? 'dateDropdownList' : 'siteDropdownList';
+            const searchTerm = document.getElementById(searchId).value.toLowerCase();
+            
+            const items = document.querySelectorAll(`#${listId} .dropdown-item`);
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(searchTerm) ? 'flex' : 'none';
             });
         }
 
@@ -493,156 +578,119 @@
                 
                 allSites = [];
                 siteCutoverMap = {};
+                sitesByDate = {};
                 
                 rows.forEach(row => {
                     const enodebName = enodebCol !== -1 ? row[enodebCol]?.trim() : null;
                     const onAirDate = dateCol !== -1 ? row[dateCol]?.trim() : null;
+                    const gbscName = gbscCol !== -1 ? row[gbscCol]?.trim() : null;
+                    const gnbName = gnbCol !== -1 ? row[gnbCol]?.trim() : null;
                     
                     if (enodebName) {
-                        const site = {
+                        // Add LTE site (eNodeB)
+                        const lteSite = {
                             name: enodebName,
-                            tech: "LTE", // Default to LTE
+                            tech: "LTE",
                             onAirDate: onAirDate || 'Unknown',
-                            linkedGBSC: gbscCol !== -1 ? row[gbscCol]?.trim() : null,
-                            linkedgNodeB: gnbCol !== -1 ? row[gnbCol]?.trim() : null
+                            linkedSites: []
                         };
-                        allSites.push(site);
-                        if (onAirDate) {
-                            siteCutoverMap[enodebName] = onAirDate;
+                        
+                        if (gbscName) {
+                            lteSite.linkedSites.push({name: gbscName, tech: "GSM"});
+                            // Also add GSM site
+                            allSites.push({
+                                name: gbscName,
+                                tech: "GSM",
+                                onAirDate: onAirDate || 'Unknown',
+                                linkedSites: [{name: enodebName, tech: "LTE"}]
+                            });
+                            siteCutoverMap[gbscName] = onAirDate || 'Unknown';
                         }
+                        
+                        if (gnbName) {
+                            lteSite.linkedSites.push({name: gnbName, tech: "NR"});
+                            // Also add NR site
+                            allSites.push({
+                                name: gnbName,
+                                tech: "NR",
+                                onAirDate: onAirDate || 'Unknown',
+                                linkedSites: [{name: enodebName, tech: "LTE"}]
+                            });
+                            siteCutoverMap[gnbName] = onAirDate || 'Unknown';
+                        }
+                        
+                        allSites.push(lteSite);
+                        siteCutoverMap[enodebName] = onAirDate || 'Unknown';
+                        
+                        // Group by date
+                        const dateKey = onAirDate || 'Unknown';
+                        if (!sitesByDate[dateKey]) {
+                            sitesByDate[dateKey] = [];
+                        }
+                        sitesByDate[dateKey].push(lteSite);
+                        if (gbscName) sitesByDate[dateKey].push({name: gbscName, tech: "GSM"});
+                        if (gnbName) sitesByDate[dateKey].push({name: gnbName, tech: "NR"});
                     }
                 });
                 
                 // Extract unique dates
-                allOnAirDates = [...new Set(allSites.map(s => s.onAirDate).filter(d => d && d !== 'Unknown'))].sort();
+                allOnAirDates = [...new Set(allSites.map(s => s.onAirDate).filter(d => d))].sort();
                 selectedOnAirDates = [...allOnAirDates]; // Select all by default
                 
-                // Select all LTE sites by default
-                selectedSites = allSites.filter(s => s.tech === "LTE").map(s => s.name);
+                // Select all sites by default
+                selectedSites = allSites.map(s => s.name);
                 
-                console.log('Loaded sites:', allSites.length);
-                console.log('Loaded dates:', allOnAirDates);
+                console.log('Loaded sites:', allSites);
+                console.log('Sites by date:', sitesByDate);
                 
-                // Fetch KPI data
-                fetchData();
+                // Update dropdowns
+                updateDateDropdown();
+                updateSiteDropdown();
                 
             } catch (error) {
                 console.error("Error loading cutover data:", error);
                 // Fallback data
                 allSites = [
-                    { name: "eNodeB_001", tech: "LTE", onAirDate: "2024-01-15", linkedGBSC: "GBSC_001", linkedgNodeB: "gNodeB_001" },
-                    { name: "eNodeB_002", tech: "LTE", onAirDate: "2024-02-01", linkedGBSC: "GBSC_002", linkedgNodeB: "gNodeB_002" },
+                    { name: "GBSC_001", tech: "GSM", onAirDate: "2024-01-15", linkedSites: [{name: "eNodeB_001", tech: "LTE"}] },
+                    { name: "eNodeB_001", tech: "LTE", onAirDate: "2024-01-15", linkedSites: [{name: "GBSC_001", tech: "GSM"}, {name: "gNodeB_001", tech: "NR"}] },
+                    { name: "gNodeB_001", tech: "NR", onAirDate: "2024-01-15", linkedSites: [{name: "eNodeB_001", tech: "LTE"}] },
+                    { name: "GBSC_002", tech: "GSM", onAirDate: "2024-02-01", linkedSites: [{name: "eNodeB_002", tech: "LTE"}] },
+                    { name: "eNodeB_002", tech: "LTE", onAirDate: "2024-02-01", linkedSites: [{name: "GBSC_002", tech: "GSM"}] },
                 ];
-                siteCutoverMap = {
-                    "eNodeB_001": "2024-01-15",
-                    "eNodeB_002": "2024-02-01"
-                };
+                
                 allOnAirDates = ["2024-01-15", "2024-02-01"];
                 selectedOnAirDates = [...allOnAirDates];
-                selectedSites = ["eNodeB_001", "eNodeB_002"];
+                selectedSites = allSites.map(s => s.name);
                 
-                console.log('Using fallback data');
-                fetchData();
+                // Group by date
+                sitesByDate = {
+                    "2024-01-15": allSites.filter(s => s.onAirDate === "2024-01-15"),
+                    "2024-02-01": allSites.filter(s => s.onAirDate === "2024-02-01")
+                };
+                
+                updateDateDropdown();
+                updateSiteDropdown();
             }
         }
 
-        function setupSiteDropdown() {
-            const list = document.getElementById('siteDropdownList');
-            const btnLabel = document.getElementById('siteBtnLabel');
-            
-            // Filter sites by selected dates
-            let filteredSites = allSites.filter(site => {
-                return selectedOnAirDates.includes(site.onAirDate);
-            });
-            
-            list.innerHTML = '';
-            
-            // Select All / Clear All options
-            const selectAllDiv = document.createElement('div');
-            selectAllDiv.className = 'dropdown-item';
-            selectAllDiv.innerHTML = '<b>✓ Select All</b>';
-            selectAllDiv.onclick = () => {
-                selectedSites = filteredSites.map(s => s.name);
-                updateSiteDropdownUI();
-                fetchData();
-            };
-            list.appendChild(selectAllDiv);
-            
-            const clearAllDiv = document.createElement('div');
-            clearAllDiv.className = 'dropdown-item';
-            clearAllDiv.innerHTML = '<b>✗ Clear All</b>';
-            clearAllDiv.onclick = () => {
-                selectedSites = [];
-                updateSiteDropdownUI();
-                fetchData();
-            };
-            list.appendChild(clearAllDiv);
-            
-            // Add divider
-            const divider = document.createElement('div');
-            divider.style.borderTop = '1px solid #eee';
-            divider.style.margin = '5px 0';
-            list.appendChild(divider);
-            
-            // Site list
-            filteredSites.forEach(site => {
-                const div = document.createElement('div');
-                div.className = 'dropdown-item';
-                
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = selectedSites.includes(site.name);
-                checkbox.onchange = (e) => {
-                    e.stopPropagation();
-                    if (checkbox.checked) {
-                        if (!selectedSites.includes(site.name)) {
-                            selectedSites.push(site.name);
-                        }
-                    } else {
-                        selectedSites = selectedSites.filter(s => s !== site.name);
-                    }
-                    updateSiteDropdownUI();
-                    fetchData();
-                };
-                
-                const label = document.createElement('span');
-                label.textContent = site.name;
-                if (site.linkedGBSC || site.linkedgNodeB) {
-                    label.textContent += ' (';
-                    if (site.linkedGBSC) label.textContent += `GSM: ${site.linkedGBSC} `;
-                    if (site.linkedgNodeB) label.textContent += `NR: ${site.linkedgNodeB}`;
-                    label.textContent += ')';
-                }
-                
-                div.appendChild(checkbox);
-                div.appendChild(label);
-                div.onclick = (e) => {
-                    if (e.target !== checkbox) {
-                        checkbox.checked = !checkbox.checked;
-                        checkbox.onchange(e);
-                    }
-                };
-                list.appendChild(div);
-            });
-            
-            // Update button label
-            updateSiteDropdownUI();
-        }
-
-        function setupDateDropdown() {
+        function updateDateDropdown() {
             const list = document.getElementById('dateDropdownList');
             const btnLabel = document.getElementById('dateBtnLabel');
             
+            // Clear existing items except search
+            const searchContainer = list.querySelector('.search-container');
             list.innerHTML = '';
+            if (searchContainer) list.appendChild(searchContainer);
             
-            // Select All / Clear All options
+            // Select All / Clear All
             const selectAllDiv = document.createElement('div');
             selectAllDiv.className = 'dropdown-item';
             selectAllDiv.innerHTML = '<b>✓ Select All</b>';
-            selectAllDiv.onclick = () => {
+            selectAllDiv.onclick = (e) => {
+                e.stopPropagation();
                 selectedOnAirDates = [...allOnAirDates];
-                updateDateDropdownUI();
-                setupSiteDropdown();
+                updateDateDropdown();
+                updateSiteDropdown();
                 fetchData();
             };
             list.appendChild(selectAllDiv);
@@ -650,10 +698,11 @@
             const clearAllDiv = document.createElement('div');
             clearAllDiv.className = 'dropdown-item';
             clearAllDiv.innerHTML = '<b>✗ Clear All</b>';
-            clearAllDiv.onclick = () => {
+            clearAllDiv.onclick = (e) => {
+                e.stopPropagation();
                 selectedOnAirDates = [];
-                updateDateDropdownUI();
-                setupSiteDropdown();
+                updateDateDropdown();
+                updateSiteDropdown();
                 fetchData();
             };
             list.appendChild(clearAllDiv);
@@ -681,8 +730,8 @@
                     } else {
                         selectedOnAirDates = selectedOnAirDates.filter(d => d !== date);
                     }
-                    updateDateDropdownUI();
-                    setupSiteDropdown();
+                    updateDateDropdown();
+                    updateSiteDropdown();
                     fetchData();
                 };
                 
@@ -701,40 +750,162 @@
             });
             
             // Update button label
-            updateDateDropdownUI();
-        }
-
-        function updateSiteDropdownUI() {
-            const btnLabel = document.getElementById('siteBtnLabel');
-            
-            if (selectedSites.length === 0) {
-                btnLabel.textContent = 'No sites selected';
-            } else if (selectedSites.length === 1) {
-                btnLabel.textContent = selectedSites[0];
-            } else if (selectedSites.length === allSites.length) {
-                btnLabel.textContent = `All sites (${selectedSites.length})`;
-            } else {
-                btnLabel.textContent = `${selectedSites.length} sites selected`;
-            }
-        }
-
-        function updateDateDropdownUI() {
-            const btnLabel = document.getElementById('dateBtnLabel');
-            
             if (selectedOnAirDates.length === 0) {
                 btnLabel.textContent = 'No dates selected';
             } else if (selectedOnAirDates.length === allOnAirDates.length) {
-                btnLabel.textContent = 'All dates';
+                btnLabel.textContent = 'All Dates';
             } else {
                 btnLabel.textContent = `${selectedOnAirDates.length} dates selected`;
             }
         }
 
+        function updateSiteDropdown() {
+            const list = document.getElementById('siteDropdownList');
+            const btnLabel = document.getElementById('siteBtnLabel');
+            
+            // Clear existing items except search
+            const searchContainer = list.querySelector('.search-container');
+            list.innerHTML = '';
+            if (searchContainer) list.appendChild(searchContainer);
+            
+            // Get sites for selected dates
+            let availableSites = [];
+            if (selectedOnAirDates.length === 0) {
+                availableSites = [];
+            } else if (selectedOnAirDates.length === allOnAirDates.length) {
+                availableSites = [...allSites];
+            } else {
+                availableSites = allSites.filter(site => 
+                    selectedOnAirDates.includes(site.onAirDate)
+                );
+            }
+            
+            // Filter by technology
+            availableSites = availableSites.filter(site => techFilters[site.tech]);
+            
+            // Select All / Clear All
+            const selectAllDiv = document.createElement('div');
+            selectAllDiv.className = 'dropdown-item';
+            selectAllDiv.innerHTML = '<b>✓ Select All</b>';
+            selectAllDiv.onclick = (e) => {
+                e.stopPropagation();
+                selectedSites = availableSites.map(s => s.name);
+                updateSiteDropdown();
+                fetchData();
+            };
+            list.appendChild(selectAllDiv);
+            
+            const clearAllDiv = document.createElement('div');
+            clearAllDiv.className = 'dropdown-item';
+            clearAllDiv.innerHTML = '<b>✗ Clear All</b>';
+            clearAllDiv.onclick = (e) => {
+                e.stopPropagation();
+                selectedSites = [];
+                updateSiteDropdown();
+                fetchData();
+            };
+            list.appendChild(clearAllDiv);
+            
+            // Add divider
+            const divider = document.createElement('div');
+            divider.style.borderTop = '1px solid #eee';
+            divider.style.margin = '5px 0';
+            list.appendChild(divider);
+            
+            // Site list grouped by technology
+            ['GSM', 'LTE', 'NR'].forEach(tech => {
+                const techSites = availableSites.filter(s => s.tech === tech);
+                if (techSites.length > 0) {
+                    // Tech header
+                    const techHeader = document.createElement('div');
+                    techHeader.className = 'dropdown-item';
+                    techHeader.style.background = '#f8f9fa';
+                    techHeader.style.fontWeight = 'bold';
+                    techHeader.style.color = tech === 'GSM' ? '#2F80ED' : tech === 'LTE' ? '#27AE60' : '#D24726';
+                    techHeader.textContent = `${tech} Sites (${techSites.length})`;
+                    list.appendChild(techHeader);
+                    
+                    // Sites for this tech
+                    techSites.forEach(site => {
+                        const div = document.createElement('div');
+                        div.className = 'dropdown-item';
+                        
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.checked = selectedSites.includes(site.name);
+                        checkbox.onchange = (e) => {
+                            e.stopPropagation();
+                            if (checkbox.checked) {
+                                if (!selectedSites.includes(site.name)) {
+                                    selectedSites.push(site.name);
+                                }
+                            } else {
+                                selectedSites = selectedSites.filter(s => s !== site.name);
+                            }
+                            updateSiteDropdown();
+                            fetchData();
+                        };
+                        
+                        const label = document.createElement('span');
+                        label.style.display = 'flex';
+                        label.style.alignItems = 'center';
+                        label.style.gap = '5px';
+                        
+                        const techDot = document.createElement('span');
+                        techDot.className = `site-tech-indicator site-tech-${site.tech.toLowerCase()}`;
+                        
+                        const siteName = document.createElement('span');
+                        siteName.textContent = site.name;
+                        
+                        label.appendChild(techDot);
+                        label.appendChild(siteName);
+                        
+                        // Add linked sites info
+                        if (site.linkedSites && site.linkedSites.length > 0) {
+                            const linkedInfo = document.createElement('small');
+                            linkedInfo.style.marginLeft = '8px';
+                            linkedInfo.style.color = '#666';
+                            linkedInfo.style.fontSize = '11px';
+                            linkedInfo.textContent = '(' + site.linkedSites.map(ls => ls.name).join(', ') + ')';
+                            label.appendChild(linkedInfo);
+                        }
+                        
+                        div.appendChild(checkbox);
+                        div.appendChild(label);
+                        div.onclick = (e) => {
+                            if (e.target !== checkbox) {
+                                checkbox.checked = !checkbox.checked;
+                                checkbox.onchange(e);
+                            }
+                        };
+                        list.appendChild(div);
+                    });
+                }
+            });
+            
+            // Update button label
+            if (selectedSites.length === 0) {
+                btnLabel.textContent = 'No sites selected';
+            } else if (selectedSites.length === availableSites.length && availableSites.length > 0) {
+                btnLabel.textContent = 'All Sites';
+            } else if (selectedSites.length === 1) {
+                const site = allSites.find(s => s.name === selectedSites[0]);
+                btnLabel.textContent = site ? site.name : '1 site selected';
+            } else {
+                btnLabel.textContent = `${selectedSites.length} sites selected`;
+            }
+        }
+
         // --- DATA FETCHING ---
         async function fetchData() {
-            document.getElementById("mainChartContainer").innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>Loading...</h2>";
+            console.log('Fetching data for level:', currentLevel);
+            console.log('Tech filters:', techFilters);
+            console.log('Selected sites:', selectedSites);
+            console.log('Selected dates:', selectedOnAirDates);
+            
+            document.getElementById("mainChartContainer").innerHTML = "<div class='loading'>Loading data...</div>";
             allData = [];
-            let timeline = [];
+            
             try {
                 const urls = currentLevel === 'group' ? sheetConfig.group : sheetConfig.site;
                 let dataPromises = [];
@@ -756,6 +927,11 @@
                                     h.toLowerCase().includes('name')
                                 );
                                 
+                                if (!dateHeader) {
+                                    console.warn(`No date header found for ${tech}`);
+                                    return [];
+                                }
+                                
                                 const techData = [];
                                 rows.forEach(r => {
                                     const obj = {};
@@ -763,37 +939,47 @@
                                         const val = r[i] ? r[i].trim() : "";
                                         obj[h] = val === "" ? null : (isNaN(val) ? val : parseFloat(val));
                                     });
+                                    
                                     if (obj[dateHeader]) {
                                         obj.Tech = tech;
                                         if (siteHeader) {
                                             obj.SiteName = obj[siteHeader] || '';
                                         }
                                         
-                                        // For site level, apply filters
+                                        // For site level, apply site filtering
                                         if (currentLevel === 'site') {
-                                            // Check if this site should be included
-                                            const shouldInclude = selectedSites.length === 0 || 
-                                                (obj.SiteName && selectedSites.includes(obj.SiteName));
-                                            
-                                            if (shouldInclude) {
+                                            // If no sites selected, show all
+                                            if (selectedSites.length === 0) {
                                                 techData.push(obj);
-                                                if (!timeline.includes(obj[dateHeader])) {
-                                                    timeline.push(obj[dateHeader]);
+                                            } else {
+                                                // Check if this site matches any selected site
+                                                const siteMatch = selectedSites.some(selectedSite => {
+                                                    // Direct match
+                                                    if (obj.SiteName === selectedSite) return true;
+                                                    // Check if this is a linked site
+                                                    const siteObj = allSites.find(s => s.name === selectedSite);
+                                                    if (siteObj && siteObj.linkedSites) {
+                                                        return siteObj.linkedSites.some(ls => ls.name === obj.SiteName);
+                                                    }
+                                                    return false;
+                                                });
+                                                
+                                                if (siteMatch) {
+                                                    techData.push(obj);
                                                 }
                                             }
                                         } else {
                                             // Group level - include all
                                             techData.push(obj);
-                                            if (!timeline.includes(obj[dateHeader])) {
-                                                timeline.push(obj[dateHeader]);
-                                            }
                                         }
                                     }
                                 });
+                                
+                                console.log(`Loaded ${techData.length} records for ${tech}`);
                                 return techData;
                             })
                             .catch(e => {
-                                console.error(`Error ${tech}:`, e);
+                                console.error(`Error loading ${tech}:`, e);
                                 return [];
                             })
                     );
@@ -802,36 +988,47 @@
                 const results = await Promise.all(dataPromises);
                 allData = results.flat();
                 
+                console.log(`Total records loaded: ${allData.length}`);
+                
                 if (allData.length === 0) {
-                    throw new Error("No data loaded with current filters");
+                    throw new Error("No data available with current filters");
                 }
                 
-                // Sort timeline
-                timeline.sort((a,b) => {
-                    const [da,ma,ya] = a.split('/').map(Number);
-                    const [db,mb,yb] = b.split('/').map(Number);
-                    return new Date(ya, ma-1, da) - new Date(yb, mb-1, db);
-                });
+                renderCharts();
                 
-                console.log(`Loaded ${allData.length} records, ${timeline.length} time points`);
-                console.log('Selected sites:', selectedSites);
-                console.log('Tech filters:', techFilters);
-                
-                renderCharts(timeline);
             } catch(e) {
                 console.error("Data error:", e);
-                document.getElementById("mainChartContainer").innerHTML = `<h2 style='text-align:center;padding:40px;color:#D24726;'>Error: ${e.message}</h2>`;
+                document.getElementById("mainChartContainer").innerHTML = 
+                    `<div class='loading' style='color:#D24726;'>Error: ${e.message}</div>`;
             }
         }
 
         // --- CHART RENDERING ---
-        function renderCharts(timeline = []) {
+        function renderCharts() {
             const container = document.getElementById("mainChartContainer");
             container.innerHTML = "";
             allCharts = {};
             
-            if (timeline.length === 0 || allData.length === 0) {
-                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No data available with current filters</h2>";
+            if (allData.length === 0) {
+                container.innerHTML = "<div class='loading'>No data available with current filters</div>";
+                return;
+            }
+            
+            // Extract timeline from data
+            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
+            if (!dateHeaderName) {
+                container.innerHTML = "<div class='loading' style='color:#D24726;'>Error: No date column found in data</div>";
+                return;
+            }
+            
+            const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => {
+                const [da,ma,ya] = a.split('/').map(Number);
+                const [db,mb,yb] = b.split('/').map(Number);
+                return new Date(ya, ma-1, da) - new Date(yb, mb-1, db);
+            });
+            
+            if (timeline.length === 0) {
+                container.innerHTML = "<div class='loading'>No timeline data available</div>";
                 return;
             }
             
@@ -841,12 +1038,6 @@
                 return `${day} ${monthNames[month-1]}`;
             });
 
-            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
-            if (!dateHeaderName) {
-                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#D24726;'>Error: No date column found</h2>";
-                return;
-            }
-
             const chartsToRender = kpiDefinitions.filter(k => {
                 const isSelected = selectedKpis.includes(k.tech + " - " + k.kpi);
                 const isTechEnabled = techFilters[k.tech];
@@ -854,62 +1045,10 @@
             });
             
             if (chartsToRender.length === 0) {
-                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No KPIs selected. Please select KPIs from the settings drawer.</h2>";
+                container.innerHTML = "<div class='loading'>No KPIs selected. Please select KPIs from the settings drawer (⚙).</div>";
                 return;
             }
 
-            if (currentLevel === 'site') {
-                renderSiteLevelCharts(container, timeline, timelineLabels, dateHeaderName, chartsToRender);
-            } else {
-                renderGroupLevelCharts(container, timeline, timelineLabels, dateHeaderName, chartsToRender);
-            }
-        }
-
-        function renderGroupLevelCharts(container, timeline, timelineLabels, dateHeaderName, chartsToRender) {
-            chartsToRender.forEach((kpiDef, idx) => {
-                const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
-                const tech = kpiDef.tech;
-                const kpi = kpiDef.kpi;
-
-                const card = document.createElement("div");
-                card.className = "chart-card";
-                const wrapper = document.createElement("div");
-                wrapper.className = "chart-container";
-                const canvas = document.createElement("canvas");
-                canvas.id = `chart_${idx}`;
-                wrapper.appendChild(canvas);
-                card.appendChild(wrapper);
-                container.appendChild(card);
-
-                const dataPoints = timeline.map(date => {
-                    const values = allData
-                        .filter(d => d.Tech === tech && d[dateHeaderName] === date)
-                        .map(d => d[kpi])
-                        .filter(v => v !== null && v !== "")
-                        .map(Number)
-                        .filter(v => !isNaN(v));
-                    
-                    if (values.length === 0) return null;
-                    
-                    const kpiLower = kpi.toLowerCase();
-                    if (kpiLower.includes('%') || kpiLower.includes('rate') || kpiLower.includes('avg') || kpiLower.includes('average')) {
-                        return values.reduce((a, b) => a + b, 0) / values.length;
-                    } else {
-                        return values.reduce((a, b) => a + b, 0);
-                    }
-                });
-
-                const validValues = dataPoints.filter(v => v !== null);
-                if (validValues.length === 0) {
-                    card.innerHTML = `<div style='text-align:center;padding:20px;color:#666;'>No ${tech} data available</div>`;
-                    return;
-                }
-
-                createChart(canvas, fullKpiName, timelineLabels, dataPoints, tech, kpi, validValues);
-            });
-        }
-
-        function renderSiteLevelCharts(container, timeline, timelineLabels, dateHeaderName, chartsToRender) {
             chartsToRender.forEach((kpiDef, idx) => {
                 const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
                 const tech = kpiDef.tech;
@@ -918,30 +1057,71 @@
                 const card = document.createElement("div");
                 card.className = "chart-card";
                 
-                // Show site info
-                if (selectedSites.length > 0) {
+                // Show site info for site level
+                if (currentLevel === 'site' && selectedSites.length > 0) {
                     const siteInfo = document.createElement("div");
                     siteInfo.className = "chart-site-info";
-                    siteInfo.textContent = `Sites: ${selectedSites.length} selected`;
+                    
+                    // Count sites by technology
+                    const techSites = selectedSites.filter(siteName => {
+                        const site = allSites.find(s => s.name === siteName);
+                        return site && site.tech === tech;
+                    });
+                    
+                    if (techSites.length > 0) {
+                        siteInfo.textContent = `${tech} Sites: ${techSites.length} selected`;
+                    } else {
+                        // Check linked sites
+                        const linkedSites = selectedSites.flatMap(siteName => {
+                            const site = allSites.find(s => s.name === siteName);
+                            if (site && site.linkedSites) {
+                                return site.linkedSites.filter(ls => ls.tech === tech).map(ls => ls.name);
+                            }
+                            return [];
+                        });
+                        
+                        if (linkedSites.length > 0) {
+                            siteInfo.textContent = `${tech} Sites: ${linkedSites.length} linked`;
+                        } else {
+                            siteInfo.textContent = `No ${tech} sites in selection`;
+                        }
+                    }
                     card.appendChild(siteInfo);
                 }
                 
                 const wrapper = document.createElement("div");
                 wrapper.className = "chart-container";
                 const canvas = document.createElement("canvas");
-                canvas.id = `chart_site_${tech}_${idx}`;
+                canvas.id = `chart_${tech}_${idx}`;
                 wrapper.appendChild(canvas);
                 card.appendChild(wrapper);
                 container.appendChild(card);
 
-                // Aggregate data for selected sites
+                // Calculate data points
                 const dataPoints = timeline.map(date => {
-                    const values = allData
-                        .filter(d => {
-                            return d.Tech === tech && 
-                                   d[dateHeaderName] === date && 
-                                   selectedSites.includes(d.SiteName);
-                        })
+                    let relevantData = allData.filter(d => 
+                        d.Tech === tech && 
+                        d[dateHeaderName] === date
+                    );
+                    
+                    // For site level, filter by selected sites
+                    if (currentLevel === 'site' && selectedSites.length > 0) {
+                        relevantData = relevantData.filter(d => {
+                            // Direct match
+                            if (selectedSites.includes(d.SiteName)) return true;
+                            
+                            // Check if this is a linked site
+                            return selectedSites.some(selectedSite => {
+                                const siteObj = allSites.find(s => s.name === selectedSite);
+                                if (siteObj && siteObj.linkedSites) {
+                                    return siteObj.linkedSites.some(ls => ls.name === d.SiteName);
+                                }
+                                return false;
+                            });
+                        });
+                    }
+                    
+                    const values = relevantData
                         .map(d => d[kpi])
                         .filter(v => v !== null && v !== "")
                         .map(Number)
@@ -959,7 +1139,7 @@
 
                 const validValues = dataPoints.filter(v => v !== null);
                 if (validValues.length === 0) {
-                    card.innerHTML = `<div style='text-align:center;padding:20px;color:#666;'>No ${tech} data for selected sites</div>`;
+                    card.innerHTML = `<div class='loading'>No ${tech} data available</div>`;
                     return;
                 }
 
@@ -978,7 +1158,7 @@
                 data: {
                     labels: timelineLabels,
                     datasets: [{ 
-                        label: currentLevel === 'site' ? 'Aggregate' : kpi,
+                        label: currentLevel === 'site' ? `${tech} Aggregate` : kpi,
                         data: dataPoints,
                         borderColor: chartColor,
                         backgroundColor: activeChartStyle && activeChartStyle.fill ? 
@@ -1062,19 +1242,6 @@
             console.log('Refreshing data...');
             fetchData(); 
         }
-        
-        function refreshCharts() {
-            console.log('Refreshing charts...');
-            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
-            if (dateHeaderName && allData.length > 0) {
-                const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
-                    const [da,ma,ya] = a.split('/').map(Number);
-                    const [db,mb,yb] = b.split('/').map(Number);
-                    return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
-                });
-                renderCharts(timeline);
-            }
-        }
 
         // --- KPI DRAWER ---
         function toggleDrawer() {
@@ -1122,6 +1289,14 @@
         function clearVisibleKpis() {
             selectedKpis = [];
             populateKpiOptions();
+        }
+        
+        function refreshCharts() {
+            if (allData.length > 0) {
+                renderCharts();
+            } else {
+                fetchData();
+            }
         }
 
         // --- CHART STYLING ---
@@ -1214,7 +1389,7 @@
             previewBody.innerHTML = '';
             
             if (allChartsForExport.length === 0) {
-                previewBody.innerHTML = '<div style="text-align:center;padding:40px;color:#666;">No charts selected</div>';
+                previewBody.innerHTML = '<div class="loading">No charts selected</div>';
                 return;
             }
             
