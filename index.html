@@ -98,6 +98,9 @@
             cursor:pointer; 
             font-size:13px; 
             border-bottom:1px solid #eee; 
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         #onAirDateDropdownList div:hover, #siteDropdownList div:hover { 
             background:#f0f7ff; 
@@ -384,6 +387,28 @@
             background: #f5f5f5; 
             border-radius: 4px; 
         }
+        
+        /* --- DROPDOWN BUTTONS --- */
+        .dropdown-btn {
+            padding: 8px 16px;
+            background: white;
+            color: #333;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            width: 100%;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            margin: 0;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body onload="initDashboard()">
@@ -392,7 +417,7 @@
     <div class="controls">
         <!-- On-Air Date Dropdown -->
         <div class="control-group" style="width:200px;">
-            <button id="onAirDateDropdownBtn" class="action-btn" style="background:white; color:#333; border:1px solid #ccc; width:100%; text-align:left; display:flex; justify-content:space-between;">
+            <button id="onAirDateDropdownBtn" class="dropdown-btn">
                 <span id="onAirDateBtnLabel">All On-Air Dates</span> <span>▼</span>
             </button>
             <div id="onAirDateDropdownList"></div>
@@ -400,7 +425,7 @@
 
         <!-- Site Dropdown -->
         <div class="control-group" style="width:200px;">
-            <button id="siteDropdownBtn" class="action-btn" style="background:white; color:#333; border:1px solid #ccc; width:100%; text-align:left; display:flex; justify-content:space-between;">
+            <button id="siteDropdownBtn" class="dropdown-btn">
                 <span id="siteBtnLabel">All Sites</span> <span>▼</span>
             </button>
             <div id="siteDropdownList"></div>
@@ -422,7 +447,7 @@
             <span class="toggle-label">Site Level</span>
         </div>
 
-        <button onclick="fetchData()" class="action-btn">Refresh</button>
+        <button onclick="refreshData()" class="action-btn">Refresh</button>
         <button onclick="openPPTExport()" class="action-btn ppt-btn">Export PPT</button>
     </div>
 
@@ -521,9 +546,6 @@
         let selectedSites = [];
         let graphsPerSlide = 2; 
         
-        let chartExportColor = '#2F80ED';
-        let chartExportTitleColor = '#333333';
-        
         let currentLevel = 'group'; // 'group' or 'site'
         const levelToggle = document.getElementById("levelToggle");
 
@@ -584,7 +606,51 @@
         let pptLayout = 9;
         let selectedTechForExport = { GSM: true, LTE: true, NR: true };
 
-        // --- GLOBAL UTILITY FUNCTIONS ---
+        // --- INITIALIZATION ---
+        function initDashboard() {
+            // Set default selected KPIs
+            selectedKpis = kpiDefinitions.filter(k => k.initialChecked).map(k => k.tech + " - " + k.kpi);
+            
+            // Initialize with default chart style
+            applyChartStyle(1);
+            
+            // Setup dropdown event listeners
+            setupDropdownListeners();
+            
+            // Fetch initial data
+            fetchData();
+        }
+
+        // --- DROPDOWN EVENT LISTENERS ---
+        function setupDropdownListeners() {
+            // Date dropdown
+            document.getElementById('onAirDateDropdownBtn').onclick = function(e) {
+                e.stopPropagation();
+                const list = document.getElementById('onAirDateDropdownList');
+                list.style.display = list.style.display === 'block' ? 'none' : 'block';
+                // Close site dropdown if open
+                document.getElementById('siteDropdownList').style.display = 'none';
+            };
+            
+            // Site dropdown
+            document.getElementById('siteDropdownBtn').onclick = function(e) {
+                e.stopPropagation();
+                const list = document.getElementById('siteDropdownList');
+                list.style.display = list.style.display === 'block' ? 'none' : 'block';
+                // Close date dropdown if open
+                document.getElementById('onAirDateDropdownList').style.display = 'none';
+            };
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.control-group')) {
+                    document.getElementById('onAirDateDropdownList').style.display = 'none';
+                    document.getElementById('siteDropdownList').style.display = 'none';
+                }
+            });
+        }
+
+        // --- LEVEL MANAGEMENT ---
         function switchLevel() {
             if(currentLevel === 'site') {
                 currentLevel = 'group';
@@ -609,6 +675,8 @@
         // --- DATA FETCHING & MAPPING ---
         async function fetchData(){
             try {
+                console.log('Fetching data for level:', currentLevel);
+                
                 // 1. Fetch KPI Data
                 const sheetUrls = currentLevel === 'group' ? sheetConfig.group : sheetConfig.site;
                 
@@ -639,25 +707,31 @@
                             obj.Tech = tech;
                             
                             // Determine site name based on technology
+                            let siteName = '';
                             if (tech === 'GSM') {
-                                obj.SiteName = obj["BSC Name"] || obj["Site Name"] || '';
+                                siteName = obj["BSC Name"] || obj["Site Name"] || '';
                             } else if (tech === 'LTE') {
-                                obj.SiteName = obj["eNodeB Name"] || obj["Site Name"] || '';
+                                siteName = obj["eNodeB Name"] || obj["Site Name"] || '';
                             } else if (tech === 'NR') {
-                                obj.SiteName = obj["gNodeB Name"] || obj["Site Name"] || '';
+                                siteName = obj["gNodeB Name"] || obj["eNodeB Name"] || obj["Site Name"] || '';
                             }
+                            
+                            obj.SiteName = siteName;
                             
                             allData.push(obj);
                             
                             // Collect sites
-                            if (obj.SiteName && !allSites.includes(obj.SiteName)) {
-                                allSites.push(obj.SiteName);
+                            if (siteName && !allSites.includes(siteName)) {
+                                allSites.push(siteName);
                             }
                         });
                     } catch(e) { 
                         console.error(`Error loading ${tech} data:`, e); 
                     }
                 }
+
+                console.log('Total data records:', allData.length);
+                console.log('All sites:', allSites);
 
                 // 2. Fetch Cutover Data
                 const cutoverUrl = sheetConfig.site.cutover + "&t=" + Date.now();
@@ -670,8 +744,8 @@
                 siteCutoverMap = {};
                 cutoverRows.forEach(r => {
                     // NR is also called eNodeB Name in cutover sheet
-                    const siteName = r[cutoverHeaders.indexOf("eNodeB Name")]?.trim();
-                    const onAirDate = r[cutoverHeaders.indexOf("On-Air Date")]?.trim();
+                    const siteName = r[cutoverHeaders.findIndex(h => h.includes("eNodeB"))]?.trim();
+                    const onAirDate = r[cutoverHeaders.findIndex(h => h.includes("On-Air"))]?.trim();
                     
                     if (siteName && onAirDate) {
                         // Check if this site exists in our data
@@ -702,13 +776,17 @@
                     selectedSites = [];
                 }
 
+                console.log('Site cutover map:', siteCutoverMap);
+                console.log('All on-air dates:', allOnAirDates);
+                console.log('Selected sites:', selectedSites);
+
                 // 4. Update UI
                 setupOnAirDateDropdown();
                 setupSiteDropdown();
                 renderCharts();
 
             } catch(e) { 
-                console.error(e); 
+                console.error('Error in fetchData:', e); 
                 document.getElementById("mainChartContainer").innerHTML = 
                     `<div class='loading' style='color:#D24726;'>Error loading data: ${e.message}</div>`;
             }
@@ -743,8 +821,15 @@
             };
             
             // Actions
-            list.innerHTML += `<div onclick="window.dateSetAll()"><b>Select All</b></div>`;
-            list.innerHTML += `<div onclick="window.dateClearAll()"><b>Clear All</b></div>`;
+            const selectAllDiv = document.createElement("div");
+            selectAllDiv.innerHTML = `<b>Select All</b>`;
+            selectAllDiv.onclick = setAll;
+            list.appendChild(selectAllDiv);
+            
+            const clearAllDiv = document.createElement("div");
+            clearAllDiv.innerHTML = `<b>Clear All</b>`;
+            clearAllDiv.onclick = clearAll;
+            list.appendChild(clearAllDiv);
 
             // Options
             allOnAirDates.forEach(date => {
@@ -755,16 +840,25 @@
                     if(e.target.tagName !== "INPUT") {
                         const chk = d.querySelector("input");
                         chk.checked = !chk.checked;
+                        updateSelectedDates();
                     }
+                };
+                
+                // Also handle checkbox click
+                const checkbox = d.querySelector('input');
+                checkbox.onclick = (e) => {
+                    e.stopPropagation();
                     updateSelectedDates();
                 };
+                
                 list.appendChild(d);
             });
             
-            btn.onclick = () => list.style.display = list.style.display==="block" ? "none" : "block";
+            btn.onclick = () => {
+                const isVisible = list.style.display === "block";
+                list.style.display = isVisible ? "none" : "block";
+            };
             
-            window.dateSetAll = setAll;
-            window.dateClearAll = clearAll;
             updateDateFilterUI({close: true});
         }
 
@@ -783,7 +877,7 @@
             
             updateDateFilterUI({close: false}); 
             setupSiteDropdown(); 
-            fetchData();
+            renderCharts(); // Use renderCharts instead of fetchData to avoid reloading
         }
 
         function updateDateFilterUI(options = {close: true}) {
@@ -794,7 +888,9 @@
             span.textContent = selectedOnAirDates.length === 0 ? "No Dates Selected" : 
                 (selectedOnAirDates.length === allOnAirDates.length ? "All On-Air Dates" : `Selected (${selectedOnAirDates.length})`);
             
-            list.querySelectorAll(".date-chk").forEach(c => c.checked = selectedOnAirDates.includes(c.value));
+            list.querySelectorAll(".date-chk").forEach(c => {
+                c.checked = selectedOnAirDates.includes(c.value);
+            });
             
             if (options.close) {
                 list.style.display = "none";
@@ -814,18 +910,18 @@
                 return date && selectedOnAirDates.includes(date);
             });
             
-            // Filter by technology
-            activeSites = activeSites.filter(site => {
-                // Determine technology based on site name or data
-                const siteData = allData.find(d => d.SiteName === site);
-                if (siteData) {
-                    return techFilters[siteData.Tech];
-                }
-                return true; // If no data, include it
-            });
-            
-            // For site level, maintain selection
+            // Filter by technology if in site level
             if (currentLevel === 'site') {
+                activeSites = activeSites.filter(site => {
+                    // Determine technology based on site name or data
+                    const siteData = allData.find(d => d.SiteName === site);
+                    if (siteData) {
+                        return techFilters[siteData.Tech];
+                    }
+                    return true; // If no data, include it
+                });
+                
+                // Maintain selection
                 selectedSites = selectedSites.filter(site => activeSites.includes(site));
             } else {
                 // For group level, don't filter by site
@@ -835,17 +931,24 @@
             const setAll = () => { 
                 selectedSites = [...activeSites]; 
                 updateSiteFilterUI({close: false}); 
-                fetchData();
+                renderCharts();
             }; 
 
             const clearAll = () => { 
                 selectedSites = []; 
                 updateSiteFilterUI({close: false}); 
-                fetchData(); 
+                renderCharts(); 
             };
             
-            list.innerHTML += `<div onclick="window.siteSetAll()"><b>Select All (${activeSites.length})</b></div>`;
-            list.innerHTML += `<div onclick="window.siteClearAll()"><b>Clear All</b></div>`;
+            const selectAllDiv = document.createElement("div");
+            selectAllDiv.innerHTML = `<b>Select All (${activeSites.length})</b>`;
+            selectAllDiv.onclick = setAll;
+            list.appendChild(selectAllDiv);
+            
+            const clearAllDiv = document.createElement("div");
+            clearAllDiv.innerHTML = `<b>Clear All</b>`;
+            clearAllDiv.onclick = clearAll;
+            list.appendChild(clearAllDiv);
 
             activeSites.forEach(site => {
                 const d = document.createElement("div");
@@ -855,16 +958,24 @@
                     if(e.target.tagName !== "INPUT") {
                         const chk = d.querySelector("input");
                         chk.checked = !chk.checked;
+                        updateSelectedSites();
                     }
+                };
+                
+                // Also handle checkbox click
+                const checkbox = d.querySelector('input');
+                checkbox.onclick = (e) => {
+                    e.stopPropagation();
                     updateSelectedSites();
                 };
+                
                 list.appendChild(d);
             });
             
-            btn.onclick = () => list.style.display = list.style.display==="block" ? "none" : "block";
-
-            window.siteSetAll = setAll;
-            window.siteClearAll = clearAll;
+            btn.onclick = () => {
+                const isVisible = list.style.display === "block";
+                list.style.display = isVisible ? "none" : "block";
+            };
             
             updateSiteFilterUI({close: true});
         }
@@ -873,7 +984,7 @@
             const list = document.getElementById("siteDropdownList");
             selectedSites = Array.from(list.querySelectorAll(".site-chk:checked")).map(c => c.value);
             updateSiteFilterUI({close: false});
-            fetchData();
+            renderCharts(); // Use renderCharts instead of fetchData
         }
 
         function updateSiteFilterUI(options = {close: true}) {
@@ -881,16 +992,11 @@
             const span = document.getElementById("siteBtnLabel");
             const list = document.getElementById("siteDropdownList");
             
-            let activeSites = allSites.filter(site => {
-                const date = siteCutoverMap[site];
-                return selectedOnAirDates.includes(date);
-            });
-
             if(currentLevel === 'group') {
                 span.textContent = "All Sites";
             } else if(selectedSites.length === 0) {
                 span.textContent = "All Active Sites";
-            } else if(selectedSites.length === activeSites.length) {
+            } else if(selectedSites.length === allSites.length) {
                 span.textContent = `All Active Sites (${selectedSites.length})`;
             } else if(selectedSites.length === 1) {
                 span.textContent = selectedSites[0];
@@ -898,7 +1004,9 @@
                 span.textContent = `Selected (${selectedSites.length})`;
             }
 
-            list.querySelectorAll(".site-chk").forEach(c => c.checked = selectedSites.includes(c.value));
+            list.querySelectorAll(".site-chk").forEach(c => {
+                c.checked = selectedSites.includes(c.value);
+            });
             
             if (options.close) {
                 list.style.display = "none";
@@ -909,6 +1017,12 @@
 
         // --- CHART RENDERING ---
         function renderCharts(){
+            console.log('Rendering charts...');
+            console.log('Current level:', currentLevel);
+            console.log('Selected sites:', selectedSites);
+            console.log('Selected dates:', selectedOnAirDates);
+            console.log('Tech filters:', techFilters);
+            
             const container = document.getElementById("mainChartContainer");
             container.innerHTML = "";
             
@@ -928,15 +1042,28 @@
             }
 
             // Filter data based on selections
-            let filteredData = allData;
+            let filteredData = [...allData];
+            
+            // Filter by technology
+            filteredData = filteredData.filter(d => techFilters[d.Tech]);
             
             // For site level, filter by selected sites
             if (currentLevel === 'site' && selectedSites.length > 0) {
-                filteredData = allData.filter(d => selectedSites.includes(d.SiteName));
+                filteredData = filteredData.filter(d => selectedSites.includes(d.SiteName));
             }
             
-            // Also filter by technology
-            filteredData = filteredData.filter(d => techFilters[d.Tech]);
+            // Filter by date if dates are selected
+            if (selectedOnAirDates.length > 0 && selectedOnAirDates.length < allOnAirDates.length) {
+                // Get sites for selected dates
+                const sitesForSelectedDates = allSites.filter(site => {
+                    const date = siteCutoverMap[site];
+                    return date && selectedOnAirDates.includes(date);
+                });
+                
+                filteredData = filteredData.filter(d => sitesForSelectedDates.includes(d.SiteName));
+            }
+
+            console.log('Filtered data count:', filteredData.length);
 
             if (filteredData.length === 0) {
                 container.innerHTML = "<div class='loading'>No data available with current filters</div>";
@@ -979,7 +1106,14 @@
                 if (currentLevel === 'site' && selectedSites.length > 0) {
                     const siteInfo = document.createElement("div");
                     siteInfo.className = "chart-site-info";
-                    siteInfo.textContent = `Sites: ${selectedSites.length} selected`;
+                    
+                    // Count sites for this technology
+                    const techSites = selectedSites.filter(site => {
+                        const siteData = allData.find(d => d.SiteName === site && d.Tech === tech);
+                        return siteData !== undefined;
+                    });
+                    
+                    siteInfo.textContent = `${tech} Sites: ${techSites.length} selected`;
                     card.appendChild(siteInfo);
                 }
                 
@@ -1222,7 +1356,8 @@
                 const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
                 const checked = selectedKpis.includes(fullKpiName) ? "checked" : "";
                 const div = document.createElement("div");
-                div.innerHTML = `<input type='checkbox' class='kpi-chk' value='${fullKpiName}' ${checked}> <span style='font-size:13px'>${kpiDef.kpi}</span>`;
+                div.className = "kpi-option";
+                div.innerHTML = `<input type='checkbox' class='kpi-chk' value='${fullKpiName}' ${checked}> ${kpiDef.kpi}`;
                 div.onclick = (e) => {
                     if(e.target.tagName !== "INPUT") {
                         const chk = div.querySelector("input");
@@ -1430,15 +1565,8 @@
             closePPTExport();
         }
 
-        // --- INITIALIZATION ---
-        function initDashboard() {
-            // Set default selected KPIs
-            selectedKpis = kpiDefinitions.filter(k => k.initialChecked).map(k => k.tech + " - " + k.kpi);
-            
-            // Initialize with default chart style
-            applyChartStyle(1);
-            
-            // Fetch initial data
+        // --- REFRESH FUNCTION ---
+        function refreshData() {
             fetchData();
         }
     </script>
