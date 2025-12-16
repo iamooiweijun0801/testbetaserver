@@ -164,26 +164,13 @@
         .ppt-btn { background: #D24726 !important; }
         .ppt-btn:hover { background: #a8381e !important; }
         
-        /* Site Selector Container - Hidden by default */
-        .site-selector-container { 
-            display: none; 
-            margin: 20px auto;
-            padding: 20px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            max-width: 1200px;
-        }
-        .site-selector-container.active { 
-            display: block; 
-        }
-        
         /* Chart Grid */
         .chart-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:20px; padding:0 20px 40px 20px; max-width: 1800px; margin: 0 auto; }
         @media (max-width: 1400px) { .chart-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 768px) { .chart-grid { grid-template-columns: 1fr; } }
         .chart-card { background:white; border-radius:8px; padding:15px; box-shadow:0 2px 8px rgba(0,0,0,0.08); display:flex; flex-direction:column; }
         .chart-container { position: relative; height: 280px; width: 100%; }
+        .chart-site-info { font-size: 12px; color: #666; margin-bottom: 10px; padding: 5px 10px; background: #f5f5f5; border-radius: 4px; }
         
         /* Drawers */
         .drawer-toggle-buttons { position: fixed; top: 20px; right: 0; display: flex; flex-direction: column; gap: 8px; z-index: 900; }
@@ -193,43 +180,43 @@
         .chartStyleDrawer, .kpiDrawer { position: fixed; top: 0; right: 0; width: 320px; height: 100%; background: white; box-shadow: -2px 0 10px rgba(0,0,0,0.1); z-index: 1000; transform: translateX(100%); transition: 0.3s; padding: 20px; display: flex; flex-direction: column; }
         .chartStyleDrawer.open, .kpiDrawer.open { transform: translateX(0); }
         
-        /* ... rest of your existing styles ... */
+        .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        .kpi-options-body, .style-options-body { flex-grow: 1; overflow-y: auto; padding-right: 5px; padding-bottom: 40px; }
+        .drawer-controls { display: flex; gap: 5px; align-items: center; }
+        .drawer-controls .action-btn { padding: 6px 10px; font-size: 13px; }
+        .kpi-group-title { font-weight: bold; color: #2F80ED; margin-top: 15px; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 3px; }
+        .kpi-option { display: block; margin-bottom: 5px; cursor: pointer; user-select: none; }
+        .kpi-option input[type="checkbox"] { margin-right: 8px; }
+        .style-button { padding: 10px 12px; margin: 6px 0; background: #f5f5f5; border-radius: 6px; cursor: pointer; font-weight: 500; border: 1px solid #ddd; transition: 0.2s; }
+        .style-button:hover { background: #e9e9e9; }
+        .style-button.active { background: #8E44AD; color: white; border-color: #8E44AD; }
+        .tech-color-buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 15px; }
+        .tech-color-btn { padding: 8px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; color: white; text-align: center; }
+        .tech-color-btn.gsm { background: #2F80ED; }
+        .tech-color-btn.lte { background: #27AE60; }
+        .tech-color-btn.nr { background: #D24726; }
         
-        /* Modal styles remain the same */
+        /* Modal styles */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2001; display: none; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
         .modal-content { background: white; width: 95%; max-width: 1400px; height: 90vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
         .modal-header { padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 18px; }
         .modal-body { flex: 1; display: flex; padding: 0; overflow: hidden; }
         #previewBody { flex: 1; overflow-y: auto; padding: 20px; background: #f5f5f5; }
+        .preview-slide { background: white; border: 1px solid #ddd; margin-bottom: 20px; padding: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); aspect-ratio: 16/9; position: relative; }
+        .preview-slide-title { position: absolute; top: 10px; left: 20px; font-size: 16px; font-weight: bold; color: #D24726; }
+        .preview-grid { display: grid; height: 100%; align-items: center; padding-top: 30px; }
+        .preview-img-box { text-align: center; padding: 5px; height: 100%; display: flex; flex-direction: column; justify-content: center; }
+        .preview-img-box img { max-width: 100%; max-height: calc(100% - 20px); object-fit: contain; border: 1px solid #eee; }
+        #previewSettingsPanel { width: 250px; background: #fff; border-left: 1px solid #eee; padding: 20px; display: flex; flex-direction: column; flex-shrink: 0; }
+        .settings-group { margin-bottom: 20px; }
+        .settings-group h4 { margin-top: 0; margin-bottom: 10px; font-size: 14px; color: #555; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .graph-options { display: flex; flex-wrap: wrap; gap: 5px; }
+        .graph-options button { padding: 6px 10px; font-size: 13px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; }
+        .graph-options button.active { background: #2F80ED; color: white; border-color: #2F80ED; }
+        .tech-export-options { display: flex; flex-direction: column; gap: 5px; }
+        .tech-export-option { display: flex; align-items: center; gap: 8px; }
+        .tech-export-option input { margin: 0; }
         .modal-footer { padding: 15px 20px; border-top: 1px solid #eee; text-align: right; flex-shrink: 0; }
-        
-        /* Site list in dropdown */
-        .site-list-scroll {
-            max-height: 200px;
-            overflow-y: auto;
-            padding-right: 5px;
-        }
-        
-        /* Status indicator */
-        .status-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-        .status-active { background: #27AE60; }
-        .status-inactive { background: #e74c3c; }
-        
-        /* Site count badge */
-        .site-count-badge {
-            background: #2F80ED;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            margin-left: 8px;
-        }
     </style>
 </head>
 <body onload="initDashboard()">
@@ -237,7 +224,7 @@
 
     <div class="controls">
         <!-- Level Toggle Switch -->
-        <div class="toggle-switch active" id="levelToggle" onclick="switchLevel()">
+        <div class="toggle-switch" id="levelToggle" onclick="switchLevel()">
             <span class="toggle-label">Group</span>
             <div class="switch">
                 <div class="circle"></div>
@@ -280,11 +267,6 @@
         <button class="action-btn" onclick="refreshData()">
             <span>🔄</span> Refresh
         </button>
-    </div>
-
-    <!-- Site Selector Container (hidden by default) -->
-    <div class="site-selector-container" id="siteSelector">
-        <!-- This will be populated dynamically when needed -->
     </div>
 
     <div class="chart-grid" id="mainChartContainer"></div>
@@ -408,10 +390,8 @@
             { name: "Thin Line with dots", borderWidth: 2, pointRadius: 4, tension: 0, fill: false }
         ];
 
-        const colorPalette = ["#2F80ED","#27AE60","#D24726","#8E44AD","#3498DB","#2ECC71","#E74C3C","#9B59B6","#1ABC9C","#F39C12","#34495E","#95A5A6"];
-
         // --- STATE ---
-        let allData = [], allCharts = {}, selectedKpis = [], selectedTechForColor = '', selectedColor = '';
+        let allData = [], allCharts = {}, selectedKpis = [];
         let pptLayout = 9, selectedTechForExport = { GSM: true, LTE: true, NR: true };
         let currentLevel = 'group'; // 'group' or 'site'
         let techFilters = { GSM: true, LTE: true, NR: true };
@@ -419,7 +399,7 @@
         let techColors = { GSM: "#2F80ED", LTE: "#27AE60", NR: "#D24726" };
         
         // New state for site management
-        let allSites = []; // Array of { name: "eNodeB_001", tech: "LTE", onAirDate: "2024-01-15", linkedGBSC: "GBSC_001", linkedgNodeB: "gNodeB_001" }
+        let allSites = []; // Array of site objects from cutover data
         let siteCutoverMap = {}; // Maps eNodeB names to their on-air dates
         let selectedSites = [];
         let allOnAirDates = [];
@@ -445,6 +425,9 @@
                 toggle.classList.add('active');
                 document.getElementById('siteDropdownContainer').style.display = 'block';
                 document.getElementById('dateDropdownContainer').style.display = 'block';
+                // Show current selection
+                setupSiteDropdown();
+                setupDateDropdown();
             } else {
                 currentLevel = 'group';
                 toggle.classList.remove('active');
@@ -456,25 +439,34 @@
 
         function toggleTechFilter(tech) {
             techFilters[tech] = !techFilters[tech];
-            document.querySelector(`.tech-filter-btn.${tech.toLowerCase()}`).classList.toggle('active', techFilters[tech]);
+            const btn = document.querySelector(`.tech-filter-btn.${tech.toLowerCase()}`);
+            btn.classList.toggle('active', techFilters[tech]);
+            
+            // Update site dropdown when tech filters change
             if (currentLevel === 'site') {
                 setupSiteDropdown();
             }
-            refreshCharts();
+            fetchData();
         }
 
         // --- DROPDOWN SETUP ---
         function setupDropdowns() {
             // Site dropdown
-            document.getElementById('siteDropdownBtn').onclick = function() {
+            document.getElementById('siteDropdownBtn').onclick = function(e) {
+                e.stopPropagation();
                 const list = document.getElementById('siteDropdownList');
                 list.style.display = list.style.display === 'block' ? 'none' : 'block';
+                // Close date dropdown if open
+                document.getElementById('dateDropdownList').style.display = 'none';
             };
             
             // Date dropdown
-            document.getElementById('dateDropdownBtn').onclick = function() {
+            document.getElementById('dateDropdownBtn').onclick = function(e) {
+                e.stopPropagation();
                 const list = document.getElementById('dateDropdownList');
                 list.style.display = list.style.display === 'block' ? 'none' : 'block';
+                // Close site dropdown if open
+                document.getElementById('siteDropdownList').style.display = 'none';
             };
             
             // Close dropdowns when clicking outside
@@ -506,26 +498,30 @@
                     const enodebName = enodebCol !== -1 ? row[enodebCol]?.trim() : null;
                     const onAirDate = dateCol !== -1 ? row[dateCol]?.trim() : null;
                     
-                    if (enodebName && onAirDate) {
+                    if (enodebName) {
                         const site = {
                             name: enodebName,
-                            tech: "LTE",
-                            onAirDate: onAirDate,
+                            tech: "LTE", // Default to LTE
+                            onAirDate: onAirDate || 'Unknown',
                             linkedGBSC: gbscCol !== -1 ? row[gbscCol]?.trim() : null,
                             linkedgNodeB: gnbCol !== -1 ? row[gnbCol]?.trim() : null
                         };
                         allSites.push(site);
-                        siteCutoverMap[enodebName] = onAirDate;
+                        if (onAirDate) {
+                            siteCutoverMap[enodebName] = onAirDate;
+                        }
                     }
                 });
                 
                 // Extract unique dates
-                allOnAirDates = [...new Set(Object.values(siteCutoverMap))].filter(d => d).sort();
+                allOnAirDates = [...new Set(allSites.map(s => s.onAirDate).filter(d => d && d !== 'Unknown'))].sort();
                 selectedOnAirDates = [...allOnAirDates]; // Select all by default
                 
-                // Update dropdowns
-                setupSiteDropdown();
-                setupDateDropdown();
+                // Select all LTE sites by default
+                selectedSites = allSites.filter(s => s.tech === "LTE").map(s => s.name);
+                
+                console.log('Loaded sites:', allSites.length);
+                console.log('Loaded dates:', allOnAirDates);
                 
                 // Fetch KPI data
                 fetchData();
@@ -543,9 +539,9 @@
                 };
                 allOnAirDates = ["2024-01-15", "2024-02-01"];
                 selectedOnAirDates = [...allOnAirDates];
+                selectedSites = ["eNodeB_001", "eNodeB_002"];
                 
-                setupSiteDropdown();
-                setupDateDropdown();
+                console.log('Using fallback data');
                 fetchData();
             }
         }
@@ -554,37 +550,31 @@
             const list = document.getElementById('siteDropdownList');
             const btnLabel = document.getElementById('siteBtnLabel');
             
-            // Filter sites by selected technologies and dates
+            // Filter sites by selected dates
             let filteredSites = allSites.filter(site => {
-                return techFilters[site.tech] && 
-                       selectedOnAirDates.includes(site.onAirDate);
+                return selectedOnAirDates.includes(site.onAirDate);
             });
-            
-            // If no sites selected, show all filtered sites
-            if (selectedSites.length === 0) {
-                selectedSites = filteredSites.map(s => s.name);
-            }
             
             list.innerHTML = '';
             
             // Select All / Clear All options
             const selectAllDiv = document.createElement('div');
             selectAllDiv.className = 'dropdown-item';
-            selectAllDiv.innerHTML = '<b>Select All</b>';
+            selectAllDiv.innerHTML = '<b>✓ Select All</b>';
             selectAllDiv.onclick = () => {
                 selectedSites = filteredSites.map(s => s.name);
                 updateSiteDropdownUI();
-                renderCharts();
+                fetchData();
             };
             list.appendChild(selectAllDiv);
             
             const clearAllDiv = document.createElement('div');
             clearAllDiv.className = 'dropdown-item';
-            clearAllDiv.innerHTML = '<b>Clear All</b>';
+            clearAllDiv.innerHTML = '<b>✗ Clear All</b>';
             clearAllDiv.onclick = () => {
                 selectedSites = [];
                 updateSiteDropdownUI();
-                renderCharts();
+                fetchData();
             };
             list.appendChild(clearAllDiv);
             
@@ -602,7 +592,8 @@
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.checked = selectedSites.includes(site.name);
-                checkbox.onchange = () => {
+                checkbox.onchange = (e) => {
+                    e.stopPropagation();
                     if (checkbox.checked) {
                         if (!selectedSites.includes(site.name)) {
                             selectedSites.push(site.name);
@@ -611,7 +602,7 @@
                         selectedSites = selectedSites.filter(s => s !== site.name);
                     }
                     updateSiteDropdownUI();
-                    renderCharts();
+                    fetchData();
                 };
                 
                 const label = document.createElement('span');
@@ -625,19 +616,17 @@
                 
                 div.appendChild(checkbox);
                 div.appendChild(label);
+                div.onclick = (e) => {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.onchange(e);
+                    }
+                };
                 list.appendChild(div);
             });
             
             // Update button label
-            if (selectedSites.length === 0) {
-                btnLabel.textContent = 'No sites selected';
-            } else if (selectedSites.length === 1) {
-                btnLabel.textContent = selectedSites[0];
-            } else if (selectedSites.length === filteredSites.length) {
-                btnLabel.textContent = `All sites (${selectedSites.length})`;
-            } else {
-                btnLabel.textContent = `${selectedSites.length} sites selected`;
-            }
+            updateSiteDropdownUI();
         }
 
         function setupDateDropdown() {
@@ -649,23 +638,23 @@
             // Select All / Clear All options
             const selectAllDiv = document.createElement('div');
             selectAllDiv.className = 'dropdown-item';
-            selectAllDiv.innerHTML = '<b>Select All</b>';
+            selectAllDiv.innerHTML = '<b>✓ Select All</b>';
             selectAllDiv.onclick = () => {
                 selectedOnAirDates = [...allOnAirDates];
                 updateDateDropdownUI();
                 setupSiteDropdown();
-                renderCharts();
+                fetchData();
             };
             list.appendChild(selectAllDiv);
             
             const clearAllDiv = document.createElement('div');
             clearAllDiv.className = 'dropdown-item';
-            clearAllDiv.innerHTML = '<b>Clear All</b>';
+            clearAllDiv.innerHTML = '<b>✗ Clear All</b>';
             clearAllDiv.onclick = () => {
                 selectedOnAirDates = [];
                 updateDateDropdownUI();
                 setupSiteDropdown();
-                renderCharts();
+                fetchData();
             };
             list.appendChild(clearAllDiv);
             
@@ -683,7 +672,8 @@
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.checked = selectedOnAirDates.includes(date);
-                checkbox.onchange = () => {
+                checkbox.onchange = (e) => {
+                    e.stopPropagation();
                     if (checkbox.checked) {
                         if (!selectedOnAirDates.includes(date)) {
                             selectedOnAirDates.push(date);
@@ -693,7 +683,7 @@
                     }
                     updateDateDropdownUI();
                     setupSiteDropdown();
-                    renderCharts();
+                    fetchData();
                 };
                 
                 const label = document.createElement('span');
@@ -701,6 +691,12 @@
                 
                 div.appendChild(checkbox);
                 div.appendChild(label);
+                div.onclick = (e) => {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.onchange(e);
+                    }
+                };
                 list.appendChild(div);
             });
             
@@ -710,43 +706,20 @@
 
         function updateSiteDropdownUI() {
             const btnLabel = document.getElementById('siteBtnLabel');
-            const list = document.getElementById('siteDropdownList');
-            
-            let filteredSites = allSites.filter(site => {
-                return techFilters[site.tech] && 
-                       selectedOnAirDates.includes(site.onAirDate);
-            });
             
             if (selectedSites.length === 0) {
                 btnLabel.textContent = 'No sites selected';
             } else if (selectedSites.length === 1) {
                 btnLabel.textContent = selectedSites[0];
-            } else if (selectedSites.length === filteredSites.length) {
+            } else if (selectedSites.length === allSites.length) {
                 btnLabel.textContent = `All sites (${selectedSites.length})`;
             } else {
                 btnLabel.textContent = `${selectedSites.length} sites selected`;
             }
-            
-            // Update checkboxes in dropdown
-            list.querySelectorAll('input[type="checkbox"]').forEach((checkbox, index) => {
-                // Skip first two checkboxes (Select All/Clear All)
-                if (index >= 2) {
-                    const siteIndex = index - 2; // Account for Select All/Clear All
-                    const filteredSites = allSites.filter(site => {
-                        return techFilters[site.tech] && 
-                               selectedOnAirDates.includes(site.onAirDate);
-                    });
-                    if (siteIndex < filteredSites.length) {
-                        const site = filteredSites[siteIndex];
-                        checkbox.checked = selectedSites.includes(site.name);
-                    }
-                }
-            });
         }
 
         function updateDateDropdownUI() {
             const btnLabel = document.getElementById('dateBtnLabel');
-            const list = document.getElementById('dateDropdownList');
             
             if (selectedOnAirDates.length === 0) {
                 btnLabel.textContent = 'No dates selected';
@@ -755,18 +728,6 @@
             } else {
                 btnLabel.textContent = `${selectedOnAirDates.length} dates selected`;
             }
-            
-            // Update checkboxes in dropdown
-            list.querySelectorAll('input[type="checkbox"]').forEach((checkbox, index) => {
-                // Skip first two checkboxes (Select All/Clear All)
-                if (index >= 2) {
-                    const dateIndex = index - 2; // Account for Select All/Clear All
-                    if (dateIndex < allOnAirDates.length) {
-                        const date = allOnAirDates[dateIndex];
-                        checkbox.checked = selectedOnAirDates.includes(date);
-                    }
-                }
-            });
         }
 
         // --- DATA FETCHING ---
@@ -776,46 +737,86 @@
             let timeline = [];
             try {
                 const urls = currentLevel === 'group' ? sheetConfig.group : sheetConfig.site;
+                let dataPromises = [];
+                
                 for (const tech in urls) {
                     if (tech === 'cutover' || !techFilters[tech]) continue;
-                    try {
-                        const res = await fetch(urls[tech] + "&t=" + Date.now());
-                        const text = await res.text();
-                        const rows = text.trim().split('\n').map(r => r.split(','));
-                        const headers = rows.shift().map(h => h.trim());
-                        const dateHeader = headers.find(h => h.toLowerCase().includes('date'));
-                        const siteHeader = headers.find(h => h.toLowerCase().includes('site') || h.toLowerCase().includes('bsc') || h.toLowerCase().includes('node'));
-                        
-                        rows.forEach(r => {
-                            const obj = {};
-                            headers.forEach((h, i) => {
-                                const val = r[i] ? r[i].trim() : "";
-                                obj[h] = val === "" ? null : (isNaN(val) ? val : parseFloat(val));
-                            });
-                            if (obj[dateHeader]) {
-                                obj.Tech = tech;
-                                if (siteHeader) obj.SiteName = obj[siteHeader] || '';
-                                if (currentLevel === 'site') {
-                                    // For site level, filter by selected sites
-                                    if (selectedSites.length === 0 || selectedSites.includes(obj.SiteName)) {
-                                        allData.push(obj);
-                                        if (!timeline.includes(obj[dateHeader])) timeline.push(obj[dateHeader]);
+                    
+                    dataPromises.push(
+                        fetch(urls[tech] + "&t=" + Date.now())
+                            .then(res => res.text())
+                            .then(text => {
+                                const rows = text.trim().split('\n').map(r => r.split(','));
+                                const headers = rows.shift().map(h => h.trim());
+                                const dateHeader = headers.find(h => h.toLowerCase().includes('date'));
+                                const siteHeader = headers.find(h => 
+                                    h.toLowerCase().includes('site') || 
+                                    h.toLowerCase().includes('bsc') || 
+                                    h.toLowerCase().includes('node') ||
+                                    h.toLowerCase().includes('name')
+                                );
+                                
+                                const techData = [];
+                                rows.forEach(r => {
+                                    const obj = {};
+                                    headers.forEach((h, i) => {
+                                        const val = r[i] ? r[i].trim() : "";
+                                        obj[h] = val === "" ? null : (isNaN(val) ? val : parseFloat(val));
+                                    });
+                                    if (obj[dateHeader]) {
+                                        obj.Tech = tech;
+                                        if (siteHeader) {
+                                            obj.SiteName = obj[siteHeader] || '';
+                                        }
+                                        
+                                        // For site level, apply filters
+                                        if (currentLevel === 'site') {
+                                            // Check if this site should be included
+                                            const shouldInclude = selectedSites.length === 0 || 
+                                                (obj.SiteName && selectedSites.includes(obj.SiteName));
+                                            
+                                            if (shouldInclude) {
+                                                techData.push(obj);
+                                                if (!timeline.includes(obj[dateHeader])) {
+                                                    timeline.push(obj[dateHeader]);
+                                                }
+                                            }
+                                        } else {
+                                            // Group level - include all
+                                            techData.push(obj);
+                                            if (!timeline.includes(obj[dateHeader])) {
+                                                timeline.push(obj[dateHeader]);
+                                            }
+                                        }
                                     }
-                                } else {
-                                    // For group level, include all data
-                                    allData.push(obj);
-                                    if (!timeline.includes(obj[dateHeader])) timeline.push(obj[dateHeader]);
-                                }
-                            }
-                        });
-                    } catch (e) { console.error(`Error ${tech}:`, e); }
+                                });
+                                return techData;
+                            })
+                            .catch(e => {
+                                console.error(`Error ${tech}:`, e);
+                                return [];
+                            })
+                    );
                 }
-                if (allData.length === 0) throw new Error("No data loaded");
-                timeline.sort((a,b)=>{
-                    const [da,ma,ya]=a.split('/').map(Number);
-                    const [db,mb,yb]=b.split('/').map(Number);
-                    return new Date(ya,ma-1,da)-new Date(yb,mb-1,db);
+                
+                const results = await Promise.all(dataPromises);
+                allData = results.flat();
+                
+                if (allData.length === 0) {
+                    throw new Error("No data loaded with current filters");
+                }
+                
+                // Sort timeline
+                timeline.sort((a,b) => {
+                    const [da,ma,ya] = a.split('/').map(Number);
+                    const [db,mb,yb] = b.split('/').map(Number);
+                    return new Date(ya, ma-1, da) - new Date(yb, mb-1, db);
                 });
+                
+                console.log(`Loaded ${allData.length} records, ${timeline.length} time points`);
+                console.log('Selected sites:', selectedSites);
+                console.log('Tech filters:', techFilters);
+                
                 renderCharts(timeline);
             } catch(e) {
                 console.error("Data error:", e);
@@ -828,7 +829,11 @@
             const container = document.getElementById("mainChartContainer");
             container.innerHTML = "";
             allCharts = {};
-            if (timeline.length === 0) return;
+            
+            if (timeline.length === 0 || allData.length === 0) {
+                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No data available with current filters</h2>";
+                return;
+            }
             
             const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
             const timelineLabels = timeline.map(d => {
@@ -837,12 +842,23 @@
             });
 
             const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
-            if (!dateHeaderName) return;
+            if (!dateHeaderName) {
+                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#D24726;'>Error: No date column found</h2>";
+                return;
+            }
 
-            const chartsToRender = kpiDefinitions.filter(k => selectedKpis.includes(k.tech + " - " + k.kpi) && techFilters[k.tech]);
-            if (chartsToRender.length === 0) return;
+            const chartsToRender = kpiDefinitions.filter(k => {
+                const isSelected = selectedKpis.includes(k.tech + " - " + k.kpi);
+                const isTechEnabled = techFilters[k.tech];
+                return isSelected && isTechEnabled;
+            });
+            
+            if (chartsToRender.length === 0) {
+                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No KPIs selected. Please select KPIs from the settings drawer.</h2>";
+                return;
+            }
 
-            if (currentLevel === 'site' && selectedSites.length > 0) {
+            if (currentLevel === 'site') {
                 renderSiteLevelCharts(container, timeline, timelineLabels, dateHeaderName, chartsToRender);
             } else {
                 renderGroupLevelCharts(container, timeline, timelineLabels, dateHeaderName, chartsToRender);
@@ -872,7 +888,9 @@
                         .filter(v => v !== null && v !== "")
                         .map(Number)
                         .filter(v => !isNaN(v));
+                    
                     if (values.length === 0) return null;
+                    
                     const kpiLower = kpi.toLowerCase();
                     if (kpiLower.includes('%') || kpiLower.includes('rate') || kpiLower.includes('avg') || kpiLower.includes('average')) {
                         return values.reduce((a, b) => a + b, 0) / values.length;
@@ -883,7 +901,7 @@
 
                 const validValues = dataPoints.filter(v => v !== null);
                 if (validValues.length === 0) {
-                    card.innerHTML = "<div style='text-align:center;padding:20px;color:#666;'>No data</div>";
+                    card.innerHTML = `<div style='text-align:center;padding:20px;color:#666;'>No ${tech} data available</div>`;
                     return;
                 }
 
@@ -916,15 +934,21 @@
                 card.appendChild(wrapper);
                 container.appendChild(card);
 
-                // Aggregate data for all selected sites
+                // Aggregate data for selected sites
                 const dataPoints = timeline.map(date => {
                     const values = allData
-                        .filter(d => d.Tech === tech && d[dateHeaderName] === date && selectedSites.includes(d.SiteName))
+                        .filter(d => {
+                            return d.Tech === tech && 
+                                   d[dateHeaderName] === date && 
+                                   selectedSites.includes(d.SiteName);
+                        })
                         .map(d => d[kpi])
                         .filter(v => v !== null && v !== "")
                         .map(Number)
                         .filter(v => !isNaN(v));
+                    
                     if (values.length === 0) return null;
+                    
                     const kpiLower = kpi.toLowerCase();
                     if (kpiLower.includes('%') || kpiLower.includes('rate') || kpiLower.includes('avg') || kpiLower.includes('average')) {
                         return values.reduce((a, b) => a + b, 0) / values.length;
@@ -935,7 +959,7 @@
 
                 const validValues = dataPoints.filter(v => v !== null);
                 if (validValues.length === 0) {
-                    card.innerHTML = "<div style='text-align:center;padding:20px;color:#666;'>No data for selected sites</div>";
+                    card.innerHTML = `<div style='text-align:center;padding:20px;color:#666;'>No ${tech} data for selected sites</div>`;
                     return;
                 }
 
@@ -957,11 +981,13 @@
                         label: currentLevel === 'site' ? 'Aggregate' : kpi,
                         data: dataPoints,
                         borderColor: chartColor,
-                        backgroundColor: activeChartStyle && activeChartStyle.fill ? chartColor.replace(')', ', 0.1)').replace('rgb', 'rgba') : 'transparent',
+                        backgroundColor: activeChartStyle && activeChartStyle.fill ? 
+                            chartColor.replace(')', ', 0.1)').replace('rgb', 'rgba') : 'transparent',
                         borderWidth: activeChartStyle ? activeChartStyle.borderWidth : 2, 
                         pointRadius: activeChartStyle ? activeChartStyle.pointRadius : 5, 
                         tension: activeChartStyle ? activeChartStyle.tension : 0.4, 
-                        spanGaps: true
+                        spanGaps: true,
+                        fill: activeChartStyle ? activeChartStyle.fill : false
                     }]
                 },
                 options: {
@@ -977,7 +1003,10 @@
                         }
                     },
                     scales: {
-                        x: { ticks: { font: { size: 8 } }, grid: { display: false } },
+                        x: { 
+                            ticks: { font: { size: 8 } }, 
+                            grid: { display: false } 
+                        },
                         y: { 
                             grid: { color: '#eee' }, 
                             min: niceMin, 
@@ -988,12 +1017,7 @@
                     }
                 }
             };
-            if (activeChartStyle) {
-                chartConfig.data.datasets[0].borderWidth = activeChartStyle.borderWidth;
-                chartConfig.data.datasets[0].pointRadius = activeChartStyle.pointRadius;
-                chartConfig.data.datasets[0].tension = activeChartStyle.tension;
-                chartConfig.data.datasets[0].fill = activeChartStyle.fill;
-            }
+            
             try {
                 allCharts[fullKpiName] = new Chart(canvas.getContext("2d"), chartConfig);
             } catch (e) {
@@ -1034,8 +1058,13 @@
             return niceFraction * Math.pow(10, exponent);
         }
 
-        function refreshData() { fetchData(); }
+        function refreshData() { 
+            console.log('Refreshing data...');
+            fetchData(); 
+        }
+        
         function refreshCharts() {
+            console.log('Refreshing charts...');
             const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
             if (dateHeaderName && allData.length > 0) {
                 const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
@@ -1119,14 +1148,11 @@
 
         // --- COLOR PICKER ---
         function openColorPicker(tech) {
-            selectedTechForColor = tech;
-            selectedColor = techColors[tech];
-            // Create a simple color picker modal
             const color = prompt(`Enter color for ${tech} (hex code):`, techColors[tech]);
             if (color) {
                 techColors[tech] = color;
                 kpiDefinitions.forEach(kpi => {
-                    if (kpi.tech === selectedTechForColor) kpi.color = color;
+                    if (kpi.tech === tech) kpi.color = color;
                 });
                 updateTechColorButtons();
                 refreshCharts();
