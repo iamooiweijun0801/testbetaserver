@@ -355,7 +355,7 @@
             display: flex; 
             flex-direction: column; 
             gap: 5px; 
-}
+        }
         .tech-export-option { 
             display: flex; 
             align-items: center; 
@@ -684,6 +684,9 @@
                 allData = [];
                 allSites = [];
                 
+                // Store GSM BSC names separately
+                let gsmBSCNames = [];
+                
                 // Fetch data for each enabled technology
                 for (const tech in sheetUrls) {
                     if (tech === 'cutover' || !techFilters[tech]) continue;
@@ -710,6 +713,7 @@
                             let siteName = '';
                             if (tech === 'GSM') {
                                 siteName = obj["BSC Name"] || obj["Site Name"] || '';
+                                if (siteName) gsmBSCNames.push(siteName);
                             } else if (tech === 'LTE') {
                                 siteName = obj["eNodeB Name"] || obj["Site Name"] || '';
                             } else if (tech === 'NR') {
@@ -732,6 +736,7 @@
 
                 console.log('Total data records:', allData.length);
                 console.log('All sites:', allSites);
+                console.log('GSM BSC Names:', gsmBSCNames);
 
                 // 2. Fetch Cutover Data
                 const cutoverUrl = sheetConfig.site.cutover + "&t=" + Date.now();
@@ -742,26 +747,87 @@
                 const cutoverHeaders = cutoverRows.shift().map(h=>h.trim());
                 
                 siteCutoverMap = {};
+                
+                // First pass: map exact matches
                 cutoverRows.forEach(r => {
-                    // NR is also called eNodeB Name in cutover sheet
-                    const siteName = r[cutoverHeaders.findIndex(h => h.includes("eNodeB"))]?.trim();
-                    const onAirDate = r[cutoverHeaders.findIndex(h => h.includes("On-Air"))]?.trim();
+                    const eNodeBName = r[cutoverHeaders.findIndex(h => h === "eNodeB Name")]?.trim();
+                    const gbscName = r[cutoverHeaders.findIndex(h => h === "GBSC")]?.trim();
+                    const gNodeBName = r[cutoverHeaders.findIndex(h => h === "gNodeB Name")]?.trim();
+                    const siteNameCol = r[cutoverHeaders.findIndex(h => h === "Site Name")]?.trim();
+                    const onAirDate = r[cutoverHeaders.findIndex(h => h === "On-Air Date")]?.trim();
                     
-                    if (siteName && onAirDate) {
-                        // Check if this site exists in our data
-                        if (allSites.includes(siteName)) {
-                            siteCutoverMap[siteName] = onAirDate;
+                    if (!onAirDate) return;
+                    
+                    // Map each site name to its on-air date
+                    const sitesInRow = [eNodeBName, gbscName, gNodeBName, siteNameCol].filter(Boolean);
+                    
+                    sitesInRow.forEach(site => {
+                        if (site && allSites.includes(site)) {
+                            siteCutoverMap[site] = onAirDate;
                         }
+                    });
+                });
+                
+                // Second pass: try to match GSM BSC names with GBSC names
+                // GSM sites might have different naming conventions
+                cutoverRows.forEach(r => {
+                    const gbscName = r[cutoverHeaders.findIndex(h => h === "GBSC")]?.trim();
+                    const onAirDate = r[cutoverHeaders.findIndex(h => h === "On-Air Date")]?.trim();
+                    
+                    if (!gbscName || !onAirDate) return;
+                    
+                    // Try to find matching GSM BSC names
+                    gsmBSCNames.forEach(bscName => {
+                        if (siteCutoverMap[bscName]) return; // Already mapped
                         
-                        // Also check for GSM sites (GBSC)
-                        const gbscName = r[cutoverHeaders.findIndex(h => h.includes("GBSC"))]?.trim();
-                        if (gbscName && allSites.includes(gbscName)) {
-                            siteCutoverMap[gbscName] = onAirDate;
+                        const bscLower = bscName.toLowerCase();
+                        const gbscLower = gbscName.toLowerCase();
+                        
+                        // Try different matching strategies
+                        const isMatch = 
+                            bscLower === gbscLower || // Exact match
+                            bscLower.includes(gbscLower) || // BSC contains GBSC
+                            gbscLower.includes(bscLower) || // GBSC contains BSC
+                            bscLower.replace(/\s+/g, '') === gbscLower.replace(/\s+/g, '') || // Same without spaces
+                            (bscLower.includes('bsc') && gbscLower.includes('bsc') && 
+                             bscLower.replace('bsc', '').replace(/\D/g, '') === gbscLower.replace('bsc', '').replace(/\D/g, '')); // Same BSC number
+                        
+                        if (isMatch) {
+                            siteCutoverMap[bscName] = onAirDate;
+                            console.log(`Matched GSM BSC ${bscName} to GBSC ${gbscName} with date ${onAirDate}`);
                         }
-                    }
+                    });
                 });
 
-                // 3. Initialize Date Filter Options and State
+                // Third pass: if GSM sites still don't have dates, try to infer from other sites in same row
+                cutoverRows.forEach(r => {
+                    const siteNameCol = r[cutoverHeaders.findIndex(h => h === "Site Name")]?.trim();
+                    const onAirDate = r[cutoverHeaders.findIndex(h => h === "On-Air Date")]?.trim();
+                    
+                    if (!siteNameCol || !onAirDate) return;
+                    
+                    // If we have GSM sites without dates, check if they might match this site name
+                    const gsmSitesWithoutDates = gsmBSCNames.filter(site => !siteCutoverMap[site]);
+                    
+                    gsmSitesWithoutDates.forEach(gsmSite => {
+                        const gsmLower = gsmSite.toLowerCase();
+                        const siteLower = siteNameCol.toLowerCase();
+                        
+                        // Check if they share common parts (like site numbers)
+                        const gsmNumbers = gsmLower.match(/\d+/g);
+                        const siteNumbers = siteLower.match(/\d+/g);
+                        
+                        if (gsmNumbers && siteNumbers && 
+                            gsmNumbers.some(num => siteNumbers.includes(num))) {
+                            siteCutoverMap[gsmSite] = onAirDate;
+                            console.log(`Inferred date for GSM ${gsmSite} from site ${siteNameCol}: ${onAirDate}`);
+                        }
+                    });
+                });
+
+                console.log('Site cutover map after all passes:', siteCutoverMap);
+
+                // 4. Initialize Date Filter Options and State
                 allOnAirDates = [...new Set(Object.values(siteCutoverMap))].filter(d => d).sort();
                 selectedOnAirDates = [...allOnAirDates]; // Default: Select All Dates
                 
@@ -776,11 +842,10 @@
                     selectedSites = [];
                 }
 
-                console.log('Site cutover map:', siteCutoverMap);
                 console.log('All on-air dates:', allOnAirDates);
                 console.log('Selected sites:', selectedSites);
 
-                // 4. Update UI
+                // 5. Update UI
                 setupOnAirDateDropdown();
                 setupSiteDropdown();
                 renderCharts();
@@ -1547,7 +1612,7 @@
                         const rowIndex = Math.floor(j / layout.cols);
 
                         const xPos = layout.marginX + (colIndex * (layout.chartW + layout.gap));
-                        const yPos = effectiveMarginTop + (rowIndex * (layout.chartW + layout.gap));
+                        const yPos = effectiveMarginTop + (rowIndex * (layout.chartH + layout.gap));
                         
                         const imgData = c.toDataURL("image/png");
                         slide.addImage({	
