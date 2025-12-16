@@ -2,143 +2,102 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>KPI Dashboard</title>
+    <title>KPI Dashboard - GSM/LTE</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
     <style>
         /* --- BASE STYLES --- */
-        body { font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin:0; padding:0; background:#f4f7f6; overflow-x:hidden; }
-        header { text-align:center; padding:15px 0; font-size:28px; font-weight:700; color:#333; background:white; box-shadow:0 2px 4px rgba(0,0,0,0.05); margin-bottom:15px; }
-
-        /* --- CONTROLS --- */
-        .controls { display:flex; justify-content:center; gap:10px; margin-bottom:20px; flex-wrap:wrap; align-items:center; }
-        .control-group { position:relative; }
-        button.action-btn { padding:8px 16px; cursor:pointer; border:none; background:#2F80ED; color:white; border-radius:6px; font-weight:600; transition:0.2s; }
-        button.action-btn:hover { background:#1f5ab5; }
-        button.ppt-btn { background:#D24726; }
-        button.ppt-btn:hover { background:#a8381e; }
-
-        /* --- TOGGLE SWITCH --- */
-        .toggle-switch {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            cursor: pointer;
+        body { 
+            font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin:0; 
+            padding:0; 
+            background:#f4f7f6; 
+            overflow-x:hidden; 
         }
-        .toggle-switch .toggle-label {
-            user-select: none;
-        }
-        .toggle-switch .switch {
-            width: 50px;
-            height: 24px;
-            background: #ccc;
-            border-radius: 12px;
-            position: relative;
-            transition: background 0.3s;
-        }
-        .toggle-switch .switch .circle {
-            width: 20px;
-            height: 20px;
-            background: white;
-            border-radius: 50%;
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            transition: left 0.3s;
-        }
-        .toggle-switch.active .switch {
-            background: #2F80ED;
-        }
-        .toggle-switch.active .switch .circle {
-            left: 28px;
-        }
-
-        /* --- TECH FILTERS --- */
-        .tech-filters { 
-            display: flex; 
-            gap: 5px; 
-            margin: 0 10px;
-        }
-        .tech-filter-btn { 
-            padding: 6px 12px; 
-            border: 1px solid #ddd; 
-            border-radius: 6px; 
-            background: white; 
-            cursor: pointer; 
-            font-size: 12px; 
-            font-weight: 600; 
-            transition: 0.2s;
-        }
-        .tech-filter-btn.active { 
-            background: #2F80ED; 
-            color: white; 
-            border-color: #2F80ED; 
-        }
-        .tech-filter-btn.gsm.active { background: #2F80ED; }
-        .tech-filter-btn.lte.active { background: #27AE60; }
-        .tech-filter-btn.nr.active { background: #D24726; }
-
-        /* --- DROPDOWNS --- */
-        #onAirDateDropdownList, #siteDropdownList { 
-            position:absolute; 
+        header { 
+            text-align:center; 
+            padding:15px 0; 
+            font-size:28px; 
+            font-weight:700; 
+            color:#333; 
             background:white; 
-            border:1px solid #ccc; 
-            max-height:200px; 
-            overflow-y:auto; 
-            display:none; 
-            z-index:100; 
-            width:100%; 
-            top:105%; 
-            border-radius:6px; 
-            box-shadow:0 4px 10px rgba(0,0,0,0.1); 
+            box-shadow:0 2px 4px rgba(0,0,0,0.05); 
+            margin-bottom:15px; 
         }
-        #onAirDateDropdownList div, #siteDropdownList div { 
-            padding:6px 10px; 
-            cursor:pointer; 
-            font-size:13px; 
-            border-bottom:1px solid #eee; 
+        
+        /* --- TECH SWITCHER --- */
+        .tech-switcher {
             display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        #onAirDateDropdownList div:hover, #siteDropdownList div:hover { 
-            background:#f0f7ff; 
-            color:#2F80ED; 
-        }
-
-        /* --- DRAWER TOGGLE BUTTONS --- */
-        .drawer-toggle-buttons {
-            position: fixed;
-            top: 20px;
-            right: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            z-index: 900;
-        }
-        .chartStyleDrawerToggle, .kpiDrawerToggle {
-            width: 36px;
-            height: 36px;
-            background: #8E44AD;
-            color: white;
-            border-radius: 6px 0 0 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
             justify-content: center;
-            font-size: 20px;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tech-switcher button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
             transition: 0.2s;
         }
-        .kpiDrawerToggle {
+        .tech-switcher button.active {
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .tech-switcher button.gsm {
             background: #2F80ED;
-            margin-top: 8px;
+            color: white;
         }
-        .chartStyleDrawerToggle:hover, .kpiDrawerToggle:hover {
-            opacity: 0.9;
+        .tech-switcher button.lte {
+            background: #27AE60;
+            color: white;
         }
-
-        /* --- GRID LAYOUT --- */
+        .tech-switcher button.nr {
+            background: #D24726;
+            color: white;
+        }
+               
+        /* --- CONTROLS --- */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        /* --- DRAWER TOGGLE BUTTONS --- */
+        .drawer-toggle-buttons { 
+            position: fixed; 
+            top: 20px; 
+            right: 0; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+            z-index: 900; 
+        }
+        .chartStyleDrawerToggle, .kpiDrawerToggle { 
+            width: 36px; 
+            height: 36px; 
+            background: #8E44AD; 
+            color: white; 
+            border-radius: 6px 0 0 6px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 20px; 
+            transition: 0.2s; 
+        }
+        .kpiDrawerToggle { 
+            background: #2F80ED; 
+            margin-top: 8px; 
+        }
+        .chartStyleDrawerToggle:hover, .kpiDrawerToggle:hover { 
+            opacity: 0.9; 
+        }
+        
+        /* --- GRID LAYOUT (3 Graphs per row) --- */
         .chart-grid { 
             display:grid; 
             grid-template-columns: repeat(3, 1fr); 
@@ -147,28 +106,47 @@
             max-width: 1800px; 
             margin: 0 auto; 
         }
-        @media (max-width: 1400px) { .chart-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 768px) { .chart-grid { grid-template-columns: 1fr; } }
-
+        @media (max-width: 1400px) { 
+            .chart-grid { 
+                grid-template-columns: repeat(2, 1fr); 
+            } 
+        }
+        @media (max-width: 768px) { 
+            .chart-grid { 
+                grid-template-columns: 1fr; 
+            } 
+        }
+        
         /* --- CARDS & CHARTS --- */
-        .chart-card { background:white; border-radius:8px; padding:15px; box-shadow:0 2px 8px rgba(0,0,0,0.08); display:flex; flex-direction:column; }
-        .chart-container { position: relative; height: 280px; width: 100%; }
-
+        .chart-card { 
+            background:white; 
+            border-radius:8px; 
+            padding:15px; 
+            box-shadow:0 2px 8px rgba(0,0,0,0.08); 
+            display:flex; 
+            flex-direction:column; 
+        }
+        .chart-container { 
+            position: relative; 
+            height: 280px; 
+            width: 100%; 
+        }
+        
         /* --- DRAWERS --- */
-        .chartStyleDrawer, .kpiDrawer {
+        .chartStyleDrawer, .kpiDrawer { 
             position: fixed; 
             top: 0; 
-            right: 0;
-            width: 320px;
+            right: 0; 
+            width: 320px; 
             height: 100%; 
-            background: white;
+            background: white; 
             box-shadow: -2px 0 10px rgba(0,0,0,0.1); 
-            z-index: 1000;
+            z-index: 1000; 
             transform: translateX(100%); 
             transition: 0.3s; 
-            padding: 20px;
+            padding: 20px; 
             display: flex; 
-            flex-direction: column;
+            flex-direction: column; 
         }
         .chartStyleDrawer.open, .kpiDrawer.open { 
             transform: translateX(0); 
@@ -181,41 +159,23 @@
             padding-bottom: 10px; 
             border-bottom: 1px solid #eee; 
         }
-        .drawer-header h3 { margin: 0; }
-        .drawer-controls { 
-            display: flex; 
-            gap: 5px;
-            align-items: center; 
-            margin-bottom: 15px;
-        }
-        .drawer-controls .action-btn { 
-            padding: 6px 10px;
-            font-size: 13px;
-        }
         .kpi-options-body, .style-options-body { 
             flex-grow: 1; 
             overflow-y: auto; 
             padding-right: 5px; 
             padding-bottom: 40px; 
         }
-        .style-button { 
-            padding: 10px 12px; 
-            margin: 6px 0; 
-            background: #f5f5f5; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-weight: 500;
-            border: 1px solid #ddd;
-            transition: 0.2s;
+        .drawer-controls { 
+            display: flex; 
+            gap: 5px; 
+            align-items: center; 
         }
-        .style-button:hover { 
-            background: #e9e9e9; 
+        .drawer-controls .action-btn { 
+            padding: 6px 10px; 
+            font-size: 13px; 
         }
-        .style-button.active {
-            background: #8E44AD;
-            color: white;
-            border-color: #8E44AD;
-        }
+
+        /* --- KPI OPTIONS STYLING --- */
         .kpi-group-title { 
             font-weight: bold; 
             color: #2F80ED; 
@@ -233,88 +193,171 @@
         .kpi-option input[type="checkbox"] { 
             margin-right: 8px; 
         }
+        
+        /* --- Chart Style Buttons --- */
+        .style-button { 
+            padding: 10px 12px; 
+            margin: 6px 0; 
+            background: #f5f5f5; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 500; 
+            border: 1px solid #ddd; 
+            transition: 0.2s; 
+        }
+        .style-button:hover { 
+            background: #e9e9e9; 
+        }
+        .style-button.active { 
+            background: #8E44AD; 
+            color: white; 
+            border-color: #8E44AD; 
+        }
+        
+        /* --- TECH COLOR BUTTONS --- */
+        .tech-color-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .tech-color-btn {
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            color: white;
+            text-align: center;
+        }
+        .tech-color-btn.gsm { background: #2F80ED; }
+        .tech-color-btn.lte { background: #27AE60; }
 
-        /* --- PREVIEW MODAL --- */
-        .modal { 
-            position:fixed; 
-            top:0; 
-            left:0; 
-            width:100%; 
-            height:100%; 
-            background:rgba(0,0,0,0.6); 
-            z-index:2000; 
-            display:none; 
-            align-items:center; 
-            justify-content:center; 
-            backdrop-filter:blur(3px); 
+        /* --- COLOR PICKER MODAL --- */
+        .color-picker-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
         }
-        .modal-content { 
-            background:white; 
-            width:95%; 
-            max-width: 1400px; 
-            height:90vh; 
-            border-radius:12px; 
-            display:flex; 
-            flex-direction:column; 
-            box-shadow:0 10px 25px rgba(0,0,0,0.3); 
+        .color-picker-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+            text-align: center;
         }
-        .modal-header { 
-            padding:15px 20px; 
-            border-bottom:1px solid #eee; 
-            display:flex; 
-            justify-content:space-between; 
-            align-items:center; 
-            font-weight:bold; 
-            font-size:18px; 
+        .color-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 15px 0;
         }
-        .modal-body { 
-            flex:1; 
-            display: flex; 
-            padding:0; 
-            overflow: hidden; 
+        .color-option {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0 auto;
+            border: 2px solid transparent;
         }
-        #previewBody { 
-            flex: 1; 
-            overflow-y:auto; 
-            padding:20px; 
-            background:#f5f5f5; 
+        .color-option.selected {
+            border: 2px solid #333;
         }
-        .preview-slide { 
-            background:white; 
-            border:1px solid #ddd; 
-            margin-bottom:20px; 
-            padding:20px; 
-            box-shadow:0 2px 5px rgba(0,0,0,0.05); 
-            aspect-ratio: 16/9; 
-            position:relative; 
+        .color-picker-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
         }
-        .preview-slide-title { 
-            position:absolute; 
-            top:10px; 
-            left:20px; 
-            font-size:16px; 
-            font-weight:bold; 
-            color:#D24726; 
+        
+        /* --- PPT EXPORT MODAL --- */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 2001;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(3px);
         }
-        .preview-grid { 
-            display:grid; 
-            height:100%; 
-            align-items:center; 
-            padding-top:30px; 
+        .modal-content {
+            background: white;
+            width: 95%;
+            max-width: 1400px;
+            height: 90vh;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         }
-        .preview-img-box { 
-            text-align:center; 
-            padding:5px; 
-            height:100%; 
-            display:flex; 
-            flex-direction:column; 
-            justify-content:center; 
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 18px;
         }
-        .preview-img-box img { 
-            max-width:100%; 
-            max-height:calc(100% - 20px); 
-            object-fit:contain; 
-            border:1px solid #eee; 
+        .modal-body {
+            flex: 1;
+            display: flex;
+            padding: 0;
+            overflow: hidden;
+        }
+        #previewBody {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .preview-slide {
+            background: white;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            aspect-ratio: 16/9;
+            position: relative;
+        }
+        .preview-slide-title {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #D24726;
+        }
+        .preview-grid {
+            display: grid;
+            height: 100%;
+            align-items: center;
+            padding-top: 30px;
+        }
+        .preview-img-box {
+            text-align: center;
+            padding: 5px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .preview-img-box img {
+            max-width: 100%;
+            max-height: calc(100% - 20px);
+            object-fit: contain;
+            border: 1px solid #eee;
         }
         #previewSettingsPanel {
             width: 250px;
@@ -323,184 +366,134 @@
             padding: 20px;
             display: flex;
             flex-direction: column;
-            flex-shrink: 0; 
+            flex-shrink: 0;
         }
-        .settings-group { 
-            margin-bottom: 20px; 
+        .settings-group {
+            margin-bottom: 20px;
         }
-        .settings-group h4 { 
-            margin-top: 0; 
-            margin-bottom: 10px; 
-            font-size: 14px; 
-            color: #555; 
-            border-bottom: 1px solid #eee; 
-            padding-bottom: 5px; 
+        .settings-group h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #555;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
         }
-        .graph-options button { 
-            margin: 5px; 
-            width: 100px; 
-            padding: 6px; 
-            font-size: 13px; 
+        .graph-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .graph-options button {
+            padding: 6px 10px;
+            font-size: 13px;
             background: #f0f0f0;
             border: 1px solid #ddd;
             border-radius: 4px;
             cursor: pointer;
         }
-        .graph-options button.active { 
-            background: #2F80ED; 
-            color: white; 
-            border-color: #2F80ED; 
+        .graph-options button.active {
+            background: #2F80ED;
+            color: white;
+            border-color: #2F80ED;
         }
-        .tech-export-options { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 5px; 
-        }
-        .tech-export-option { 
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-        }
-        .tech-export-option input { 
-            margin: 0; 
-        }
-        .modal-footer { 
-            padding:15px 20px; 
-            border-top:1px solid #eee; 
-            text-align:right;
-            flex-shrink: 0; 
-        }
-
-        /* --- LOADING STATE --- */
-        .loading { 
-            text-align: center; 
-            padding: 40px; 
-            color: #666; 
-        }
-
-        /* --- SITE INFO --- */
-        .chart-site-info { 
-            font-size: 12px; 
-            color: #666; 
-            margin-bottom: 10px; 
-            padding: 5px 10px; 
-            background: #f5f5f5; 
-            border-radius: 4px; 
-        }
-        
-        /* --- DROPDOWN BUTTONS --- */
-        .dropdown-btn {
-            padding: 8px 16px;
-            background: white;
-            color: #333;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            width: 100%;
-            text-align: left;
+        .tech-export-options {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            font-size: 14px;
+            flex-direction: column;
+            gap: 5px;
         }
-        
-        /* Checkbox styling */
-        input[type="checkbox"] {
+        .tech-export-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tech-export-option input {
             margin: 0;
-            cursor: pointer;
+        }
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            text-align: right;
+            flex-shrink: 0;
         }
     </style>
 </head>
 <body onload="initDashboard()">
-    <header>KPI Dashboard</header>
+    <header>KPI Dashboard - GSM/LTE</header>
 
-    <div class="controls">
-        <!-- On-Air Date Dropdown -->
-        <div class="control-group" style="width:200px;">
-            <button id="onAirDateDropdownBtn" class="dropdown-btn">
-                <span id="onAirDateBtnLabel">All On-Air Dates</span> <span>▼</span>
-            </button>
-            <div id="onAirDateDropdownList"></div>
-        </div>
-
-        <!-- Site Dropdown -->
-        <div class="control-group" style="width:200px;">
-            <button id="siteDropdownBtn" class="dropdown-btn">
-                <span id="siteBtnLabel">All Sites</span> <span>▼</span>
-            </button>
-            <div id="siteDropdownList"></div>
-        </div>
-
-        <!-- Technology Filters -->
-        <div class="tech-filters" id="techFilters">
-            <button class="tech-filter-btn gsm active" onclick="toggleTechFilter('GSM')">GSM</button>
-            <button class="tech-filter-btn lte active" onclick="toggleTechFilter('LTE')">LTE</button>
-            <button class="tech-filter-btn nr active" onclick="toggleTechFilter('NR')">NR</button>
-        </div>
-
-        <!-- Level Toggle Switch -->
-        <div class="toggle-switch" id="levelToggle">
-            <span class="toggle-label">Group Level</span>
-            <div class="switch" onclick="switchLevel()">
-                <div class="circle"></div>
-            </div>
-            <span class="toggle-label">Site Level</span>
-        </div>
-
-        <button onclick="refreshData()" class="action-btn">Refresh</button>
-        <button onclick="openPPTExport()" class="action-btn ppt-btn">Export PPT</button>
+    <div class="tech-switcher">
+        <button class="gsm-lte active" onclick="switchToDashboard('gsm-lte')">GSM/LTE</button>
+        <button class="nr" onclick="switchToDashboard('nr')">NR</button>
     </div>
 
-    <div class="chart-grid" id="mainChartContainer"></div>
+    <div class="controls">
+        <button class="action-btn" onclick="openPPTExport()">📊 Export PPT</button>
+    </div>
 
-    <!-- DRAWER TOGGLE BUTTONS -->
+    <div class="chart-grid" id="mainChartContainer">
+        <!-- Charts will be loaded here -->
+    </div>
+
+    <!-- Drawer Toggle Buttons -->
     <div class="drawer-toggle-buttons">
         <div class="chartStyleDrawerToggle" onclick="toggleChartStyleDrawer()">🎨</div>
         <div class="kpiDrawerToggle" onclick="toggleDrawer()">⚙</div>
     </div>
 
-    <!-- CHART STYLE DRAWER -->
+    <!-- Chart Style Drawer -->
     <div id="chartStyleDrawer" class="chartStyleDrawer">
-        <div class="drawer-header">
-            <h3>Chart Styles</h3>
-            <button onclick="toggleChartStyleDrawer()" style="border:none; background:none; font-size:22px; cursor:pointer;">✕</button>
+        <div class="drawer-header"> 
+            <h3>Chart Styles</h3> 
+            <button onclick="toggleChartStyleDrawer()" style="border:none; background:none; font-size:22px; cursor:pointer;">✕</button> 
         </div>
         <div class="style-options-body">
-            <div class="style-button" onclick="applyChartStyle(0)">Style 1 – Clean Lines</div>
-            <div class="style-button" onclick="applyChartStyle(1)">Style 2 – Bold</div>
-            <div class="style-button" onclick="applyChartStyle(2)">Style 3 – Dotted</div>
-            <div class="style-button" onclick="applyChartStyle(3)">Style 4 – Thick + Soft</div>
-            <div class="style-button" onclick="applyChartStyle(4)">Style 5 – Minimalist</div>
-            <div class="style-button" onclick="applyChartStyle(5)">Style 6 – Dashed</div>
-            <div class="style-button" onclick="applyChartStyle(6)">Style 7 – Neon</div>
-            <div class="style-button" onclick="applyChartStyle(7)">Style 8 – Shadow Line</div>
-            <div class="style-button" onclick="applyChartStyle(8)">Style 9 – Rounded Dots</div>
-            <div class="style-button" onclick="applyChartStyle(9)">Style 10 – Random Colors</div>
+            <div class="style-button" onclick="applyChartStyle(0)">Filled Area</div>
+            <div class="style-button" onclick="applyChartStyle(1)">Line with Dots</div>
+            <div class="style-button" onclick="applyChartStyle(2)">Smooth Line</div>
+            <div class="style-button" onclick="applyChartStyle(3)">Thick Line</div>
+            <div class="style-button" onclick="applyChartStyle(4)">Thin Line with dots</div>
             
-            <hr style="margin:15px 0;">
-            
-            <label><b>Custom Color:</b></label>
-            <input type="color" id="customChartColor" onchange="applyCustomColor()" style="width:100%; height:40px; margin-top:6px;">
+            <div style="margin: 20px 0; border-top: 1px solid #eee; padding-top: 15px;">
+                <label><b>Technology Colors</b></label>
+                <div class="tech-color-buttons">
+                    <button class="tech-color-btn gsm" onclick="openColorPicker('GSM')">GSM Color</button>
+                    <button class="tech-color-btn lte" onclick="openColorPicker('LTE')">LTE Color</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- KPI SETTINGS DRAWER -->
+    <!-- KPI Settings Drawer -->
     <div id="kpiDrawer" class="kpiDrawer">
-        <div class="drawer-header">
-            <h3 id="drawerHeaderTitle">KPI Settings</h3>
-            <button onclick="toggleDrawer()" style="border:none; background:none; font-size:24px; cursor:pointer; color:#777;">✕</button>
+        <div class="drawer-header"> 
+            <h3 id="drawerHeaderTitle">KPI Settings</h3> 
+            <button onclick="toggleDrawer()" style="border:none; background:none; font-size:24px; cursor:pointer; color:#777;">✕</button> 
         </div>
-        
         <div class="drawer-controls">
             <button class="action-btn" onclick="selectVisibleKpis()" style="background:#5cb85c;">Select All</button>
             <button class="action-btn" onclick="clearVisibleKpis()" style="background:#f0ad4e;">Clear All</button>
-            <button class="action-btn" onclick="applyKpis()">Apply</button>
+            <button class="action-btn" onclick="applyKpis()" style="background:#2F80ED;">Apply</button>
         </div>
-        
-        <div class="kpi-options-body" id="kpiOptionsList"></div>
+        <div class="kpi-options-body" id="kpiOptionsList">
+            <!-- KPI options will be loaded here -->
+        </div>
     </div>
 
-    <!-- PREVIEW MODAL -->
+    <!-- Color Picker Modal -->
+    <div id="colorPickerModal" class="color-picker-modal">
+        <div class="color-picker-content">
+            <h3 id="colorPickerTitle">Select Color for GSM</h3>
+            <div class="color-picker-grid" id="colorPickerGrid">
+                <!-- Color options will be added here -->
+            </div>
+            <div class="color-picker-actions">
+                <button class="action-btn" onclick="closeColorPicker()" style="background:#888;">Cancel</button>
+                <button class="action-btn" onclick="applySelectedColor()" style="background:#27AE60;">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PPT Export Modal -->
     <div id="pptModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -508,29 +501,44 @@
                 <button onclick="closePPTExport()" style="border:none; background:none; font-size:20px; cursor:pointer;">✕</button>
             </div>
             <div class="modal-body">
-                <div id="previewBody"></div>
+                <div id="previewBody">
+                    <!-- Preview slides will be loaded here -->
+                </div>
                 <div id="previewSettingsPanel">
                     <h3>Export Settings</h3>
+                    
                     <div class="settings-group">
-                        <h4>Graphs per Slide</h4>
+                        <h4>Layout</h4>
                         <div class="graph-options">
-                            <button class="action-btn" data-count="1" onclick="updatePPTPreview(1)">1 Graph</button>
-                            <button class="action-btn" data-count="2" onclick="updatePPTPreview(2)">2 Graphs</button>
-                            <button class="action-btn" data-count="3" onclick="updatePPTPreview(3)">3 Graphs</button>
-                            <button class="action-btn" data-count="4" onclick="updatePPTPreview(4)">4 Graphs</button>
-                            <button class="action-btn" data-count="6" onclick="updatePPTPreview(6)">6 Graphs</button>
-                            <button class="action-btn" data-count="9" onclick="updatePPTPreview(9)">9 Graphs</button>
+                            <button onclick="updatePPTPreview(1)" data-count="1">1 Graph</button>
+                            <button onclick="updatePPTPreview(2)" data-count="2">2 Graphs</button>
+                            <button onclick="updatePPTPreview(3)" data-count="3">3 Graphs</button>
+                            <button onclick="updatePPTPreview(4)" data-count="4">4 Graphs</button>
+                            <button onclick="updatePPTPreview(6)" data-count="6">6 Graphs</button>
+                            <button onclick="updatePPTPreview(9)" data-count="9">9 Graphs</button>
                         </div>
                     </div>
+                    
                     <div class="settings-group">
                         <h4>Select Technologies</h4>
-                        <div class="tech-export-options" id="techExportOptions"></div>
+                        <div class="tech-export-options" id="techExportOptions">
+                            <!-- Technology checkboxes will be added here -->
+                        </div>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <h4>Export Options</h4>
+                        <div style="font-size: 12px; color: #666; margin-top: 10px;">
+                            <p>• Maintains chart colors</p>
+                            <p>• Preserves chart titles</p>
+                            <p>• Optimized for PowerPoint</p>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="action-btn" style="background:#888;" onclick="closePPTExport()">Cancel</button>
-                <button class="action-btn ppt-btn" onclick="downloadPPT()">Download .PPTX</button>
+                <button class="action-btn" onclick="closePPTExport()" style="background:#888;">Cancel</button>
+                <button class="action-btn ppt-btn" onclick="downloadPPT()" style="background:#D24726;">Download PPT</button>
             </div>
         </div>
     </div>
@@ -538,618 +546,207 @@
     <script>
         // --- CONFIG & STATE ---
         let allData = [];
-        let allSites = [];
-        let siteCutoverMap = {}; // Maps Site Name -> On-Air Date
-        let allOnAirDates = [];
-        let selectedOnAirDates = [];
-
-        let selectedSites = [];
-        let graphsPerSlide = 2; 
-        
-        let currentLevel = 'group'; // 'group' or 'site'
-        const levelToggle = document.getElementById("levelToggle");
-
-        const sheetConfig = {
-            group: {
-                GSM: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1977848975&single=true&output=csv",
-                LTE: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=893314169&single=true&output=csv",
-                NR: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1372365834&single=true&output=csv"
-            },
-            site: {
-                GSM: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1930867305&single=true&output=csv",
-                LTE: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=0&single=true&output=csv",
-                NR: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1617739873&single=true&output=csv",
-                cutover: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=19616562&single=true&output=csv"
-            }
+        let allCharts = {};
+        let selectedKpis = [];
+        let selectedTechForColor = '';
+        let selectedColor = '';
+        let pptLayout = 9; // Default: 3 graphs per slide
+        let selectedTechForExport = {
+            GSM: true,
+            LTE: true
         };
 
-        // KPI Definitions
+        // --- KPI Definitions (GSM/LTE only) ---
         const kpiDefinitions = [
             { tech: "GSM", kpi: "Call setup success rate(%)", initialChecked: true, color: "#2F80ED" },
             { tech: "GSM", kpi: "Call drop rate(%)", initialChecked: true, color: "#2F80ED" },
             { tech: "GSM", kpi: "CS Traffic (erl)", initialChecked: true, color: "#2F80ED" },
+            
             { tech: "LTE", kpi: "Call Setup Success Rate(%)", initialChecked: true, color: "#27AE60" },
             { tech: "LTE", kpi: "E-RAB Call Drop Rate(%)", initialChecked: true, color: "#27AE60" },
             { tech: "LTE", kpi: "DL -USER Average Throughput (Mbit/s)", initialChecked: true, color: "#27AE60" },
             { tech: "LTE", kpi: "UL -USER Average Throughput (Mbit/s)", initialChecked: true, color: "#27AE60" },
             { tech: "LTE", kpi: "DL Data Total Volume (Gbyte)", initialChecked: true, color: "#27AE60" },
             { tech: "LTE", kpi: "UL Data Total Volume (Gbyte)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "DL PRB Utilization (%)", initialChecked: true, color: "#27AE60" },
-            { tech: "NR", kpi: "SgNB Addition Success Rate (CU)(%)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "DL Traffic Volume (GB)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "DL User Throughput(Mbps)", initialChecked: true, color: "#D24726" },
+            { tech: "LTE", kpi: "DL PRB Utilization (%)", initialChecked: true, color: "#27AE60" }
         ];
 
-        let selectedKpis = [];
-
-        // Tech filters state
-        let techFilters = { GSM: true, LTE: true, NR: true };
-
-        // Chart Styling
+        // --- Sheet URLs (GSM/LTE only) ---
+        const sheetUrls = {
+            GSM: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1977848975&single=true&output=csv",
+            LTE: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=893314169&single=true&output=csv"
+        };
+        
         let activeChartStyle = null;
-        let activeCustomColor = null;
+        let techColors = {
+            GSM: "#2F80ED",
+            LTE: "#27AE60"
+        };
 
-        const chartStyles = [
-            { borderWidth: 2, pointRadius: 3, borderDash: [], tension: 0.2, borderColor: null },
-            { borderWidth: 4, pointRadius: 5, borderDash: [], tension: 0.25, borderColor: null },
-            { borderWidth: 2, pointRadius: 0, borderDash: [6,3], tension: 0.1, borderColor: null },
-            { borderWidth: 3, pointRadius: 4, borderDash: [], tension: 0.4, borderColor: null },
-            { borderWidth: 1, pointRadius: 0, borderDash: [], tension: 0, borderColor: null },
-            { borderWidth: 2, pointRadius: 2, borderDash: [4,4], tension: 0.3, borderColor: null },
-            { borderWidth: 3, pointRadius: 6, borderDash: [], tension: 0.15, borderColor: null },
-            { borderWidth: 3, pointRadius: 3, borderDash: [], tension: 0.2, borderColor: null },
-            { borderWidth: 2, pointRadius: 8, borderDash: [], tension: 0.25, borderColor: null },
-            { borderWidth: 3, pointRadius: 5, borderDash: [], tension: 0.25, randomColor: true }
+        // --- Color Palette Options ---
+        const colorPalette = [
+            "#2F80ED", "#27AE60", "#D24726", "#8E44AD",
+            "#3498DB", "#2ECC71", "#E74C3C", "#9B59B6",
+            "#1ABC9C", "#F39C12", "#34495E", "#95A5A6",
+            "#2980B9", "#16A085", "#C0392B", "#8E44AD"
         ];
 
-        // PPT Export
-        let pptLayout = 9;
-        let selectedTechForExport = { GSM: true, LTE: true, NR: true };
+        // --- Chart Styles ---
+        const chartStyles = [
+            { 
+                name: "Filled Area", 
+                borderWidth: 2, 
+                pointRadius: 0, 
+                borderDash: [], 
+                tension: 0.2, 
+                fill: true, 
+                backgroundColor: "rgba(47, 128, 237, 0.1)" 
+            },
+            { 
+                name: "Line with Dots", 
+                borderWidth: 3, 
+                pointRadius: 5, 
+                borderDash: [], 
+                tension: 0.4, 
+                fill: false 
+            },
+            { 
+                name: "Smooth Line", 
+                borderWidth: 2, 
+                pointRadius: 0, 
+                borderDash: [], 
+                tension: 0.4, 
+                fill: false 
+            },
+            { 
+                name: "Thick Line", 
+                borderWidth: 4, 
+                pointRadius: 0, 
+                borderDash: [], 
+                tension: 0.3, 
+                fill: false 
+            },
+            { 
+                name: "Thin Line with dots", 
+                borderWidth: 2, 
+                pointRadius: 4, 
+                borderDash: [], 
+                tension: 0, 
+                fill: false 
+            }
+        ];
+
+        // --- ACTION BUTTON STYLING ---
+        const actionBtnStyle = `
+            .action-btn { 
+                padding: 8px 16px; 
+                cursor: pointer; 
+                border: none; 
+                background: #2F80ED; 
+                color: white; 
+                border-radius: 6px; 
+                font-weight: 600; 
+                transition: 0.2s; 
+            }
+            .action-btn:hover { 
+                background: #1f5ab5; 
+            }
+            .ppt-btn {
+                background: #D24726 !important;
+            }
+            .ppt-btn:hover {
+                background: #a8381e !important;
+            }
+        `;
+        
+        const style = document.createElement('style');
+        style.textContent = actionBtnStyle;
+        document.head.appendChild(style);
+
+        // --- DASHBOARD SWITCHER ---
+        function switchToDashboard(type) {
+            if (type === 'gsm-lte') {
+                // Already here
+                return;
+            } else if (type === 'nr') {
+                window.location.href = 'nr.html';
+            }
+        }
 
         // --- INITIALIZATION ---
         function initDashboard() {
-            // Set default selected KPIs
             selectedKpis = kpiDefinitions.filter(k => k.initialChecked).map(k => k.tech + " - " + k.kpi);
-            
-            // Initialize with default chart style
             applyChartStyle(1);
-            
-            // Setup dropdown event listeners
-            setupDropdownListeners();
-            
-            // Fetch initial data
             fetchData();
         }
 
-        // --- DROPDOWN EVENT LISTENERS ---
-        function setupDropdownListeners() {
-            // Date dropdown
-            document.getElementById('onAirDateDropdownBtn').onclick = function(e) {
-                e.stopPropagation();
-                const list = document.getElementById('onAirDateDropdownList');
-                list.style.display = list.style.display === 'block' ? 'none' : 'block';
-                // Close site dropdown if open
-                document.getElementById('siteDropdownList').style.display = 'none';
-            };
-            
-            // Site dropdown
-            document.getElementById('siteDropdownBtn').onclick = function(e) {
-                e.stopPropagation();
-                const list = document.getElementById('siteDropdownList');
-                list.style.display = list.style.display === 'block' ? 'none' : 'block';
-                // Close date dropdown if open
-                document.getElementById('onAirDateDropdownList').style.display = 'none';
-            };
-            
-            // Close dropdowns when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('.control-group')) {
-                    document.getElementById('onAirDateDropdownList').style.display = 'none';
-                    document.getElementById('siteDropdownList').style.display = 'none';
-                }
-            });
-        }
-
-        // --- LEVEL MANAGEMENT ---
-        function switchLevel() {
-            if(currentLevel === 'site') {
-                currentLevel = 'group';
-                levelToggle.classList.remove('active');
-            } else {
-                currentLevel = 'site';
-                levelToggle.classList.add('active');
-            }
-            fetchData();
-        }
-
-        function toggleTechFilter(tech) {
-            techFilters[tech] = !techFilters[tech];
-            const btn = document.querySelector(`.tech-filter-btn.${tech.toLowerCase()}`);
-            btn.classList.toggle('active', techFilters[tech]);
-            
-            // Update site dropdown when tech filters change
-            setupSiteDropdown();
-            renderCharts(); // Use renderCharts instead of fetchData
-        }
-
-        // --- DATA FETCHING & MAPPING ---
+        // --- DATA FETCHING ---
         async function fetchData(){
+            document.getElementById("mainChartContainer").innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>Loading data...</h2>";
+            allData = [];
+            let timeline = [];
+            
             try {
-                console.log('Fetching data for level:', currentLevel);
-                
-                // 1. Fetch KPI Data
-                const sheetUrls = currentLevel === 'group' ? sheetConfig.group : sheetConfig.site;
-                
-                // Clear previous data
-                allData = [];
-                allSites = [];
-                
-                // Store GSM BSC names separately
-                let gsmBSCNames = [];
-                
-                // Fetch data for each enabled technology
                 for (const tech in sheetUrls) {
-                    if (tech === 'cutover' || !techFilters[tech]) continue;
-                    
                     try {
-                        const kpiUrl = sheetUrls[tech] + "&t=" + Date.now();
-                        const kpiRes = await fetch(kpiUrl);
-                        const kpiText = await kpiRes.text();
+                        const url = sheetUrls[tech] + "&t=" + Date.now();
+                        const res = await fetch(url);
+                        if (!res.ok) continue;
+                        const text = await res.text();
+                        if (!text || text.trim() === '') continue;
+                        const rows = text.trim().split('\n').map(r => r.split(','));
                         
-                        const kpiRows = kpiText.trim().split('\n').map(r=>r.split(','));
-                        const kpiHeaders = kpiRows.shift().map(h=>h.trim());
+                        if (rows.length < 2) continue;
                         
-                        kpiRows.forEach(r=>{ 
-                            const obj={}; 
-                            kpiHeaders.forEach((h,i)=>{ 
-                                const val=r[i]?r[i].trim():""; 
-                                obj[h] = val==="" ? null : (isNaN(val) ? val : parseFloat(val)); 
-                            }); 
-                            
-                            // Add technology info
-                            obj.Tech = tech;
-                            
-                            // Determine site name based on technology
-                            let siteName = '';
-                            if (tech === 'GSM') {
-                                siteName = obj["BSC Name"] || obj["Site Name"] || '';
-                                if (siteName) gsmBSCNames.push(siteName);
-                            } else if (tech === 'LTE') {
-                                siteName = obj["eNodeB Name"] || obj["Site Name"] || '';
-                            } else if (tech === 'NR') {
-                                siteName = obj["gNodeB Name"] || obj["eNodeB Name"] || obj["Site Name"] || '';
-                            }
-                            
-                            obj.SiteName = siteName;
-                            
-                            allData.push(obj);
-                            
-                            // Collect sites
-                            if (siteName && !allSites.includes(siteName)) {
-                                allSites.push(siteName);
+                        const headers = rows.shift().map(h => h.trim());
+                        const dateHeader = headers.find(h => h.toLowerCase().includes('date'));
+                        
+                        rows.forEach(r => {
+                            const obj = {};
+                            headers.forEach((h, i) => {
+                                const val = r[i] ? r[i].trim() : "";
+                                obj[h] = val === "" ? null : (isNaN(val) ? val : parseFloat(val));
+                            });
+                            if (obj[dateHeader]) {
+                                obj.Tech = tech;
+                                allData.push(obj);
+                                if (!timeline.includes(obj[dateHeader])) {
+                                    timeline.push(obj[dateHeader]);
+                                }
                             }
                         });
-                    } catch(e) { 
-                        console.error(`Error loading ${tech} data:`, e); 
+                    } catch (e) {
+                        console.error(`Error loading ${tech} data:`, e);
                     }
                 }
 
-                console.log('Total data records:', allData.length);
-                console.log('All sites:', allSites);
-                console.log('GSM BSC Names:', gsmBSCNames);
-
-                // 2. Fetch Cutover Data
-                const cutoverUrl = sheetConfig.site.cutover + "&t=" + Date.now();
-                const cutoverRes = await fetch(cutoverUrl);
-                const cutoverText = await cutoverRes.text();
-                
-                const cutoverRows = cutoverText.trim().split('\n').map(r=>r.split(','));
-                const cutoverHeaders = cutoverRows.shift().map(h=>h.trim());
-                
-                siteCutoverMap = {};
-                
-                // First pass: map exact matches
-                cutoverRows.forEach(r => {
-                    const eNodeBName = r[cutoverHeaders.findIndex(h => h === "eNodeB Name")]?.trim();
-                    const gbscName = r[cutoverHeaders.findIndex(h => h === "GBSC")]?.trim();
-                    const gNodeBName = r[cutoverHeaders.findIndex(h => h === "gNodeB Name")]?.trim();
-                    const siteNameCol = r[cutoverHeaders.findIndex(h => h === "Site Name")]?.trim();
-                    const onAirDate = r[cutoverHeaders.findIndex(h => h === "On-Air Date")]?.trim();
-                    
-                    if (!onAirDate) return;
-                    
-                    // Map each site name to its on-air date
-                    const sitesInRow = [eNodeBName, gbscName, gNodeBName, siteNameCol].filter(Boolean);
-                    
-                    sitesInRow.forEach(site => {
-                        if (site && allSites.includes(site)) {
-                            siteCutoverMap[site] = onAirDate;
-                        }
-                    });
-                });
-                
-                // Second pass: try to match GSM BSC names with GBSC names
-                // GSM sites might have different naming conventions
-                cutoverRows.forEach(r => {
-                    const gbscName = r[cutoverHeaders.findIndex(h => h === "GBSC")]?.trim();
-                    const onAirDate = r[cutoverHeaders.findIndex(h => h === "On-Air Date")]?.trim();
-                    
-                    if (!gbscName || !onAirDate) return;
-                    
-                    // Try to find matching GSM BSC names
-                    gsmBSCNames.forEach(bscName => {
-                        if (siteCutoverMap[bscName]) return; // Already mapped
-                        
-                        const bscLower = bscName.toLowerCase();
-                        const gbscLower = gbscName.toLowerCase();
-                        
-                        // Try different matching strategies
-                        const isMatch = 
-                            bscLower === gbscLower || // Exact match
-                            bscLower.includes(gbscLower) || // BSC contains GBSC
-                            gbscLower.includes(bscLower) || // GBSC contains BSC
-                            bscLower.replace(/\s+/g, '') === gbscLower.replace(/\s+/g, '') || // Same without spaces
-                            (bscLower.includes('bsc') && gbscLower.includes('bsc') && 
-                             bscLower.replace('bsc', '').replace(/\D/g, '') === gbscLower.replace('bsc', '').replace(/\D/g, '')); // Same BSC number
-                        
-                        if (isMatch) {
-                            siteCutoverMap[bscName] = onAirDate;
-                            console.log(`Matched GSM BSC ${bscName} to GBSC ${gbscName} with date ${onAirDate}`);
-                        }
-                    });
-                });
-
-                // Third pass: if GSM sites still don't have dates, try to infer from other sites in same row
-                cutoverRows.forEach(r => {
-                    const siteNameCol = r[cutoverHeaders.findIndex(h => h === "Site Name")]?.trim();
-                    const onAirDate = r[cutoverHeaders.findIndex(h => h === "On-Air Date")]?.trim();
-                    
-                    if (!siteNameCol || !onAirDate) return;
-                    
-                    // If we have GSM sites without dates, check if they might match this site name
-                    const gsmSitesWithoutDates = gsmBSCNames.filter(site => !siteCutoverMap[site]);
-                    
-                    gsmSitesWithoutDates.forEach(gsmSite => {
-                        const gsmLower = gsmSite.toLowerCase();
-                        const siteLower = siteNameCol.toLowerCase();
-                        
-                        // Check if they share common parts (like site numbers)
-                        const gsmNumbers = gsmLower.match(/\d+/g);
-                        const siteNumbers = siteLower.match(/\d+/g);
-                        
-                        if (gsmNumbers && siteNumbers && 
-                            gsmNumbers.some(num => siteNumbers.includes(num))) {
-                            siteCutoverMap[gsmSite] = onAirDate;
-                            console.log(`Inferred date for GSM ${gsmSite} from site ${siteNameCol}: ${onAirDate}`);
-                        }
-                    });
-                });
-
-                console.log('Site cutover map after all passes:', siteCutoverMap);
-
-                // 4. Initialize Date Filter Options and State
-                allOnAirDates = [...new Set(Object.values(siteCutoverMap))].filter(d => d).sort();
-                selectedOnAirDates = [...allOnAirDates]; // Default: Select All Dates
-                
-                // For site level: if no sites selected, select all sites from selected dates
-                if (currentLevel === 'site') {
-                    selectedSites = allSites.filter(site => {
-                        const date = siteCutoverMap[site];
-                        return date && selectedOnAirDates.includes(date);
-                    });
-                } else {
-                    // For group level, don't filter by site
-                    selectedSites = [];
+                if (allData.length === 0) {
+                    throw new Error("No data loaded from any source");
                 }
 
-                console.log('All on-air dates:', allOnAirDates);
-                console.log('Selected sites:', selectedSites);
-
-                // 5. Update UI
-                setupOnAirDateDropdown();
-                setupSiteDropdown();
-                renderCharts();
-
-            } catch(e) { 
-                console.error('Error in fetchData:', e); 
-                document.getElementById("mainChartContainer").innerHTML = 
-                    `<div class='loading' style='color:#D24726;'>Error loading data: ${e.message}</div>`;
-            }
-        }
-
-        // --- FILTER UI LOGIC (ON-AIR DATE) ---
-        function setupOnAirDateDropdown(){
-            const list = document.getElementById("onAirDateDropdownList");
-            const btn = document.getElementById("onAirDateDropdownBtn");
-            list.innerHTML = "";
-            
-            const setAll = () => { 
-                selectedOnAirDates = [...allOnAirDates]; 
-                if (currentLevel === 'site') {
-                    // Select all sites from selected dates
-                    selectedSites = allSites.filter(site => {
-                        const date = siteCutoverMap[site];
-                        return date && selectedOnAirDates.includes(date);
-                    });
-                }
-                updateDateFilterUI({close: false}); 
-                setupSiteDropdown();
-                renderCharts(); // FIXED: Use renderCharts instead of fetchData
-            };
-
-            const clearAll = () => { 
-                selectedOnAirDates = []; 
-                selectedSites = []; 
-                updateDateFilterUI({close: false}); 
-                setupSiteDropdown(); 
-                renderCharts(); // FIXED: Use renderCharts instead of fetchData
-            };
-            
-            // Actions
-            const selectAllDiv = document.createElement("div");
-            selectAllDiv.innerHTML = `<b>Select All</b>`;
-            selectAllDiv.onclick = setAll;
-            list.appendChild(selectAllDiv);
-            
-            const clearAllDiv = document.createElement("div");
-            clearAllDiv.innerHTML = `<b>Clear All</b>`;
-            clearAllDiv.onclick = clearAll;
-            list.appendChild(clearAllDiv);
-
-            // Options
-            allOnAirDates.forEach(date => {
-                const d = document.createElement("div");
-                const checked = selectedOnAirDates.includes(date) ? "checked" : "";
-                d.innerHTML = `<input type='checkbox' value='${date}' class='date-chk' ${checked}> ${date}`;
-                d.onclick = (e) => {
-                    if(e.target.tagName !== "INPUT") {
-                        const chk = d.querySelector("input");
-                        chk.checked = !chk.checked;
-                        updateSelectedDates();
-                    }
-                };
-                
-                // Also handle checkbox click
-                const checkbox = d.querySelector('input');
-                checkbox.onclick = (e) => {
-                    e.stopPropagation();
-                    updateSelectedDates();
-                };
-                
-                list.appendChild(d);
-            });
-            
-            btn.onclick = () => {
-                const isVisible = list.style.display === "block";
-                list.style.display = isVisible ? "none" : "block";
-            };
-            
-            updateDateFilterUI({close: true});
-        }
-
-        function updateSelectedDates() {
-            const list = document.getElementById("onAirDateDropdownList");
-            selectedOnAirDates = Array.from(list.querySelectorAll(".date-chk:checked")).map(c => c.value);
-            
-            if (currentLevel === 'site') {
-                // Filter sites by selected dates
-                let activeSites = allSites.filter(site => {
-                    const date = siteCutoverMap[site];
-                    return date && selectedOnAirDates.includes(date);
-                });
-                selectedSites = [...activeSites]; 
-            }
-            
-            updateDateFilterUI({close: false}); 
-            setupSiteDropdown(); 
-            renderCharts(); // Use renderCharts instead of fetchData to avoid reloading
-        }
-
-        function updateDateFilterUI(options = {close: true}) {
-            const btn = document.getElementById("onAirDateDropdownBtn");
-            const span = document.getElementById("onAirDateBtnLabel");
-            const list = document.getElementById("onAirDateDropdownList");
-            
-            span.textContent = selectedOnAirDates.length === 0 ? "No Dates Selected" : 
-                (selectedOnAirDates.length === allOnAirDates.length ? "All On-Air Dates" : `Selected (${selectedOnAirDates.length})`);
-            
-            list.querySelectorAll(".date-chk").forEach(c => {
-                c.checked = selectedOnAirDates.includes(c.value);
-            });
-            
-            if (options.close) {
-                list.style.display = "none";
-            } else {
-                list.style.display = "block";
-            }
-        }
-
-        // --- FILTER UI LOGIC (Site Name) ---
-        function setupSiteDropdown(){
-            const list = document.getElementById("siteDropdownList");
-            const btn = document.getElementById("siteDropdownBtn");
-            list.innerHTML = "";
-
-            let activeSites = allSites.filter(site => {
-                const date = siteCutoverMap[site];
-                return date && selectedOnAirDates.includes(date);
-            });
-            
-            // Filter by technology if in site level
-            if (currentLevel === 'site') {
-                activeSites = activeSites.filter(site => {
-                    // Determine technology based on site name or data
-                    const siteData = allData.find(d => d.SiteName === site);
-                    if (siteData) {
-                        return techFilters[siteData.Tech];
-                    }
-                    return true; // If no data, include it
+                // Sort the timeline
+                timeline.sort((a,b)=>{
+                    const [da,ma,ya]=a.split('/').map(Number);
+                    const [db,mb,yb]=b.split('/').map(Number);
+                    return new Date(ya,ma-1,da)-new Date(yb,mb-1,db);
                 });
                 
-                // Maintain selection
-                selectedSites = selectedSites.filter(site => activeSites.includes(site));
-            } else {
-                // For group level, don't filter by site
-                selectedSites = [];
-            }
-            
-            const setAll = () => { 
-                selectedSites = [...activeSites]; 
-                updateSiteFilterUI({close: false}); 
-                renderCharts();
-            }; 
+                renderCharts(timeline);
 
-            const clearAll = () => { 
-                selectedSites = []; 
-                updateSiteFilterUI({close: false}); 
-                renderCharts(); 
-            };
-            
-            const selectAllDiv = document.createElement("div");
-            selectAllDiv.innerHTML = `<b>Select All (${activeSites.length})</b>`;
-            selectAllDiv.onclick = setAll;
-            list.appendChild(selectAllDiv);
-            
-            const clearAllDiv = document.createElement("div");
-            clearAllDiv.innerHTML = `<b>Clear All</b>`;
-            clearAllDiv.onclick = clearAll;
-            list.appendChild(clearAllDiv);
-
-            activeSites.forEach(site => {
-                const d = document.createElement("div");
-                const checked = selectedSites.includes(site) ? "checked" : ""; 
-                d.innerHTML = `<input type='checkbox' value='${site}' class='site-chk' ${checked}> ${site}`;
-                d.onclick = (e) => {
-                    if(e.target.tagName !== "INPUT") {
-                        const chk = d.querySelector("input");
-                        chk.checked = !chk.checked;
-                        updateSelectedSites();
-                    }
-                };
-                
-                // Also handle checkbox click
-                const checkbox = d.querySelector('input');
-                checkbox.onclick = (e) => {
-                    e.stopPropagation();
-                    updateSelectedSites();
-                };
-                
-                list.appendChild(d);
-            });
-            
-            btn.onclick = () => {
-                const isVisible = list.style.display === "block";
-                list.style.display = isVisible ? "none" : "block";
-            };
-            
-            updateSiteFilterUI({close: true});
-        }
-
-        function updateSelectedSites() {
-            const list = document.getElementById("siteDropdownList");
-            selectedSites = Array.from(list.querySelectorAll(".site-chk:checked")).map(c => c.value);
-            updateSiteFilterUI({close: false});
-            renderCharts(); // Use renderCharts instead of fetchData
-        }
-
-        function updateSiteFilterUI(options = {close: true}) {
-            const btn = document.getElementById("siteDropdownBtn");
-            const span = document.getElementById("siteBtnLabel");
-            const list = document.getElementById("siteDropdownList");
-            
-            if(currentLevel === 'group') {
-                span.textContent = "All Sites";
-            } else if(selectedSites.length === 0) {
-                span.textContent = "All Active Sites";
-            } else if(selectedSites.length === allSites.length) {
-                span.textContent = `All Active Sites (${selectedSites.length})`;
-            } else if(selectedSites.length === 1) {
-                span.textContent = selectedSites[0];
-            } else {
-                span.textContent = `Selected (${selectedSites.length})`;
-            }
-
-            list.querySelectorAll(".site-chk").forEach(c => {
-                c.checked = selectedSites.includes(c.value);
-            });
-            
-            if (options.close) {
-                list.style.display = "none";
-            } else {
-                list.style.display = "block";
+            } catch(e) {
+                console.error("Data loading error:", e);
+                document.getElementById("mainChartContainer").innerHTML = "<h2 style='text-align:center;padding:40px;color:#D24726;'>Failed to load data. Check console for details.</h2>";
             }
         }
 
         // --- CHART RENDERING ---
-        function renderCharts(){
-            console.log('Rendering charts...');
-            console.log('Current level:', currentLevel);
-            console.log('Selected sites:', selectedSites);
-            console.log('Selected dates:', selectedOnAirDates);
-            console.log('Tech filters:', techFilters);
-            
+        function renderCharts(timeline = []) {
             const container = document.getElementById("mainChartContainer");
             container.innerHTML = "";
+            allCharts = {};
             
-            if (allData.length === 0) {
-                container.innerHTML = "<div class='loading'>No data available</div>";
-                return;
-            }
-            
-            // Filter KPI definitions based on selected KPIs
-            const chartsToRender = kpiDefinitions.filter(k => {
-                return selectedKpis.includes(k.tech + " - " + k.kpi) && techFilters[k.tech];
-            });
-            
-            if (chartsToRender.length === 0) {
-                container.innerHTML = "<div class='loading'>No KPIs selected. Please select KPIs from settings.</div>";
-                return;
-            }
-
-            // Filter data based on selections
-            let filteredData = [...allData];
-            
-            // Filter by technology
-            filteredData = filteredData.filter(d => techFilters[d.Tech]);
-            
-            // For site level, filter by selected sites
-            if (currentLevel === 'site' && selectedSites.length > 0) {
-                filteredData = filteredData.filter(d => selectedSites.includes(d.SiteName));
-            }
-            
-            // Filter by date if dates are selected
-            if (selectedOnAirDates.length > 0 && selectedOnAirDates.length < allOnAirDates.length) {
-                // Get sites for selected dates
-                const sitesForSelectedDates = allSites.filter(site => {
-                    const date = siteCutoverMap[site];
-                    return date && selectedOnAirDates.includes(date);
-                });
-                
-                filteredData = filteredData.filter(d => sitesForSelectedDates.includes(d.SiteName));
-            }
-
-            console.log('Filtered data count:', filteredData.length);
-
-            if (filteredData.length === 0) {
-                container.innerHTML = "<div class='loading'>No data available with current filters</div>";
-                return;
-            }
-
-            // Get timeline
-            const dateHeader = Object.keys(filteredData[0] || {}).find(h => h.toLowerCase().includes('date'));
-            if (!dateHeader) {
-                container.innerHTML = "<div class='loading' style='color:#D24726;'>Error: No date column found</div>";
-                return;
-            }
-
-            const timeline = [...new Set(filteredData.map(d=>d[dateHeader]))].filter(d => d).sort((a,b)=>{
-                const [da,ma,ya]=a.split('/').map(Number);
-                const [db,mb,yb]=b.split('/').map(Number);
-                return new Date(ya,ma-1,da)-new Date(yb,mb-1,db);
-            });
-
-            if (timeline.length === 0) {
-                container.innerHTML = "<div class='loading'>No timeline data available</div>";
+            if (timeline.length === 0 || allData.length === 0) {
+                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No data available.</h2>";
                 return;
             }
 
@@ -1159,6 +756,16 @@
                 return `${day} ${monthNames[month - 1]}`;
             });
 
+            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
+            if (!dateHeaderName) return;
+
+            const chartsToRender = kpiDefinitions.filter(k => selectedKpis.includes(k.tech + " - " + k.kpi));
+            
+            if (chartsToRender.length === 0) {
+                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No KPIs selected. Please select KPIs from settings drawer.</h2>";
+                return;
+            }
+
             chartsToRender.forEach((kpiDef, idx) => {
                 const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
                 const tech = kpiDef.tech;
@@ -1166,352 +773,370 @@
 
                 const card = document.createElement("div");
                 card.className = "chart-card";
-                
-                // Add site info for site level
-                if (currentLevel === 'site' && selectedSites.length > 0) {
-                    const siteInfo = document.createElement("div");
-                    siteInfo.className = "chart-site-info";
-                    
-                    // Count sites for this technology
-                    const techSites = selectedSites.filter(site => {
-                        const siteData = allData.find(d => d.SiteName === site && d.Tech === tech);
-                        return siteData !== undefined;
-                    });
-                    
-                    siteInfo.textContent = `${tech} Sites: ${techSites.length} selected`;
-                    card.appendChild(siteInfo);
-                }
-                
                 const wrapper = document.createElement("div");
                 wrapper.className = "chart-container";
-                
                 const canvas = document.createElement("canvas");
                 canvas.id = `chart_${idx}`;
-                
                 wrapper.appendChild(canvas);
                 card.appendChild(wrapper);
                 container.appendChild(card);
 
-                // Calculate data points
+                // Data Processing
                 const dataPoints = timeline.map(date => {
-                    const values = filteredData
-                        .filter(d => d.Tech === tech && d[dateHeader] === date)
+                    const values = allData
+                        .filter(d => d.Tech === tech && d[dateHeaderName] === date)
                         .map(d => d[kpi])
                         .filter(v => v !== null && v !== "")
                         .map(Number)
                         .filter(v => !isNaN(v));
-
+                    
                     if (values.length === 0) return null;
-
+                    
                     const kpiLower = kpi.toLowerCase();
-                    if (
-                        kpiLower.includes('%') ||
-                        kpiLower.includes('rate') ||
-                        kpiLower.includes('avg') ||
-                        kpiLower.includes('average')
-                    ) {
+                    if (kpiLower.includes('%') || kpiLower.includes('rate') || kpiLower.includes('avg') || kpiLower.includes('average')|| kpiLower.includes('max')) {
                         return values.reduce((a, b) => a + b, 0) / values.length;
                     } else {
                         return values.reduce((a, b) => a + b, 0);
                     }
                 });
 
-                // Only valid values
-                let validValues = dataPoints.filter(v => v !== null);
+                const validValues = dataPoints.filter(v => v !== null);
                 if (validValues.length === 0) {
-                    card.innerHTML = `<div class='loading'>No ${tech} data available</div>`;
+                    const noDataMsg = document.createElement("div");
+                    noDataMsg.style.textAlign = "center";
+                    noDataMsg.style.padding = "20px";
+                    noDataMsg.style.color = "#666";
+                    noDataMsg.textContent = "No data available for this KPI";
+                    card.appendChild(noDataMsg);
                     return;
                 }
 
                 let minVal = Math.min(...validValues);
                 let maxVal = Math.max(...validValues);
 
-                // Compute smart Y-axis
-                const { niceMin, niceMax, tickSpacing } = computeYAxis(minVal, maxVal);
-
-                // Chart Color
-                let chartColor;
-                if (activeCustomColor) {
-                    chartColor = activeCustomColor;
-                } else if (activeChartStyle && activeChartStyle.randomColor) {
-                    chartColor = getRandomColor();
-                } else if (activeChartStyle && activeChartStyle.borderColor) {
-                    chartColor = activeChartStyle.borderColor;
-                } else {
-                    chartColor = kpiDef.color || getRandomColor();
+                // Y-Axis Helper Functions
+                function niceNumber(value, round) {
+                    if (value === 0) return 0;
+                    const exponent = Math.floor(Math.log10(value));
+                    const fraction = value / Math.pow(10, exponent);
+                    let niceFraction;
+                    if (round) {
+                        if (fraction < 1.5) niceFraction = 1; 
+                        else if (fraction < 3) niceFraction = 2; 
+                        else if (fraction < 7) niceFraction = 5; 
+                        else niceFraction = 10;
+                    } else {
+                        if (fraction <= 1) niceFraction = 1; 
+                        else if (fraction <= 2) niceFraction = 2; 
+                        else if (fraction <= 5) niceFraction = 5; 
+                        else niceFraction = 10;
+                    }
+                    return niceFraction * Math.pow(10, exponent);
                 }
+      
+                function computeYAxis(minVal, maxVal) {
+                    if (minVal >= 98 && maxVal <= 100) {
+                        return { niceMin: 98, niceMax: 100, tickSpacing: 0.5 };
+                    }
+                    let minV = minVal * 0.95; 
+                    let maxV = maxVal * 1.05;
+                    if (maxVal < 10) minV = 0;
+                    if (maxVal > 90 && maxVal <= 100) maxV = 100;
+                    let range = maxV - minV;
+                    if (range === 0) range = Math.abs(maxV) * 0.1 || 1;
+                    const tickSpacing = niceNumber(range / 5, true);
+                    const niceMin = Math.floor(minV / tickSpacing) * tickSpacing;
+                    const niceMax = Math.ceil(maxV / tickSpacing) * tickSpacing;
+                    return { niceMin, niceMax, tickSpacing };
+                }
+                
+                const { niceMin, niceMax, tickSpacing } = computeYAxis(minVal, maxVal);
+                let chartColor = techColors[tech];
 
                 // Chart Config
                 const chartConfig = {
                     type: 'line',
                     data: {
                         labels: timelineLabels,
-                        datasets: [{
-                            label: (currentLevel === 'site' && selectedSites.length > 0 && dataPoints.some(p => p !== null)) ? "Aggregate" : "No Data",
+                        datasets: [{ 
+                            label: kpi,
                             data: dataPoints,
                             borderColor: chartColor,
-                            backgroundColor: 'transparent',
-                            borderWidth: 2,
-                            pointRadius: 3,
-                            tension: 0.1,
+                            backgroundColor: activeChartStyle && activeChartStyle.fill ? 
+                                chartColor.replace(')', ', 0.1)').replace('rgb', 'rgba') : 'transparent',
+                            borderWidth: activeChartStyle ? activeChartStyle.borderWidth : 2, 
+                            pointRadius: activeChartStyle ? activeChartStyle.pointRadius : 5, 
+                            pointBackgroundColor: chartColor,
+                            pointBorderColor: chartColor,
+                            pointBorderWidth: 1,
+                            tension: activeChartStyle ? activeChartStyle.tension : 0.4, 
                             spanGaps: true
                         }]
                     },
                     options: {
-                        responsive: true,
+                        responsive: true, 
                         maintainAspectRatio: false,
-                        animation: {
-                            x: {
-                                type: 'number',
-                                easing: 'linear',
-                                duration: 500,
-                                from: NaN,
-                                delay: (ctx) => ctx.index * 30
+                        plugins: { 
+                            legend: { 
+                                display: false 
                             },
-                            y: { duration: 0 }
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            title: {
-                                display: true,
-                                text: kpi,
-                                font: { size: 14, weight: 'bold' },
+                            title: { 
+                                display: true, 
+                                text: `${tech} - ${kpi}`,
+                                font: { 
+                                    size: 14, 
+                                    weight: 'bold' 
+                                }, 
                                 color: '#333'
                             }
                         },
                         scales: {
-                            x: {
-                                ticks: { font: { size: 8 } },
-                                grid: { display: false }
+                            x: { 
+                                ticks: { 
+                                    font: { size: 8 } 
+                                }, 
+                                grid: { 
+                                    display: false 
+                                } 
                             },
-                            y: {
-                                grid: { color: '#eee' },
-                                min: niceMin,
-                                max: niceMax,
-                                ticks: { stepSize: tickSpacing },
-                                beginAtZero: maxVal < 10
+                            y: { 
+                                grid: { 
+                                    color: '#eee' 
+                                }, 
+                                min: niceMin, 
+                                max: niceMax, 
+                                ticks: { 
+                                    stepSize: tickSpacing 
+                                }, 
+                                beginAtZero: maxVal < 10 
                             }
                         }
                     }
                 };
 
-                // Apply active chart style if set
                 if (activeChartStyle) {
                     const style = activeChartStyle;
                     chartConfig.data.datasets[0].borderWidth = style.borderWidth;
                     chartConfig.data.datasets[0].pointRadius = style.pointRadius;
                     chartConfig.data.datasets[0].borderDash = style.borderDash;
                     chartConfig.data.datasets[0].tension = style.tension;
-                    
-                    if (!activeCustomColor && !style.randomColor && style.borderColor) {
-                        chartConfig.data.datasets[0].borderColor = style.borderColor;
+                    chartConfig.data.datasets[0].fill = style.fill;
+                    if (style.fill && style.backgroundColor) {
+                        chartConfig.data.datasets[0].backgroundColor = style.backgroundColor.replace('47, 128, 237', 
+                            chartColor.substring(1).match(/.{2}/g).map(x => parseInt(x, 16)).join(', '));
                     }
                 }
 
-                // Create chart
                 try {
-                    new Chart(canvas.getContext("2d"), chartConfig);
+                    allCharts[fullKpiName] = new Chart(canvas.getContext("2d"), chartConfig);
                 } catch (e) {
-                    console.error(`Chart error ${fullKpiName}:`, e);
-                    card.innerHTML = `<div class='loading' style='color:#D24726;'>Error creating chart</div>`;
+                    console.error(`Error creating chart for ${fullKpiName}:`, e);
+                    const errorMsg = document.createElement("div");
+                    errorMsg.style.textAlign = "center";
+                    errorMsg.style.padding = "20px";
+                    errorMsg.style.color = "#D24726";
+                    errorMsg.textContent = "Error creating chart";
+                    card.appendChild(errorMsg);
                 }
             });
         }
-
-        function computeYAxis(minVal, maxVal) {
-            // Special rule: if min >= 98 and max <= 100
-            if (minVal >= 97 && maxVal <= 100) {
-                return { niceMin: 96, niceMax: 100, tickSpacing: 1 };
-            }
-
-            // ±5% buffer
-            let minV = minVal * 0.95;
-            let maxV = maxVal * 1.05;
-
-            // Small KPI rule
-            if (maxVal < 10) minV = 0;
-
-            // Cap 90–100 → ymax = 100
-            if (maxVal > 90 && maxVal <= 100) maxV = 100;
-
-            let range = maxV - minV;
-            if (range === 0) range = Math.abs(maxV) * 0.1 || 1;
-
-            // Choose nice tick spacing
-            const tickSpacing = niceNumber(range / 5, true);
-
-            // Align min/max to nice numbers
-            const niceMin = Math.floor(minV / tickSpacing) * tickSpacing;
-            const niceMax = Math.ceil(maxV / tickSpacing) * tickSpacing;
-
-            return { niceMin, niceMax, tickSpacing };
-        }
-
-        function niceNumber(value, round) {
-            const exponent = Math.floor(Math.log10(value));
-            const fraction = value / Math.pow(10, exponent);
-
-            let niceFraction;
-            if (round) {
-                if (fraction < 1.5) niceFraction = 1;
-                else if (fraction < 3) niceFraction = 2;
-                else if (fraction < 7) niceFraction = 5;
-                else niceFraction = 10;
-            } else {
-                if (fraction <= 1) niceFraction = 1;
-                else if (fraction <= 2) niceFraction = 2;
-                else if (fraction <= 5) niceFraction = 5;
-                else niceFraction = 10;
-            }
-
-            return niceFraction * Math.pow(10, exponent);
-        }
-
-        function getRandomColor() {
-            const colors = ['#2F80ED', '#27AE60', '#D24726', '#8E44AD', '#F39C12', '#2980B9'];
-            return colors[Math.floor(Math.random() * colors.length)];
-        }
-
-        // --- DRAWER FUNCTIONS ---
+        
+        // --- KPI DRAWER FUNCTIONS ---
         function toggleDrawer(){
             const d = document.getElementById("kpiDrawer");
             d.classList.toggle("open");
             if(d.classList.contains("open")) populateKpiOptions();
         }
 
-        function toggleChartStyleDrawer(){
-            const d = document.getElementById("chartStyleDrawer");
-            d.classList.toggle("open");
-        }
-
-        // --- CHART STYLING FUNCTIONS ---
-        function applyChartStyle(styleIndex){
-            activeChartStyle = chartStyles[styleIndex];
-            
-            document.querySelectorAll('.style-button').forEach((btn, idx) => {
-                if (idx === styleIndex) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-            
-            renderCharts();
-        }
-
-        function applyCustomColor(){
-            activeCustomColor = document.getElementById("customChartColor").value;
-            renderCharts();
-        }
-
-        // --- KPI DRAWER FUNCTIONS ---
         function populateKpiOptions(){
             const list = document.getElementById("kpiOptionsList");
             list.innerHTML = "";
-            
-            document.getElementById('drawerHeaderTitle').textContent = 'KPI Settings';
-
             let currentTech = "";
+
             kpiDefinitions.forEach(kpiDef => {
+                const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
+                
                 if (kpiDef.tech !== currentTech) {
                     list.innerHTML += `<div class="kpi-group-title">${kpiDef.tech} KPIs</div>`;
                     currentTech = kpiDef.tech;
                 }
-                
-                const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
+
                 const checked = selectedKpis.includes(fullKpiName) ? "checked" : "";
-                const div = document.createElement("div");
-                div.className = "kpi-option";
-                div.innerHTML = `<input type='checkbox' class='kpi-chk' value='${fullKpiName}' ${checked}> ${kpiDef.kpi}`;
-                div.onclick = (e) => {
-                    if(e.target.tagName !== "INPUT") {
-                        const chk = div.querySelector("input");
+                const d = document.createElement("label");
+                d.className = "kpi-option";
+                d.innerHTML = `<input type='checkbox' value='${fullKpiName}' class='kpi-chk' ${checked}> ${kpiDef.kpi}`;
+                d.onclick = (e) => {
+                    const chk = d.querySelector("input");
+                    if (e.target.tagName !== "INPUT") {
                         chk.checked = !chk.checked;
                     }
                 };
-                list.appendChild(div);
+                list.appendChild(d);
             });
+        }
+        
+        function applyKpis() {
+            const list = document.getElementById("kpiOptionsList");
+            selectedKpis = Array.from(list.querySelectorAll(".kpi-chk:checked")).map(c => c.value);
+            document.getElementById("kpiDrawer").classList.remove("open");
+            
+            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
+            if (dateHeaderName && allData.length > 0) {
+                const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
+                    const [da,ma,ya] = a.split('/').map(Number);
+                    const [db,mb,yb] = b.split('/').map(Number);
+                    return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
+                });
+                renderCharts(timeline);
+            }
         }
 
         function selectVisibleKpis() {
             selectedKpis = kpiDefinitions.map(k => k.tech + " - " + k.kpi);
             populateKpiOptions();
         }
-
+        
         function clearVisibleKpis() {
             selectedKpis = [];
             populateKpiOptions();
         }
 
-        function applyKpis(){
-            const chks = document.querySelectorAll(".kpi-chk");
-            selectedKpis = Array.from(chks).filter(c => c.checked).map(c => c.value);
-            
-            toggleDrawer();
-            renderCharts();
+        // --- CHART STYLING FUNCTIONS ---
+        function toggleChartStyleDrawer(){
+            const d = document.getElementById("chartStyleDrawer");
+            d.classList.toggle("open");
         }
 
-        // --- PPT EXPORT ---
-        function getLayoutConfig(count) {
-            const slideWidth = 10.0;
-            const slideHeight = 5.625;
+        function applyChartStyle(styleIndex){
+            activeChartStyle = chartStyles[styleIndex];
+            document.querySelectorAll('.style-button').forEach((btn, idx) => {
+                if (idx === styleIndex) { 
+                    btn.classList.add('active'); 
+                } else { 
+                    btn.classList.remove('active'); 
+                }
+            });
             
-            const marginX = 0.2;	
-            const marginTop = 0.9;
-            const marginBottom = 0.2;
-            const gap = 0.15;
-
-            let rows, cols;
-
-            switch(parseInt(count)) {
-                case 1: rows = 1; cols = 1; break;
-                case 2: rows = 1; cols = 2; break;
-                case 3: rows = 2; cols = 2; break;
-                case 4: rows = 2; cols = 2; break;
-                case 6: rows = 2; cols = 3; break;
-                case 9: rows = 3; cols = 3; break;
-                default: rows = 2; cols = 2;
+            updateTechColorButtons();
+            
+            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
+            if (dateHeaderName && allData.length > 0) {
+                const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
+                    const [da,ma,ya] = a.split('/').map(Number);
+                    const [db,mb,yb] = b.split('/').map(Number);
+                    return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
+                });
+                renderCharts(timeline);
             }
-
-            const usableW = slideWidth - (marginX * 2);
-            const usableH = slideHeight - marginTop - marginBottom;
-
-            const chartW = (usableW - ((cols - 1) * gap)) / cols;
-            const chartH = (usableH - ((rows - 1) * gap)) / rows;
-
-            return { rows, cols, chartW, chartH, gap, marginX, marginTop, slideWidth, slideHeight };
         }
 
+        function updateTechColorButtons() {
+            const gsmBtn = document.querySelector('.tech-color-btn.gsm');
+            const lteBtn = document.querySelector('.tech-color-btn.lte');
+            
+            if (gsmBtn) gsmBtn.style.background = techColors.GSM;
+            if (lteBtn) lteBtn.style.background = techColors.LTE;
+        }
+
+        // --- COLOR PICKER FUNCTIONS ---
+        function openColorPicker(tech) {
+            selectedTechForColor = tech;
+            selectedColor = techColors[tech];
+            document.getElementById('colorPickerTitle').textContent = `Select Color for ${tech}`;
+            
+            const colorGrid = document.getElementById('colorPickerGrid');
+            colorGrid.innerHTML = '';
+            
+            colorPalette.forEach(color => {
+                const colorOption = document.createElement('div');
+                colorOption.className = 'color-option';
+                colorOption.style.backgroundColor = color;
+                colorOption.dataset.color = color;
+                
+                if (color === selectedColor) {
+                    colorOption.classList.add('selected');
+                }
+                
+                colorOption.onclick = () => {
+                    document.querySelectorAll('.color-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    colorOption.classList.add('selected');
+                    selectedColor = color;
+                };
+                
+                colorGrid.appendChild(colorOption);
+            });
+            
+            document.getElementById('colorPickerModal').style.display = 'flex';
+        }
+
+        function closeColorPicker() {
+            document.getElementById('colorPickerModal').style.display = 'none';
+        }
+
+        function applySelectedColor() {
+            if (selectedTechForColor && selectedColor) {
+                techColors[selectedTechForColor] = selectedColor;
+                
+                kpiDefinitions.forEach(kpi => {
+                    if (kpi.tech === selectedTechForColor) {
+                        kpi.color = selectedColor;
+                    }
+                });
+                
+                updateTechColorButtons();
+                
+                const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
+                if (dateHeaderName && allData.length > 0) {
+                    const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
+                        const [da,ma,ya] = a.split('/').map(Number);
+                        const [db,mb,yb] = b.split('/').map(Number);
+                        return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
+                    });
+                    renderCharts(timeline);
+                }
+                
+                closeColorPicker();
+            }
+        }
+
+        // --- PPT EXPORT FUNCTIONS ---
         function openPPTExport() {
-            const canvases = document.querySelectorAll("canvas");
-            if(canvases.length === 0) { 
-                alert("No charts to export."); 
-                return; 
+            const charts = document.querySelectorAll("canvas");
+            if (charts.length === 0) {
+                alert("No charts to export. Please select some KPIs first.");
+                return;
             }
             
-            // Setup tech export options
             const techOptions = document.getElementById('techExportOptions');
             techOptions.innerHTML = '';
+            
             for (const tech in selectedTechForExport) {
-                techOptions.innerHTML += `
-                    <div class="tech-export-option">
-                        <input type="checkbox" id="export-${tech}" ${selectedTechForExport[tech] ? 'checked' : ''} onchange="updateTechExportSelection('${tech}', this.checked)">
-                        <label for="export-${tech}">${tech}</label>
-                    </div>
+                const div = document.createElement('div');
+                div.className = 'tech-export-option';
+                div.innerHTML = `
+                    <input type="checkbox" id="export-${tech}" ${selectedTechForExport[tech] ? 'checked' : ''} 
+                           onchange="updateTechExportSelection('${tech}', this.checked)">
+                    <label for="export-${tech}">${tech}</label>
                 `;
+                techOptions.appendChild(div);
             }
             
-            // Highlight active layout button
             document.querySelectorAll('.graph-options button').forEach(btn => {
-                btn.classList.toggle('active', parseInt(btn.dataset.count) === pptLayout);
+                if (parseInt(btn.dataset.count) === pptLayout) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
             });
             
             updatePPTPreview(pptLayout);
-            document.getElementById("pptModal").style.display = "flex";
+            document.getElementById('pptModal').style.display = 'flex';
         }
 
-        function closePPTExport() { 
-            document.getElementById("pptModal").style.display = "none"; 
+        function closePPTExport() {
+            document.getElementById('pptModal').style.display = 'none';
         }
 
         function updateTechExportSelection(tech, isSelected) {
@@ -1522,117 +1147,272 @@
         function updatePPTPreview(layoutCount) {
             pptLayout = layoutCount;
             
-            // Highlight active layout button
             document.querySelectorAll('.graph-options button').forEach(btn => {
-                btn.classList.toggle('active', parseInt(btn.dataset.count) === layoutCount);
+                if (parseInt(btn.dataset.count) === layoutCount) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
             });
             
-            const body = document.getElementById("previewBody");
-            const canvases = document.querySelectorAll("canvas");
+            // Get ALL selected charts mixed together
+            const allChartsForExport = [];
+            const chartElements = document.querySelectorAll("canvas");
             
-            document.getElementById("previewTitle").textContent = `PPT Export Preview (${layoutCount} Graphs per Slide)`;
-            body.innerHTML = "";
-
-            const layout = getLayoutConfig(layoutCount);
-            const gridTemplateCols = `repeat(${layout.cols}, 1fr)`;
-
-            for(let i=0; i<canvases.length; i+=layoutCount){
-                const slideDiv = document.createElement("div");
-                slideDiv.className = "preview-slide";
-                
-                const slideTitle = document.createElement("div");
-                slideTitle.className = "preview-slide-title";
-                slideTitle.textContent = `Slide ${Math.floor(i/layoutCount) + 1}`;
-                slideDiv.appendChild(slideTitle);
-
-                const grid = document.createElement("div");
-                grid.className = "preview-grid";
-                grid.style.display = "grid";
-                grid.style.gridTemplateColumns = gridTemplateCols;
-                grid.style.gap = "10px";
-                grid.style.height = "100%";
-                grid.style.paddingTop = "30px";
-                grid.style.alignContent = "start";
-
-                for(let j=0; j<layoutCount; j++){
-                    if(i+j < canvases.length){
-                        const c = canvases[i+j];
-                        const box = createPreviewBox(c);	
-                        grid.appendChild(box);
+            chartElements.forEach((canvas, index) => {
+                const chart = Chart.getChart(canvas.id);
+                if (chart) {
+                    const title = chart.options.plugins.title.text;
+                    const tech = title.split(' - ')[0];
+                    
+                    if (selectedTechForExport[tech]) {
+                        allChartsForExport.push({
+                            canvas: canvas,
+                            chart: chart,
+                            title: title,
+                            tech: tech
+                        });
                     }
                 }
+            });
+            
+            if (allChartsForExport.length === 0) {
+                document.getElementById('previewBody').innerHTML = 
+                    '<div style="text-align:center;padding:40px;color:#666;">No charts selected for export.</div>';
+                return;
+            }
+            
+            const previewBody = document.getElementById('previewBody');
+            previewBody.innerHTML = '';
+            
+            // Calculate grid layout based on selected layout
+            const layout = getLayoutConfig(layoutCount);
+            const gridTemplateCols = `repeat(${layout.cols}, 1fr)`;
+            const gridTemplateRows = `repeat(${layout.rows}, 1fr)`;
+            
+            for (let i = 0; i < allChartsForExport.length; i += layoutCount) {
+                const slideDiv = document.createElement('div');
+                slideDiv.className = 'preview-slide';
+                
+                const slideTitle = document.createElement('div');
+                slideTitle.className = 'preview-slide-title';
+                slideTitle.textContent = `Slide ${Math.floor(i/layoutCount) + 1}`;
+                slideDiv.appendChild(slideTitle);
+                
+                const grid = document.createElement('div');
+                grid.className = 'preview-grid';
+                grid.style.display = 'grid';
+                grid.style.gridTemplateColumns = gridTemplateCols;
+                grid.style.gridTemplateRows = gridTemplateRows;
+                grid.style.gap = '10px';
+                grid.style.height = '100%';
+                grid.style.paddingTop = '30px';
+                grid.style.alignContent = 'start';
+                
+                // Fill the grid
+                for (let j = 0; j < layoutCount; j++) {
+                    const cellIndex = i + j;
+                    if (cellIndex < allChartsForExport.length) {
+                        const chartData = allChartsForExport[cellIndex];
+                        const box = createPreviewBox(chartData.canvas, chartData.title);
+                        grid.appendChild(box);
+                    } else {
+                        // Empty cell for 1-0-0 layout
+                        const emptyBox = document.createElement('div');
+                        emptyBox.className = 'preview-img-box';
+                        emptyBox.style.border = '1px dashed #eee';
+                        emptyBox.style.background = '#f9f9f9';
+                        emptyBox.innerHTML = '<div style="color:#999;font-size:12px;"></div>';
+                        grid.appendChild(emptyBox);
+                    }
+                }
+                
                 slideDiv.appendChild(grid);
-                body.appendChild(slideDiv);
+                previewBody.appendChild(slideDiv);
             }
         }
 
-        function createPreviewBox(canvas) {
-            const box = document.createElement("div");
-            box.className = "preview-img-box";
+        function getLayoutConfig(count) {
+            let rows, cols;
+            switch(parseInt(count)) {
+                case 1: rows = 1; cols = 1; break;
+                case 2: rows = 1; cols = 2; break;
+                case 3: rows = 2; cols = 2; break;
+                case 4: rows = 2; cols = 2; break;
+                case 6: rows = 2; cols = 3; break;
+                case 9: rows = 3; cols = 3; break;
+                default: rows = 3; cols = 3;
+            }
+            return { rows, cols };
+        }
+
+        function createPreviewBox(canvas, title) {
+            const box = document.createElement('div');
+            box.className = 'preview-img-box';
             
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.drawImage(canvas, 0, 0);
+            try {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(canvas, 0, 0);
+                const imgData = tempCanvas.toDataURL("image/png");
+                
+                const img = document.createElement('img');
+                img.src = imgData;
+                img.style.maxHeight = '100%';
+                img.style.maxWidth = '100%';
+                img.style.objectFit = 'contain';
+                
+                const titleLabel = document.createElement('div');
+                titleLabel.textContent = title.length > 50 ? title.substring(0, 50) + '...' : title;
+                titleLabel.style.fontSize = '12px';
+                titleLabel.style.color = '#666';
+                titleLabel.style.marginTop = '5px';
+                titleLabel.style.textAlign = 'center';
+                
+                box.appendChild(img);
+                box.appendChild(titleLabel);
+            } catch (e) {
+                box.innerHTML = '<div style="color:#D24726;font-size:12px;">Preview Error</div>';
+            }
             
-            const img = document.createElement("img");
-            img.src = tempCanvas.toDataURL("image/png");
-            img.style.maxHeight = "100%";
-            img.style.maxWidth = "100%";
-            img.style.objectFit = "contain";
-            
-            box.appendChild(img);
             return box;
         }
 
-        async function downloadPPT(){
+        async function downloadPPT() {
             const pptx = new PptxGenJS();
             pptx.layout = 'LAYOUT_16x9';
             
             // Title slide
-            let slide = pptx.addSlide();
-            slide.addText("KPI Dashboard Report", { x:0.5, y:2, fontSize:32, bold:true, color:'2F80ED' });
-            slide.addText(`Generated: ${new Date().toLocaleDateString()}`, { x:0.5, y:3, fontSize:14 });
-
-            const canvases = document.querySelectorAll("canvas");
-            const count = pptLayout;
+            const titleSlide = pptx.addSlide();
+            titleSlide.addText('KPI Dashboard Report - GSM/LTE', {
+                x: 0.5, y: 1, w: 9, h: 1,
+                fontSize: 36, bold: true, color: '2F80ED'
+            });
             
-            const layout = getLayoutConfig(count);
-            const effectiveMarginTop = 0.2;
-
-            for(let i=0; i<canvases.length; i+=count){
-                let slide = pptx.addSlide();
-
-                for(let j=0; j<count; j++){
-                    if(i+j < canvases.length){
-                        const c = canvases[i+j];
-                        
-                        const colIndex = j % layout.cols;
-                        const rowIndex = Math.floor(j / layout.cols);
-
-                        const xPos = layout.marginX + (colIndex * (layout.chartW + layout.gap));
-                        const yPos = effectiveMarginTop + (rowIndex * (layout.chartH + layout.gap));
-                        
-                        const imgData = c.toDataURL("image/png");
-                        slide.addImage({	
-                            data: imgData,	
-                            x: xPos,	
-                            y: yPos,	
-                            w: layout.chartW,	
-                            h: layout.chartH	
+            const date = new Date().toLocaleDateString();
+            titleSlide.addText(`Generated: ${date}`, {
+                x: 0.5, y: 2, w: 9, h: 0.5,
+                fontSize: 16, color: '666666'
+            });
+            
+            // Get all selected charts mixed together
+            const allChartsForExport = [];
+            const chartElements = document.querySelectorAll("canvas");
+            
+            chartElements.forEach((canvas, index) => {
+                const chart = Chart.getChart(canvas.id);
+                if (chart) {
+                    const title = chart.options.plugins.title.text;
+                    const tech = title.split(' - ')[0];
+                    
+                    if (selectedTechForExport[tech]) {
+                        allChartsForExport.push({
+                            canvas: canvas,
+                            chart: chart,
+                            title: title,
+                            tech: tech
                         });
                     }
                 }
+            });
+            
+            if (allChartsForExport.length === 0) {
+                alert("No charts selected for export.");
+                return;
             }
-
-            pptx.writeFile({ fileName: `KPI_Report_${new Date().getTime()}.pptx` });
-            closePPTExport();
-        }
-
-        // --- REFRESH FUNCTION ---
-        function refreshData() {
-            fetchData();
+            
+            // PPT layout calculations
+            const layout = getLayoutConfig(pptLayout);
+            const slideWidth = 10.0;
+            const slideHeight = 5.625;
+            const marginX = 0.5;
+            const marginTop = 0.8;
+            const marginBottom = 0.5;
+            const gap = 0.2;
+            
+            const usableW = slideWidth - (marginX * 2);
+            const usableH = slideHeight - marginTop - marginBottom;
+            const chartW = (usableW - ((layout.cols - 1) * gap)) / layout.cols;
+            const chartH = (usableH - ((layout.rows - 1) * gap)) / layout.rows;
+            
+            // Add chart slides
+            for (let i = 0; i < allChartsForExport.length; i += pptLayout) {
+                const slide = pptx.addSlide();
+                
+                for (let j = 0; j < pptLayout; j++) {
+                    const chartIndex = i + j;
+                    if (chartIndex < allChartsForExport.length) {
+                        const chartData = allChartsForExport[chartIndex];
+                        const rowIndex = Math.floor(j / layout.cols);
+                        const colIndex = j % layout.cols;
+                        
+                        const xPos = marginX + (colIndex * (chartW + gap));
+                        const yPos = marginTop + (rowIndex * (chartH + gap));
+                        
+                        try {
+                            slide.addImage({
+                                data: chartData.canvas.toDataURL("image/png"),
+                                x: xPos,
+                                y: yPos,
+                                w: chartW,
+                                h: chartH
+                            });
+                            
+                            // Add chart title
+                            const shortTitle = chartData.title.length > 40 ? 
+                                chartData.title.substring(0, 40) + '...' : chartData.title;
+                            slide.addText(shortTitle, {
+                                x: xPos,
+                                y: yPos - 0.25,
+                                w: chartW,
+                                h: 0.25,
+                                fontSize: 7,
+                                bold: true,
+                                color: '333333'
+                            });
+                        } catch (e) {
+                            console.error(`Error adding chart to PPT:`, e);
+                        }
+                    }
+                }
+            }
+            
+            // Summary slide
+            const summarySlide = pptx.addSlide();
+            summarySlide.addText('Summary', {
+                x: 0.5, y: 0.5, w: 9, h: 0.5,
+                fontSize: 28, bold: true, color: '2F80ED'
+            });
+            
+            let summaryText = `Total Charts: ${allChartsForExport.length}\n`;
+            summaryText += `Layout: ${layout.rows}x${layout.cols} (${pptLayout} per slide)\n`;
+            summaryText += `Total Slides: ${Math.ceil(allChartsForExport.length / pptLayout) + 2}\n\n`;
+            
+            // Count by technology
+            const techCount = {};
+            allChartsForExport.forEach(chart => {
+                techCount[chart.tech] = (techCount[chart.tech] || 0) + 1;
+            });
+            
+            for (const tech in techCount) {
+                summaryText += `${tech}: ${techCount[tech]} charts\n`;
+            }
+            
+            summarySlide.addText(summaryText, {
+                x: 0.5, y: 1.5, w: 9, h: 3,
+                fontSize: 14, color: '333333'
+            });
+            
+            // Download
+            const timestamp = new Date().getTime();
+            try {
+                await pptx.writeFile({ fileName: `GSM_LTE_KPI_Report_${timestamp}.pptx` });
+                closePPTExport();
+            } catch (e) {
+                alert("Error generating PPT: " + e.message);
+            }
         }
     </script>
 </body>
