@@ -1,1997 +1,325 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>KPI Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
-    <style>
-        /* --- BASE STYLES --- */
-        body { 
-            font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin:0; 
-            padding:0; 
-            background:#f4f7f6; 
-            overflow-x:hidden; 
-        }
-        header { 
-            text-align:center; 
-            padding:15px 0; 
-            font-size:28px; 
-            font-weight:700; 
-            color:#333; 
-            background:white; 
-            box-shadow:0 2px 4px rgba(0,0,0,0.05); 
-            margin-bottom:15px; 
-        }
-        
-        /* --- CONTROLS --- */
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        
-        /* --- LEVEL SWITCH --- */
-        .level-switch {
-            display: flex;
-            background: #f0f0f0;
-            border-radius: 8px;
-            padding: 4px;
-            margin: 0 10px;
-        }
-        .level-btn {
-            padding: 8px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: 0.2s;
-            border: none;
-            background: transparent;
-            color: #666;
-        }
-        .level-btn.active {
-            background: #2F80ED;
-            color: white;
-            box-shadow: 0 2px 4px rgba(47, 128, 237, 0.3);
-        }
-        
-        /* --- SITE SELECTOR --- */
-        .site-selector-container {
-            display: none;
-            margin: 10px 0;
-            padding: 10px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            max-width: 800px;
-            margin: 0 auto 20px auto;
-        }
-        .site-selector-container.active {
-            display: block;
-        }
-        .site-search {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-        .site-list-container {
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #eee;
-            border-radius: 6px;
-            padding: 10px;
-            background: #f9f9f9;
-        }
-        .site-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 5px;
-        }
-        .site-item {
-            padding: 5px 10px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: 0.2s;
-        }
-        .site-item:hover {
-            background: #f0f0f0;
-        }
-        .site-item.selected {
-            background: #2F80ED;
-            color: white;
-            border-color: #2F80ED;
-        }
-        .site-item.tech-gsm {
-            border-left: 3px solid #2F80ED;
-        }
-        .site-item.tech-lte {
-            border-left: 3px solid #27AE60;
-        }
-        .site-item.tech-nr {
-            border-left: 3px solid #D24726;
-        }
-        .site-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            justify-content: flex-end;
-        }
-        
-        /* --- TECH FILTERS --- */
-        .tech-filters {
-            display: flex;
-            gap: 5px;
-            margin: 0 10px;
-        }
-        .tech-filter-btn {
-            padding: 6px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            background: white;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            transition: 0.2s;
-        }
-        .tech-filter-btn.active {
-            background: #2F80ED;
-            color: white;
-            border-color: #2F80ED;
-        }
-        .tech-filter-btn.gsm.active {
-            background: #2F80ED;
-        }
-        .tech-filter-btn.lte.active {
-            background: #27AE60;
-        }
-        .tech-filter-btn.nr.active {
-            background: #D24726;
-        }
-        
-        /* --- DRAWER TOGGLE BUTTONS --- */
-        .drawer-toggle-buttons { 
-            position: fixed; 
-            top: 20px; 
-            right: 0; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 8px; 
-            z-index: 900; 
-        }
-        .chartStyleDrawerToggle, .kpiDrawerToggle { 
-            width: 36px; 
-            height: 36px; 
-            background: #8E44AD; 
-            color: white; 
-            border-radius: 6px 0 0 6px; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 20px; 
-            transition: 0.2s; 
-        }
-        .kpiDrawerToggle { 
-            background: #2F80ED; 
-            margin-top: 8px; 
-        }
-        .chartStyleDrawerToggle:hover, .kpiDrawerToggle:hover { 
-            opacity: 0.9; 
-        }
-        
-        /* --- GRID LAYOUT (3 Graphs per row) --- */
-        .chart-grid { 
-            display:grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap:20px; 
-            padding:0 20px 40px 20px; 
-            max-width: 1800px; 
-            margin: 0 auto; 
-        }
-        @media (max-width: 1400px) { 
-            .chart-grid { 
-                grid-template-columns: repeat(2, 1fr); 
-            } 
-        }
-        @media (max-width: 768px) { 
-            .chart-grid { 
-                grid-template-columns: 1fr; 
-            } 
-        }
-        
-        /* --- CARDS & CHARTS --- */
-        .chart-card { 
-            background:white; 
-            border-radius:8px; 
-            padding:15px; 
-            box-shadow:0 2px 8px rgba(0,0,0,0.08); 
-            display:flex; 
-            flex-direction:column; 
-        }
-        .chart-container { 
-            position: relative; 
-            height: 280px; 
-            width: 100%; 
-        }
-        .chart-site-info {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 5px;
-            padding: 3px 8px;
-            background: #f5f5f5;
-            border-radius: 4px;
-            display: inline-block;
-        }
-        
-        /* --- DRAWERS --- */
-        .chartStyleDrawer, .kpiDrawer { 
-            position: fixed; 
-            top: 0; 
-            right: 0; 
-            width: 320px; 
-            height: 100%; 
-            background: white; 
-            box-shadow: -2px 0 10px rgba(0,0,0,0.1); 
-            z-index: 1000; 
-            transform: translateX(100%); 
-            transition: 0.3s; 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column; 
-        }
-        .chartStyleDrawer.open, .kpiDrawer.open { 
-            transform: translateX(0); 
-        }
-        .drawer-header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 15px; 
-            padding-bottom: 10px; 
-            border-bottom: 1px solid #eee; 
-        }
-        .kpi-options-body, .style-options-body { 
-            flex-grow: 1; 
-            overflow-y: auto; 
-            padding-right: 5px; 
-            padding-bottom: 40px; 
-        }
-        .drawer-controls { 
-            display: flex; 
-            gap: 5px; 
-            align-items: center; 
-        }
-        .drawer-controls .action-btn { 
-            padding: 6px 10px; 
-            font-size: 13px; 
-        }
-
-        /* --- KPI OPTIONS STYLING --- */
-        .kpi-group-title { 
-            font-weight: bold; 
-            color: #2F80ED; 
-            margin-top: 15px; 
-            margin-bottom: 5px; 
-            border-bottom: 1px solid #eee; 
-            padding-bottom: 3px; 
-        }
-        .kpi-option { 
-            display: block; 
-            margin-bottom: 5px; 
-            cursor: pointer; 
-            user-select: none; 
-        }
-        .kpi-option input[type="checkbox"] { 
-            margin-right: 8px; 
-        }
-        
-        /* --- Chart Style Buttons --- */
-        .style-button { 
-            padding: 10px 12px; 
-            margin: 6px 0; 
-            background: #f5f5f5; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-weight: 500; 
-            border: 1px solid #ddd; 
-            transition: 0.2s; 
-        }
-        .style-button:hover { 
-            background: #e9e9e9; 
-        }
-        .style-button.active { 
-            background: #8E44AD; 
-            color: white; 
-            border-color: #8E44AD; 
-        }
-        
-        /* --- TECH COLOR BUTTONS --- */
-        .tech-color-buttons {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin-top: 15px;
-        }
-        .tech-color-btn {
-            padding: 8px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            color: white;
-            text-align: center;
-        }
-        .tech-color-btn.gsm { background: #2F80ED; }
-        .tech-color-btn.lte { background: #27AE60; }
-        .tech-color-btn.nr { background: #D24726; }
-
-        /* --- COLOR PICKER MODAL --- */
-        .color-picker-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 2000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-        }
-        .color-picker-content {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            width: 300px;
-            text-align: center;
-        }
-        .color-picker-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin: 15px 0;
-        }
-        .color-option {
-            width: 50px;
-            height: 50px;
-            border-radius: 6px;
-            cursor: pointer;
-            margin: 0 auto;
-            border: 2px solid transparent;
-        }
-        .color-option.selected {
-            border: 2px solid #333;
-        }
-        .color-picker-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 15px;
-        }
-        
-        /* --- PPT EXPORT MODAL --- */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            z-index: 2001;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(3px);
-        }
-        .modal-content {
-            background: white;
-            width: 95%;
-            max-width: 1400px;
-            height: 90vh;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-        .modal-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: bold;
-            font-size: 18px;
-        }
-        .modal-body {
-            flex: 1;
-            display: flex;
-            padding: 0;
-            overflow: hidden;
-        }
-        #previewBody {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        .preview-slide {
-            background: white;
-            border: 1px solid #ddd;
-            margin-bottom: 20px;
-            padding: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            aspect-ratio: 16/9;
-            position: relative;
-        }
-        .preview-slide-title {
-            position: absolute;
-            top: 10px;
-            left: 20px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #D24726;
-        }
-        .preview-grid {
-            display: grid;
-            height: 100%;
-            align-items: center;
-            padding-top: 30px;
-        }
-        .preview-img-box {
-            text-align: center;
-            padding: 5px;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .preview-img-box img {
-            max-width: 100%;
-            max-height: calc(100% - 20px);
-            object-fit: contain;
-            border: 1px solid #eee;
-        }
-        #previewSettingsPanel {
-            width: 250px;
-            background: #fff;
-            border-left: 1px solid #eee;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-        }
-        .settings-group {
-            margin-bottom: 20px;
-        }
-        .settings-group h4 {
-            margin-top: 0;
-            margin-bottom: 10px;
-            font-size: 14px;
-            color: #555;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
-        }
-        .graph-options {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-        }
-        .graph-options button {
-            padding: 6px 10px;
-            font-size: 13px;
-            background: #f0f0f0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .graph-options button.active {
-            background: #2F80ED;
-            color: white;
-            border-color: #2F80ED;
-        }
-        .tech-export-options {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        .tech-export-option {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .tech-export-option input {
-            margin: 0;
-        }
-        .modal-footer {
-            padding: 15px 20px;
-            border-top: 1px solid #eee;
-            text-align: right;
-            flex-shrink: 0;
-        }
-    </style>
-</head>
-<body onload="initDashboard()">
-    <header>KPI Dashboard</header>
-
-    <div class="controls">
-        <div class="level-switch">
-            <button class="level-btn active" onclick="setLevel('group')" id="groupLevelBtn">Group Level</button>
-            <button class="level-btn" onclick="setLevel('site')" id="siteLevelBtn">Site Level</button>
-        </div>
-        
-        <div class="tech-filters" id="techFilters">
-            <button class="tech-filter-btn gsm active" onclick="toggleTechFilter('GSM')">GSM</button>
-            <button class="tech-filter-btn lte active" onclick="toggleTechFilter('LTE')">LTE</button>
-            <button class="tech-filter-btn nr active" onclick="toggleTechFilter('NR')">NR</button>
-        </div>
-        
-        <button class="action-btn" onclick="openPPTExport()">📊 Export PPT</button>
-        <button class="action-btn" onclick="refreshData()">🔄 Refresh</button>
-    </div>
-
-    <div class="site-selector-container" id="siteSelector">
-        <input type="text" class="site-search" placeholder="Search sites..." onkeyup="filterSites()" id="siteSearch">
-        <div class="site-list-container">
-            <div class="site-list" id="siteList">
-                <!-- Sites will be loaded here -->
-            </div>
-        </div>
-        <div class="site-actions">
-            <button class="action-btn" onclick="selectAllSites()" style="background:#5cb85c;">Select All</button>
-            <button class="action-btn" onclick="clearAllSites()" style="background:#f0ad4e;">Clear All</button>
-            <button class="action-btn" onclick="applySiteSelection()" style="background:#2F80ED;">Apply</button>
-        </div>
-    </div>
-
-    <div class="chart-grid" id="mainChartContainer">
-        <!-- Charts will be loaded here -->
-    </div>
-
-    <!-- Drawer Toggle Buttons -->
-    <div class="drawer-toggle-buttons">
-        <div class="chartStyleDrawerToggle" onclick="toggleChartStyleDrawer()">🎨</div>
-        <div class="kpiDrawerToggle" onclick="toggleDrawer()">⚙</div>
-    </div>
-
-    <!-- Chart Style Drawer -->
-    <div id="chartStyleDrawer" class="chartStyleDrawer">
-        <div class="drawer-header"> 
-            <h3>Chart Styles</h3> 
-            <button onclick="toggleChartStyleDrawer()" style="border:none; background:none; font-size:22px; cursor:pointer;">✕</button> 
-        </div>
-        <div class="style-options-body">
-            <div class="style-button" onclick="applyChartStyle(0)">Filled Area</div>
-            <div class="style-button" onclick="applyChartStyle(1)">Line with Dots</div>
-            <div class="style-button" onclick="applyChartStyle(2)">Smooth Line</div>
-            <div class="style-button" onclick="applyChartStyle(3)">Thick Line</div>
-            <div class="style-button" onclick="applyChartStyle(4)">Thin Line with dots</div>
-            
-            <div style="margin: 20px 0; border-top: 1px solid #eee; padding-top: 15px;">
-                <label><b>Technology Colors</b></label>
-                <div class="tech-color-buttons">
-                    <button class="tech-color-btn gsm" onclick="openColorPicker('GSM')">GSM Color</button>
-                    <button class="tech-color-btn lte" onclick="openColorPicker('LTE')">LTE Color</button>
-                    <button class="tech-color-btn nr" onclick="openColorPicker('NR')">NR Color</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- KPI Settings Drawer -->
-    <div id="kpiDrawer" class="kpiDrawer">
-        <div class="drawer-header"> 
-            <h3 id="drawerHeaderTitle">KPI Settings</h3> 
-            <button onclick="toggleDrawer()" style="border:none; background:none; font-size:24px; cursor:pointer; color:#777;">✕</button> 
-        </div>
-        <div class="drawer-controls">
-            <button class="action-btn" onclick="selectVisibleKpis()" style="background:#5cb85c;">Select All</button>
-            <button class="action-btn" onclick="clearVisibleKpis()" style="background:#f0ad4e;">Clear All</button>
-            <button class="action-btn" onclick="applyKpis()" style="background:#2F80ED;">Apply</button>
-        </div>
-        <div class="kpi-options-body" id="kpiOptionsList">
-            <!-- KPI options will be loaded here -->
-        </div>
-    </div>
-
-    <!-- Color Picker Modal -->
-    <div id="colorPickerModal" class="color-picker-modal">
-        <div class="color-picker-content">
-            <h3 id="colorPickerTitle">Select Color for GSM</h3>
-            <div class="color-picker-grid" id="colorPickerGrid">
-                <!-- Color options will be added here -->
-            </div>
-            <div class="color-picker-actions">
-                <button class="action-btn" onclick="closeColorPicker()" style="background:#888;">Cancel</button>
-                <button class="action-btn" onclick="applySelectedColor()" style="background:#27AE60;">Apply</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- PPT Export Modal -->
-    <div id="pptModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span>PPT Export Preview</span>
-                <button onclick="closePPTExport()" style="border:none; background:none; font-size:20px; cursor:pointer;">✕</button>
-            </div>
-            <div class="modal-body">
-                <div id="previewBody">
-                    <!-- Preview slides will be loaded here -->
-                </div>
-                <div id="previewSettingsPanel">
-                    <h3>Export Settings</h3>
-                    
-                    <div class="settings-group">
-                        <h4>Layout</h4>
-                        <div class="graph-options">
-                            <button onclick="updatePPTPreview(1)" data-count="1">1 Graph</button>
-                            <button onclick="updatePPTPreview(2)" data-count="2">2 Graphs</button>
-                            <button onclick="updatePPTPreview(3)" data-count="3">3 Graphs</button>
-                            <button onclick="updatePPTPreview(4)" data-count="4">4 Graphs</button>
-                            <button onclick="updatePPTPreview(6)" data-count="6">6 Graphs</button>
-                            <button onclick="updatePPTPreview(9)" data-count="9">9 Graphs</button>
-                        </div>
-                    </div>
-                    
-                    <div class="settings-group">
-                        <h4>Select Technologies</h4>
-                        <div class="tech-export-options" id="techExportOptions">
-                            <!-- Technology checkboxes will be added here -->
-                        </div>
-                    </div>
-                    
-                    <div class="settings-group">
-                        <h4>Export Options</h4>
-                        <div style="font-size: 12px; color: #666; margin-top: 10px;">
-                            <p>• Maintains chart colors</p>
-                            <p>• Preserves chart titles</p>
-                            <p>• Optimized for PowerPoint</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="action-btn" onclick="closePPTExport()" style="background:#888;">Cancel</button>
-                <button class="action-btn ppt-btn" onclick="downloadPPT()" style="background:#D24726;">Download PPT</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // --- CONFIG & STATE ---
-        let allData = [];
-        let allCharts = {};
-        let selectedKpis = [];
-        let selectedTechForColor = '';
-        let selectedColor = '';
-        let pptLayout = 9;
-        let selectedTechForExport = {
-            GSM: true,
-            LTE: true,
-            NR: true
-        };
-        
-        // --- NEW STATE VARIABLES FOR SITE LEVEL ---
-        let currentLevel = 'group'; // 'group' or 'site'
-        let selectedSites = [];
-        let allSites = []; // Will hold all sites from cutover sheet
-        let techFilters = {
-            GSM: true,
-            LTE: true,
-            NR: true
-        };
-
-        // --- SHEET CONFIGURATION ---
-        const sheetConfig = {
-            group: {
-                GSM: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1977848975&single=true&output=csv",
-                LTE: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=893314169&single=true&output=csv",
-                NR: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1372365834&single=true&output=csv"
-            },
-            site: {
-                // Replace these with your actual 7 Google Sheets URLs
-                GSM: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1930867305&single=true&output=csv",
-                LTE: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=0&single=true&output=csv",
-                NR: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1617739873&single=true&output=csv",
-                cutover: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=19616562&single=true&output=csv"
-            }
-        };
-
-        // --- KPI Definitions ---
-        const kpiDefinitions = [
-            { tech: "GSM", kpi: "Call setup success rate(%)", initialChecked: true, color: "#2F80ED" },
-            { tech: "GSM", kpi: "Call drop rate(%)", initialChecked: true, color: "#2F80ED" },
-            { tech: "GSM", kpi: "CS Traffic (erl)", initialChecked: true, color: "#2F80ED" },
-            
-            { tech: "LTE", kpi: "Call Setup Success Rate(%)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "E-RAB Call Drop Rate(%)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "DL -USER Average Throughput (Mbit/s)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "UL -USER Average Throughput (Mbit/s)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "DL Data Total Volume (Gbyte)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "UL Data Total Volume (Gbyte)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "DL PRB Utilization (%)", initialChecked: true, color: "#27AE60" },
-                       
-            { tech: "NR", kpi: "SgNB Addition Success Rate (CU)(%)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "DL Traffic Volume (GB)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "DL User Throughput(Mbps)", initialChecked: true, color: "#D24726" },
-        ];
-
-        let activeChartStyle = null;
-        let techColors = {
-            GSM: "#2F80ED",
-            LTE: "#27AE60",
-            NR: "#D24726"
-        };
-
-        // --- Color Palette Options ---
-        const colorPalette = [
-            "#2F80ED", "#27AE60", "#D24726", "#8E44AD",
-            "#3498DB", "#2ECC71", "#E74C3C", "#9B59B6",
-            "#1ABC9C", "#F39C12", "#34495E", "#95A5A6",
-            "#2980B9", "#16A085", "#C0392B", "#8E44AD"
-        ];
-
-        // --- Chart Styles ---
-        const chartStyles = [
-            { 
-                name: "Filled Area", 
-                borderWidth: 2, 
-                pointRadius: 0, 
-                borderDash: [], 
-                tension: 0.2, 
-                fill: true, 
-                backgroundColor: "rgba(47, 128, 237, 0.1)" 
-            },
-            { 
-                name: "Line with Dots", 
-                borderWidth: 3, 
-                pointRadius: 5, 
-                borderDash: [], 
-                tension: 0.4, 
-                fill: false 
-            },
-            { 
-                name: "Smooth Line", 
-                borderWidth: 2, 
-                pointRadius: 0, 
-                borderDash: [], 
-                tension: 0.4, 
-                fill: false 
-            },
-            { 
-                name: "Thick Line", 
-                borderWidth: 4, 
-                pointRadius: 0, 
-                borderDash: [], 
-                tension: 0.3, 
-                fill: false 
-            },
-            { 
-                name: "Thin Line with dots", 
-                borderWidth: 2, 
-                pointRadius: 4, 
-                borderDash: [], 
-                tension: 0, 
-                fill: false 
-            }
-        ];
-
-        // --- ACTION BUTTON STYLING ---
-        const actionBtnStyle = `
-            .action-btn { 
-                padding: 8px 16px; 
-                cursor: pointer; 
-                border: none; 
-                background: #2F80ED; 
-                color: white; 
-                border-radius: 6px; 
-                font-weight: 600; 
-                transition: 0.2s; 
-            }
-            .action-btn:hover { 
-                background: #1f5ab5; 
-            }
-            .ppt-btn {
-                background: #D24726 !important;
-            }
-            .ppt-btn:hover {
-                background: #a8381e !important;
-            }
-        `;
-        
-        const style = document.createElement('style');
-        style.textContent = actionBtnStyle;
-        document.head.appendChild(style);
-
-        // --- INITIALIZATION ---
-        function initDashboard() {
-            selectedKpis = kpiDefinitions.filter(k => k.initialChecked).map(k => k.tech + " - " + k.kpi);
-            applyChartStyle(1);
-            fetchData();
-        }
-
-        // --- LEVEL MANAGEMENT ---
-        function setLevel(level) {
-            currentLevel = level;
-            
-            // Update UI
-            document.getElementById('groupLevelBtn').classList.toggle('active', level === 'group');
-            document.getElementById('siteLevelBtn').classList.toggle('active', level === 'site');
-            document.getElementById('siteSelector').classList.toggle('active', level === 'site');
-            
-            if (level === 'site') {
-                // Load sites from cutover sheet if not already loaded
-                if (allSites.length === 0) {
-                    loadCutoverSites();
-                } else {
-                    renderSiteList();
-                }
-            }
-            
-            // Refresh data for the new level
-            fetchData();
-        }
-
-        // --- CUTOVER SITE MANAGEMENT ---
-        async function loadCutoverSites() {
-            try {
-                // Load sites from cutover sheet
-                const cutoverUrl = sheetConfig.site.cutover + "&t=" + Date.now();
-                const res = await fetch(cutoverUrl);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                
-                const text = await res.text();
-                if (!text || text.trim() === '') throw new Error("Empty response");
-                
-                const rows = text.trim().split('\n').map(r => r.split(','));
-                if (rows.length < 2) throw new Error("No data in sheet");
-                
-                const headers = rows.shift().map(h => h.trim().toLowerCase());
-                
-                // Find site name and technology columns
-                const siteNameCol = headers.findIndex(h => 
-                    h.includes('site') || h.includes('name') || h.includes('node')
-                );
-                const techCol = headers.findIndex(h => 
-                    h.includes('tech') || h.includes('technology') || h.includes('type')
-                );
-                
-                if (siteNameCol === -1) throw new Error("Site name column not found");
-                
-                allSites = [];
-                rows.forEach(row => {
-                    const siteName = row[siteNameCol] ? row[siteNameCol].trim() : '';
-                    let tech = '';
-                    
-                    if (techCol !== -1 && row[techCol]) {
-                        tech = row[techCol].trim().toUpperCase();
-                    } else {
-                        // Try to determine tech from site name
-                        if (siteName.toLowerCase().includes('GBSC') ) {
-                            tech = 'GSM';
-                        } else if (siteName.toLowerCase().includes('eNodeB Name') ) {
-                            tech = 'LTE';
-                        } else if (siteName.toLowerCase().includes('gNodeb Name') ) {
-                            tech = 'NR';
-                        }
-                    }
-                    
-                    if (siteName && tech) {
-                        allSites.push({ name: siteName, tech: tech });
-                    }
-                });
-                
-                // If no tech was determined, create default sites
-                if (allSites.length === 0) {
-                    console.warn("Using default sites");
-                    allSites = [
-                        { name: "GBSC_001", tech: "GSM" },
-                        { name: "GBSC_002", tech: "GSM" },
-                        { name: "eNodeB_001", tech: "LTE" },
-                        { name: "eNodeB_002", tech: "LTE" },
-                        { name: "eNodeB_003", tech: "LTE" },
-                        { name: "gNodeB_001", tech: "NR" },
-                        { name: "gNodeB_002", tech: "NR" },
-                    ];
-                }
-                
-                renderSiteList();
-                
-            } catch (error) {
-                console.error("Error loading cutover sites:", error);
-                
-                // Fallback to default sites
-                allSites = [
-                    { name: "GBSC_001", tech: "GSM" },
-                    { name: "GBSC_002", tech: "GSM" },
-                    { name: "eNodeB_001", tech: "LTE" },
-                    { name: "eNodeB_002", tech: "LTE" },
-                    { name: "eNodeB_003", tech: "LTE" },
-                    { name: "gNodeB_001", tech: "NR" },
-                    { name: "gNodeB_002", tech: "NR" },
-                ];
-                renderSiteList();
-                
-                alert("Using default sites. Please configure cutover sheet URL.");
-            }
-        }
-
-        function renderSiteList() {
-            const siteListEl = document.getElementById('siteList');
-            siteListEl.innerHTML = '';
-            
-            const filteredSites = allSites.filter(site => techFilters[site.tech]);
-            
-            if (filteredSites.length === 0) {
-                siteListEl.innerHTML = '<div style="text-align:center;color:#666;padding:20px;">No sites available for selected technologies</div>';
-                return;
-            }
-            
-            filteredSites.forEach(site => {
-                const siteEl = document.createElement('div');
-                siteEl.className = `site-item tech-${site.tech.toLowerCase()} ${selectedSites.includes(site.name) ? 'selected' : ''}`;
-                siteEl.textContent = `${site.name} (${site.tech})`;
-                siteEl.dataset.site = site.name;
-                siteEl.dataset.tech = site.tech;
-                
-                siteEl.onclick = () => {
-                    if (selectedSites.includes(site.name)) {
-                        selectedSites = selectedSites.filter(s => s !== site.name);
-                    } else {
-                        selectedSites.push(site.name);
-                    }
-                    siteEl.classList.toggle('selected');
-                };
-                
-                siteListEl.appendChild(siteEl);
-            });
-        }
-
-        function filterSites() {
-            const searchTerm = document.getElementById('siteSearch').value.toLowerCase();
-            const siteItems = document.querySelectorAll('.site-item');
-            
-            siteItems.forEach(item => {
-                const siteName = item.dataset.site.toLowerCase();
-                const tech = item.dataset.tech.toLowerCase();
-                const display = siteName.includes(searchTerm) || tech.includes(searchTerm) ? 'block' : 'none';
-                item.style.display = display;
-            });
-        }
-
-        function selectAllSites() {
-            const filteredSites = allSites.filter(site => techFilters[site.tech]);
-            selectedSites = filteredSites.map(site => site.name);
-            renderSiteList();
-        }
-
-        function clearAllSites() {
-            selectedSites = [];
-            renderSiteList();
-        }
-
-        function applySiteSelection() {
-            if (currentLevel === 'site' && selectedSites.length === 0) {
-                alert("Please select at least one site.");
-                return;
-            }
-            fetchData();
-        }
-
-        function toggleTechFilter(tech) {
-            techFilters[tech] = !techFilters[tech];
-            
-            // Update UI
-            const btn = document.querySelector(`.tech-filter-btn.${tech.toLowerCase()}`);
-            btn.classList.toggle('active', techFilters[tech]);
-            
-            // If in site level, update site list
-            if (currentLevel === 'site') {
-                renderSiteList();
-            }
-            
-            // Refresh charts
-            refreshCharts();
-        }
-
-        // --- DATA FETCHING ---
-        async function fetchData(){
-            document.getElementById("mainChartContainer").innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>Loading data...</h2>";
-            allData = [];
-            let timeline = [];
-            
-            try {
-                const urls = currentLevel === 'group' ? sheetConfig.group : sheetConfig.site;
-                
-                for (const tech in urls) {
-                    if (tech === 'cutover') continue; // Skip cutover sheet
-                    if (!techFilters[tech]) continue;
-                    
-                    try {
-                        const url = urls[tech] + "&t=" + Date.now();
-                        const res = await fetch(url);
-                        if (!res.ok) continue;
-                        const text = await res.text();
-                        if (!text || text.trim() === '') continue;
-                        const rows = text.trim().split('\n').map(r => r.split(','));
-                        
-                        if (rows.length < 2) continue;
-                        
-                        const headers = rows.shift().map(h => h.trim());
-                        const dateHeader = headers.find(h => h.toLowerCase().includes('date'));
-                        const siteHeader = headers.find(h => 
-                            h.toLowerCase().includes('site') || 
-                            h.toLowerCase().includes('bsc') || 
-                            h.toLowerCase().includes('enodeb') || 
-                            h.toLowerCase().includes('gnodeb') ||
-                            h.toLowerCase().includes('node')
-                        );
-                        
-                        rows.forEach(r => {
-                            const obj = {};
-                            headers.forEach((h, i) => {
-                                const val = r[i] ? r[i].trim() : "";
-                                obj[h] = val === "" ? null : (isNaN(val) ? val : parseFloat(val));
-                            });
-                            
-                            if (obj[dateHeader]) {
-                                obj.Tech = tech;
-                                
-                                // Add site information
-                                if (siteHeader) {
-                                    obj.SiteName = obj[siteHeader] || '';
-                                }
-                                
-                                // For site level, filter by selected sites
-                                if (currentLevel === 'site') {
-                                    const siteName = obj.SiteName;
-                                    if (selectedSites.length === 0 || selectedSites.includes(siteName)) {
-                                        allData.push(obj);
-                                        if (!timeline.includes(obj[dateHeader])) {
-                                            timeline.push(obj[dateHeader]);
-                                        }
-                                    }
-                                } else {
-                                    // Group level - include all data
-                                    allData.push(obj);
-                                    if (!timeline.includes(obj[dateHeader])) {
-                                        timeline.push(obj[dateHeader]);
-                                    }
-                                }
-                            }
-                        });
-                    } catch (e) {
-                        console.error(`Error loading ${tech} data:`, e);
-                    }
-                }
-
-                if (allData.length === 0) {
-                    throw new Error("No data loaded from any source");
-                }
-
-                // Sort the timeline
-                timeline.sort((a,b)=>{
-                    const [da,ma,ya]=a.split('/').map(Number);
-                    const [db,mb,yb]=b.split('/').map(Number);
-                    return new Date(ya,ma-1,da)-new Date(yb,mb-1,db);
-                });
-                
-                renderCharts(timeline);
-
-            } catch(e) {
-                console.error("Data loading error:", e);
-                document.getElementById("mainChartContainer").innerHTML = `<h2 style='text-align:center;padding:40px;color:#D24726;'>Failed to load data: ${e.message}</h2>`;
-            }
-        }
-
-        // --- CHART RENDERING ---
-        function renderCharts(timeline = []) {
-            const container = document.getElementById("mainChartContainer");
-            container.innerHTML = "";
-            allCharts = {};
-            
-            if (timeline.length === 0 || allData.length === 0) {
-                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No data available.</h2>";
-                return;
-            }
-
-            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            const timelineLabels = timeline.map(d => {
-                const [day, month] = d.split('/').map(Number);
-                return `${day} ${monthNames[month - 1]}`;
-            });
-
-            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
-            if (!dateHeaderName) return;
-
-            const chartsToRender = kpiDefinitions.filter(k => 
-                selectedKpis.includes(k.tech + " - " + k.kpi) && techFilters[k.tech]
-            );
-            
-            if (chartsToRender.length === 0) {
-                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No KPIs selected. Please select KPIs from settings drawer.</h2>";
-                return;
-            }
-
-            // For site level, we need to handle multiple sites per chart
-            if (currentLevel === 'site' && selectedSites.length > 0) {
-                renderSiteLevelCharts(container, timeline, timelineLabels, dateHeaderName, chartsToRender);
-            } else {
-                renderGroupLevelCharts(container, timeline, timelineLabels, dateHeaderName, chartsToRender);
-            }
-        }
-
-        function renderGroupLevelCharts(container, timeline, timelineLabels, dateHeaderName, chartsToRender) {
-            chartsToRender.forEach((kpiDef, idx) => {
-                const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
-                const tech = kpiDef.tech;
-                const kpi = kpiDef.kpi;
-
-                const card = document.createElement("div");
-                card.className = "chart-card";
-                const wrapper = document.createElement("div");
-                wrapper.className = "chart-container";
-                const canvas = document.createElement("canvas");
-                canvas.id = `chart_${idx}`;
-                wrapper.appendChild(canvas);
-                card.appendChild(wrapper);
-                container.appendChild(card);
-
-                // Data Processing for group level
-                const dataPoints = timeline.map(date => {
-                    const values = allData
-                        .filter(d => d.Tech === tech && d[dateHeaderName] === date)
-                        .map(d => d[kpi])
-                        .filter(v => v !== null && v !== "")
-                        .map(Number)
-                        .filter(v => !isNaN(v));
-                    
-                    if (values.length === 0) return null;
-                    
-                    const kpiLower = kpi.toLowerCase();
-                    if (kpiLower.includes('%') || kpiLower.includes('rate') || kpiLower.includes('avg') || kpiLower.includes('average')|| kpiLower.includes('max')) {
-                        return values.reduce((a, b) => a + b, 0) / values.length;
-                    } else {
-                        return values.reduce((a, b) => a + b, 0);
-                    }
-                });
-
-                const validValues = dataPoints.filter(v => v !== null);
-                if (validValues.length === 0) {
-                    const noDataMsg = document.createElement("div");
-                    noDataMsg.style.textAlign = "center";
-                    noDataMsg.style.padding = "20px";
-                    noDataMsg.style.color = "#666";
-                    noDataMsg.textContent = "No data available for this KPI";
-                    card.appendChild(noDataMsg);
-                    return;
-                }
-
-                createChart(canvas, fullKpiName, timelineLabels, dataPoints, tech, kpi, validValues);
-            });
-        }
-
-        function renderSiteLevelCharts(container, timeline, timelineLabels, dateHeaderName, chartsToRender) {
-            // For site level, create a chart for each selected KPI with multiple datasets (one per site)
-            chartsToRender.forEach((kpiDef, idx) => {
-                const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
-                const tech = kpiDef.tech;
-                const kpi = kpiDef.kpi;
-
-                const card = document.createElement("div");
-                card.className = "chart-card";
-                
-                // Get sites for this technology
-                const techSites = selectedSites.filter(site => {
-                    const siteObj = allSites.find(as => as.name === site);
-                    return siteObj && siteObj.tech === tech;
-                });
-
-                if (techSites.length === 0) {
-                    // Skip if no sites for this tech
-                    return;
-                }
-                
-                // Add site info to card
-                const siteInfo = document.createElement("div");
-                siteInfo.className = "chart-site-info";
-                siteInfo.textContent = `Sites: ${techSites.length} selected`;
-                card.appendChild(siteInfo);
-                
-                const wrapper = document.createElement("div");
-                wrapper.className = "chart-container";
-                const canvas = document.createElement("canvas");
-                canvas.id = `chart_site_${tech}_${idx}`;
-                wrapper.appendChild(canvas);
-                card.appendChild(wrapper);
-                container.appendChild(card);
-
-                // Create datasets for each site
-                const datasets = [];
-
-                techSites.forEach((site, siteIdx) => {
-                    const dataPoints = timeline.map(date => {
-                        const values = allData
-                            .filter(d => d.Tech === tech && d[dateHeaderName] === date && d.SiteName === site)
-                            .map(d => d[kpi])
-                            .filter(v => v !== null && v !== "")
-                            .map(Number)
-                            .filter(v => !isNaN(v));
-                        
-                        if (values.length === 0) return null;
-                        return values[0]; // For site level, there should be only one value per date
-                    });
-
-                    // Generate a color for this site (different shade of the tech color)
-                    const baseColor = techColors[tech];
-                    const adjustedColor = adjustColor(baseColor, siteIdx * 30); // Adjust hue for each site
-                    
-                    datasets.push({
-                        label: site,
-                        data: dataPoints,
-                        borderColor: adjustedColor,
-                        backgroundColor: activeChartStyle && activeChartStyle.fill ? 
-                            adjustedColor.replace(')', ', 0.1)').replace('rgb', 'rgba') : 'transparent',
-                        borderWidth: activeChartStyle ? activeChartStyle.borderWidth : 2,
-                        pointRadius: activeChartStyle ? activeChartStyle.pointRadius : 3,
-                        pointBackgroundColor: adjustedColor,
-                        pointBorderColor: adjustedColor,
-                        tension: activeChartStyle ? activeChartStyle.tension : 0.4,
-                        spanGaps: true,
-                        fill: false
-                    });
-                });
-
-                // Check if we have any data
-                const allDataPoints = datasets.flatMap(ds => ds.data.filter(v => v !== null));
-                if (allDataPoints.length === 0) {
-                    const noDataMsg = document.createElement("div");
-                    noDataMsg.style.textAlign = "center";
-                    noDataMsg.style.padding = "20px";
-                    noDataMsg.style.color = "#666";
-                    noDataMsg.textContent = "No data available for selected sites";
-                    card.appendChild(noDataMsg);
-                    return;
-                }
-
-                createSiteLevelChart(canvas, fullKpiName, timelineLabels, datasets, tech, kpi, allDataPoints);
-            });
-        }
-
-        function createChart(canvas, fullKpiName, timelineLabels, dataPoints, tech, kpi, validValues) {
-            const minVal = Math.min(...validValues);
-            const maxVal = Math.max(...validValues);
-            
-            const { niceMin, niceMax, tickSpacing } = computeYAxis(minVal, maxVal);
-            let chartColor = techColors[tech];
-
-            const chartConfig = {
-                type: 'line',
-                data: {
-                    labels: timelineLabels,
-                    datasets: [{ 
-                        label: kpi,
-                        data: dataPoints,
-                        borderColor: chartColor,
-                        backgroundColor: activeChartStyle && activeChartStyle.fill ? 
-                            chartColor.replace(')', ', 0.1)').replace('rgb', 'rgba') : 'transparent',
-                        borderWidth: activeChartStyle ? activeChartStyle.borderWidth : 2, 
-                        pointRadius: activeChartStyle ? activeChartStyle.pointRadius : 5, 
-                        pointBackgroundColor: chartColor,
-                        pointBorderColor: chartColor,
-                        pointBorderWidth: 1,
-                        tension: activeChartStyle ? activeChartStyle.tension : 0.4, 
-                        spanGaps: true
-                    }]
-                },
-                options: {
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { 
-                            display: currentLevel === 'site',
-                            position: 'top'
-                        },
-                        title: { 
-                            display: true, 
-                            text: `${tech} - ${kpi}${currentLevel === 'site' ? ' (Site Level)' : ''}`,
-                            font: { 
-                                size: 14, 
-                                weight: 'bold' 
-                            }, 
-                            color: '#333'
-                        }
-                    },
-                    scales: {
-                        x: { 
-                            ticks: { 
-                                font: { size: 8 } 
-                            }, 
-                            grid: { 
-                                display: false 
-                            } 
-                        },
-                        y: { 
-                            grid: { 
-                                color: '#eee' 
-                            }, 
-                            min: niceMin, 
-                            max: niceMax, 
-                            ticks: { 
-                                stepSize: tickSpacing 
-                            }, 
-                            beginAtZero: maxVal < 10 
-                        }
-                    }
-                }
-            };
-
-            if (activeChartStyle) {
-                const style = activeChartStyle;
-                chartConfig.data.datasets[0].borderWidth = style.borderWidth;
-                chartConfig.data.datasets[0].pointRadius = style.pointRadius;
-                chartConfig.data.datasets[0].borderDash = style.borderDash;
-                chartConfig.data.datasets[0].tension = style.tension;
-                chartConfig.data.datasets[0].fill = style.fill;
-                if (style.fill && style.backgroundColor) {
-                    chartConfig.data.datasets[0].backgroundColor = style.backgroundColor.replace('47, 128, 237', 
-                        chartColor.substring(1).match(/.{2}/g).map(x => parseInt(x, 16)).join(', '));
-                }
-            }
-
-            try {
-                allCharts[fullKpiName] = new Chart(canvas.getContext("2d"), chartConfig);
-            } catch (e) {
-                console.error(`Error creating chart for ${fullKpiName}:`, e);
-                const errorMsg = document.createElement("div");
-                errorMsg.style.textAlign = "center";
-                errorMsg.style.padding = "20px";
-                errorMsg.style.color = "#D24726";
-                errorMsg.textContent = "Error creating chart";
-                canvas.parentElement.parentElement.appendChild(errorMsg);
-            }
-        }
-
-        function createSiteLevelChart(canvas, fullKpiName, timelineLabels, datasets, tech, kpi, allDataPoints) {
-            const minVal = Math.min(...allDataPoints);
-            const maxVal = Math.max(...allDataPoints);
-            
-            const { niceMin, niceMax, tickSpacing } = computeYAxis(minVal, maxVal);
-
-            const chartConfig = {
-                type: 'line',
-                data: {
-                    labels: timelineLabels,
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { 
-                            display: true,
-                            position: 'top',
-                            labels: {
-                                font: { size: 10 },
-                                boxWidth: 12
-                            }
-                        },
-                        title: { 
-                            display: true, 
-                            text: `${tech} - ${kpi} (Site Level)`,
-                            font: { 
-                                size: 14, 
-                                weight: 'bold' 
-                            }, 
-                            color: '#333'
-                        }
-                    },
-                    scales: {
-                        x: { 
-                            ticks: { 
-                                font: { size: 8 } 
-                            }, 
-                            grid: { 
-                                display: false 
-                            } 
-                        },
-                        y: { 
-                            grid: { 
-                                color: '#eee' 
-                            }, 
-                            min: niceMin, 
-                            max: niceMax, 
-                            ticks: { 
-                                stepSize: tickSpacing,
-                                font: { size: 9 }
-                            }, 
-                            beginAtZero: maxVal < 10 
-                        }
-                    }
-                }
-            };
-
-            if (activeChartStyle) {
-                const style = activeChartStyle;
-                datasets.forEach(dataset => {
-                    dataset.borderWidth = style.borderWidth;
-                    dataset.pointRadius = style.pointRadius;
-                    dataset.tension = style.tension;
-                    dataset.fill = style.fill;
-                });
-            }
-
-            try {
-                allCharts[fullKpiName] = new Chart(canvas.getContext("2d"), chartConfig);
-            } catch (e) {
-                console.error(`Error creating site chart for ${fullKpiName}:`, e);
-                const errorMsg = document.createElement("div");
-                errorMsg.style.textAlign = "center";
-                errorMsg.style.padding = "20px";
-                errorMsg.style.color = "#D24726";
-                errorMsg.textContent = "Error creating chart";
-                canvas.parentElement.parentElement.appendChild(errorMsg);
-            }
-        }
-
-        // --- HELPER FUNCTIONS ---
-        function adjustColor(hex, amount) {
-            // Convert hex to RGB
-            let r = parseInt(hex.slice(1, 3), 16);
-            let g = parseInt(hex.slice(3, 5), 16);
-            let b = parseInt(hex.slice(5, 7), 16);
-            
-            // Adjust brightness
-            r = Math.max(0, Math.min(255, r + amount));
-            g = Math.max(0, Math.min(255, g + amount));
-            b = Math.max(0, Math.min(255, b + amount));
-            
-            // Convert back to hex
-            return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-        }
-
-        function computeYAxis(minVal, maxVal) {
-            if (minVal >= 98 && maxVal <= 100) {
-                return { niceMin: 98, niceMax: 100, tickSpacing: 0.5 };
-            }
-            let minV = minVal * 0.95; 
-            let maxV = maxVal * 1.05;
-            if (maxVal < 10) minV = 0;
-            if (maxVal > 90 && maxVal <= 100) maxV = 100;
-            let range = maxV - minV;
-            if (range === 0) range = Math.abs(maxV) * 0.1 || 1;
-            const tickSpacing = niceNumber(range / 5, true);
-            const niceMin = Math.floor(minV / tickSpacing) * tickSpacing;
-            const niceMax = Math.ceil(maxV / tickSpacing) * tickSpacing;
-            return { niceMin, niceMax, tickSpacing };
-        }
-
-        function niceNumber(value, round) {
-            if (value === 0) return 0;
-            const exponent = Math.floor(Math.log10(value));
-            const fraction = value / Math.pow(10, exponent);
-            let niceFraction;
-            if (round) {
-                if (fraction < 1.5) niceFraction = 1; 
-                else if (fraction < 3) niceFraction = 2; 
-                else if (fraction < 7) niceFraction = 5; 
-                else niceFraction = 10;
-            } else {
-                if (fraction <= 1) niceFraction = 1; 
-                else if (fraction <= 2) niceFraction = 2; 
-                else if (fraction <= 5) niceFraction = 5; 
-                else niceFraction = 10;
-            }
-            return niceFraction * Math.pow(10, exponent);
-        }
-
-        // --- REFRESH FUNCTION ---
-        function refreshData() {
-            fetchData();
-        }
-
-        function refreshCharts() {
-            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
-            if (dateHeaderName && allData.length > 0) {
-                const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
-                    const [da,ma,ya] = a.split('/').map(Number);
-                    const [db,mb,yb] = b.split('/').map(Number);
-                    return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
-                });
-                renderCharts(timeline);
-            }
-        }
-
-        // --- KPI DRAWER FUNCTIONS ---
-        function toggleDrawer(){
-            const d = document.getElementById("kpiDrawer");
-            d.classList.toggle("open");
-            if(d.classList.contains("open")) populateKpiOptions();
-        }
-
-        function populateKpiOptions(){
-            const list = document.getElementById("kpiOptionsList");
-            list.innerHTML = "";
-            let currentTech = "";
-
-            kpiDefinitions.forEach(kpiDef => {
-                const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
-                
-                if (kpiDef.tech !== currentTech) {
-                    list.innerHTML += `<div class="kpi-group-title">${kpiDef.tech} KPIs</div>`;
-                    currentTech = kpiDef.tech;
-                }
-
-                const checked = selectedKpis.includes(fullKpiName) ? "checked" : "";
-                const d = document.createElement("label");
-                d.className = "kpi-option";
-                d.innerHTML = `<input type='checkbox' value='${fullKpiName}' class='kpi-chk' ${checked}> ${kpiDef.kpi}`;
-                d.onclick = (e) => {
-                    const chk = d.querySelector("input");
-                    if (e.target.tagName !== "INPUT") {
-                        chk.checked = !chk.checked;
-                    }
-                };
-                list.appendChild(d);
-            });
-        }
-        
-        function applyKpis() {
-            const list = document.getElementById("kpiOptionsList");
-            selectedKpis = Array.from(list.querySelectorAll(".kpi-chk:checked")).map(c => c.value);
-            document.getElementById("kpiDrawer").classList.remove("open");
-            
-            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
-            if (dateHeaderName && allData.length > 0) {
-                const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
-                    const [da,ma,ya] = a.split('/').map(Number);
-                    const [db,mb,yb] = b.split('/').map(Number);
-                    return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
-                });
-                renderCharts(timeline);
-            }
-        }
-
-        function selectVisibleKpis() {
-            selectedKpis = kpiDefinitions.map(k => k.tech + " - " + k.kpi);
-            populateKpiOptions();
-        }
-        
-        function clearVisibleKpis() {
-            selectedKpis = [];
-            populateKpiOptions();
-        }
-
-        // --- CHART STYLING FUNCTIONS ---
-        function toggleChartStyleDrawer(){
-            const d = document.getElementById("chartStyleDrawer");
-            d.classList.toggle("open");
-        }
-
-        function applyChartStyle(styleIndex){
-            activeChartStyle = chartStyles[styleIndex];
-            document.querySelectorAll('.style-button').forEach((btn, idx) => {
-                if (idx === styleIndex) { 
-                    btn.classList.add('active'); 
-                } else { 
-                    btn.classList.remove('active'); 
-                }
-            });
-            
-            updateTechColorButtons();
-            
-            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
-            if (dateHeaderName && allData.length > 0) {
-                const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
-                    const [da,ma,ya] = a.split('/').map(Number);
-                    const [db,mb,yb] = b.split('/').map(Number);
-                    return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
-                });
-                renderCharts(timeline);
-            }
-        }
-
-        function updateTechColorButtons() {
-            const gsmBtn = document.querySelector('.tech-color-btn.gsm');
-            const lteBtn = document.querySelector('.tech-color-btn.lte');
-            const nrBtn = document.querySelector('.tech-color-btn.nr');
-            
-            if (gsmBtn) gsmBtn.style.background = techColors.GSM;
-            if (lteBtn) lteBtn.style.background = techColors.LTE;
-            if (nrBtn) nrBtn.style.background = techColors.NR;
-        }
-
-        // --- COLOR PICKER FUNCTIONS ---
-        function openColorPicker(tech) {
-            selectedTechForColor = tech;
-            selectedColor = techColors[tech];
-            document.getElementById('colorPickerTitle').textContent = `Select Color for ${tech}`;
-            
-            const colorGrid = document.getElementById('colorPickerGrid');
-            colorGrid.innerHTML = '';
-            
-            colorPalette.forEach(color => {
-                const colorOption = document.createElement('div');
-                colorOption.className = 'color-option';
-                colorOption.style.backgroundColor = color;
-                colorOption.dataset.color = color;
-                
-                if (color === selectedColor) {
-                    colorOption.classList.add('selected');
-                }
-                
-                colorOption.onclick = () => {
-                    document.querySelectorAll('.color-option').forEach(opt => {
-                        opt.classList.remove('selected');
-                    });
-                    colorOption.classList.add('selected');
-                    selectedColor = color;
-                };
-                
-                colorGrid.appendChild(colorOption);
-            });
-            
-            document.getElementById('colorPickerModal').style.display = 'flex';
-        }
-
-        function closeColorPicker() {
-            document.getElementById('colorPickerModal').style.display = 'none';
-        }
-
-        function applySelectedColor() {
-            if (selectedTechForColor && selectedColor) {
-                techColors[selectedTechForColor] = selectedColor;
-                
-                kpiDefinitions.forEach(kpi => {
-                    if (kpi.tech === selectedTechForColor) {
-                        kpi.color = selectedColor;
-                    }
-                });
-                
-                updateTechColorButtons();
-                
-                const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
-                if (dateHeaderName && allData.length > 0) {
-                    const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
-                        const [da,ma,ya] = a.split('/').map(Number);
-                        const [db,mb,yb] = b.split('/').map(Number);
-                        return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
-                    });
-                    renderCharts(timeline);
-                }
-                
-                closeColorPicker();
-            }
-        }
-
-        // --- PPT EXPORT FUNCTIONS ---
-        function openPPTExport() {
-            const charts = document.querySelectorAll("canvas");
-            if (charts.length === 0) {
-                alert("No charts to export. Please select some KPIs first.");
-                return;
-            }
-            
-            const techOptions = document.getElementById('techExportOptions');
-            techOptions.innerHTML = '';
-            
-            for (const tech in selectedTechForExport) {
-                const div = document.createElement('div');
-                div.className = 'tech-export-option';
-                div.innerHTML = `
-                    <input type="checkbox" id="export-${tech}" ${selectedTechForExport[tech] ? 'checked' : ''} 
-                           onchange="updateTechExportSelection('${tech}', this.checked)">
-                    <label for="export-${tech}">${tech}</label>
-                `;
-                techOptions.appendChild(div);
-            }
-            
-            document.querySelectorAll('.graph-options button').forEach(btn => {
-                if (parseInt(btn.dataset.count) === pptLayout) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-            
-            updatePPTPreview(pptLayout);
-            document.getElementById('pptModal').style.display = 'flex';
-        }
-
-        function closePPTExport() {
-            document.getElementById('pptModal').style.display = 'none';
-        }
-
-        function updateTechExportSelection(tech, isSelected) {
-            selectedTechForExport[tech] = isSelected;
-            updatePPTPreview(pptLayout);
-        }
-
-        function updatePPTPreview(layoutCount) {
-            pptLayout = layoutCount;
-            
-            document.querySelectorAll('.graph-options button').forEach(btn => {
-                if (parseInt(btn.dataset.count) === layoutCount) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-            
-            // Get ALL selected charts mixed together
-            const allChartsForExport = [];
-            const chartElements = document.querySelectorAll("canvas");
-            
-            chartElements.forEach((canvas, index) => {
-                const chart = Chart.getChart(canvas.id);
-                if (chart) {
-                    const title = chart.options.plugins.title.text;
-                    const tech = title.split(' - ')[0];
-                    
-                    if (selectedTechForExport[tech]) {
-                        allChartsForExport.push({
-                            canvas: canvas,
-                            chart: chart,
-                            title: title,
-                            tech: tech
-                        });
-                    }
-                }
-            });
-            
-            if (allChartsForExport.length === 0) {
-                document.getElementById('previewBody').innerHTML = 
-                    '<div style="text-align:center;padding:40px;color:#666;">No charts selected for export.</div>';
-                return;
-            }
-            
-            const previewBody = document.getElementById('previewBody');
-            previewBody.innerHTML = '';
-            
-            // Calculate grid layout based on selected layout
-            const layout = getLayoutConfig(layoutCount);
-            const gridTemplateCols = `repeat(${layout.cols}, 1fr)`;
-            const gridTemplateRows = `repeat(${layout.rows}, 1fr)`;
-            
-            for (let i = 0; i < allChartsForExport.length; i += layoutCount) {
-                const slideDiv = document.createElement('div');
-                slideDiv.className = 'preview-slide';
-                
-                const slideTitle = document.createElement('div');
-                slideTitle.className = 'preview-slide-title';
-                slideTitle.textContent = `Slide ${Math.floor(i/layoutCount) + 1}`;
-                slideDiv.appendChild(slideTitle);
-                
-                const grid = document.createElement('div');
-                grid.className = 'preview-grid';
-                grid.style.display = 'grid';
-                grid.style.gridTemplateColumns = gridTemplateCols;
-                grid.style.gridTemplateRows = gridTemplateRows;
-                grid.style.gap = '10px';
-                grid.style.height = '100%';
-                grid.style.paddingTop = '30px';
-                grid.style.alignContent = 'start';
-                
-                // Fill the grid
-                for (let j = 0; j < layoutCount; j++) {
-                    const cellIndex = i + j;
-                    if (cellIndex < allChartsForExport.length) {
-                        const chartData = allChartsForExport[cellIndex];
-                        const box = createPreviewBox(chartData.canvas, chartData.title);
-                        grid.appendChild(box);
-                    } else {
-                        // Empty cell for 1-0-0 layout
-                        const emptyBox = document.createElement('div');
-                        emptyBox.className = 'preview-img-box';
-                        emptyBox.style.border = '1px dashed #eee';
-                        emptyBox.style.background = '#f9f9f9';
-                        emptyBox.innerHTML = '<div style="color:#999;font-size:12px;"></div>';
-                        grid.appendChild(emptyBox);
-                    }
-                }
-                
-                slideDiv.appendChild(grid);
-                previewBody.appendChild(slideDiv);
-            }
-        }
-
-        function getLayoutConfig(count) {
-            let rows, cols;
-            switch(parseInt(count)) {
-                case 1: rows = 1; cols = 1; break;
-                case 2: rows = 1; cols = 2; break;
-                case 3: rows = 2; cols = 2; break;
-                case 4: rows = 2; cols = 2; break;
-                case 6: rows = 2; cols = 3; break;
-                case 9: rows = 3; cols = 3; break;
-                default: rows = 3; cols = 3;
-            }
-            return { rows, cols };
-        }
-
-        function createPreviewBox(canvas, title) {
-            const box = document.createElement('div');
-            box.className = 'preview-img-box';
-            
-            try {
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = canvas.width;
-                tempCanvas.height = canvas.height;
-                const tempCtx = tempCanvas.getContext('2d');
-                tempCtx.drawImage(canvas, 0, 0);
-                const imgData = tempCanvas.toDataURL("image/png");
-                
-                const img = document.createElement('img');
-                img.src = imgData;
-                img.style.maxHeight = '100%';
-                img.style.maxWidth = '100%';
-                img.style.objectFit = 'contain';
-                
-                const titleLabel = document.createElement('div');
-                titleLabel.textContent = title.length > 50 ? title.substring(0, 50) + '...' : title;
-                titleLabel.style.fontSize = '12px';
-                titleLabel.style.color = '#666';
-                titleLabel.style.marginTop = '5px';
-                titleLabel.style.textAlign = 'center';
-                
-                box.appendChild(img);
-                box.appendChild(titleLabel);
-            } catch (e) {
-                box.innerHTML = '<div style="color:#D24726;font-size:12px;">Preview Error</div>';
-            }
-            
-            return box;
-        }
-
-        async function downloadPPT() {
-            const pptx = new PptxGenJS();
-            pptx.layout = 'LAYOUT_16x9';
-            
-            // Title slide
-            const titleSlide = pptx.addSlide();
-            titleSlide.addText('KPI Dashboard Report', {
-                x: 0.5, y: 1, w: 9, h: 1,
-                fontSize: 36, bold: true, color: '2F80ED'
-            });
-            
-            const date = new Date().toLocaleDateString();
-            titleSlide.addText(`Generated: ${date}`, {
-                x: 0.5, y: 2, w: 9, h: 0.5,
-                fontSize: 16, color: '666666'
-            });
-            
-            // Get all selected charts mixed together
-            const allChartsForExport = [];
-            const chartElements = document.querySelectorAll("canvas");
-            
-            chartElements.forEach((canvas, index) => {
-                const chart = Chart.getChart(canvas.id);
-                if (chart) {
-                    const title = chart.options.plugins.title.text;
-                    const tech = title.split(' - ')[0];
-                    
-                    if (selectedTechForExport[tech]) {
-                        allChartsForExport.push({
-                            canvas: canvas,
-                            chart: chart,
-                            title: title,
-                            tech: tech
-                        });
-                    }
-                }
-            });
-            
-            if (allChartsForExport.length === 0) {
-                alert("No charts selected for export.");
-                return;
-            }
-            
-            // PPT layout calculations
-            const layout = getLayoutConfig(pptLayout);
-            const slideWidth = 10.0;
-            const slideHeight = 5.625;
-            const marginX = 0.5;
-            const marginTop = 0.8;
-            const marginBottom = 0.5;
-            const gap = 0.2;
-            
-            const usableW = slideWidth - (marginX * 2);
-            const usableH = slideHeight - marginTop - marginBottom;
-            const chartW = (usableW - ((layout.cols - 1) * gap)) / layout.cols;
-            const chartH = (usableH - ((layout.rows - 1) * gap)) / layout.rows;
-            
-            // Add chart slides
-            for (let i = 0; i < allChartsForExport.length; i += pptLayout) {
-                const slide = pptx.addSlide();
-                
-                for (let j = 0; j < pptLayout; j++) {
-                    const chartIndex = i + j;
-                    if (chartIndex < allChartsForExport.length) {
-                        const chartData = allChartsForExport[chartIndex];
-                        const rowIndex = Math.floor(j / layout.cols);
-                        const colIndex = j % layout.cols;
-                        
-                        const xPos = marginX + (colIndex * (chartW + gap));
-                        const yPos = marginTop + (rowIndex * (chartH + gap));
-                        
-                        try {
-                            slide.addImage({
-                                data: chartData.canvas.toDataURL("image/png"),
-                                x: xPos,
-                                y: yPos,
-                                w: chartW,
-                                h: chartH
-                            });
-                            
-                            // Add chart title
-                            const shortTitle = chartData.title.length > 40 ? 
-                                chartData.title.substring(0, 40) + '...' : chartData.title;
-                            slide.addText(shortTitle, {
-                                x: xPos,
-                                y: yPos - 0.25,
-                                w: chartW,
-                                h: 0.25,
-                                fontSize: 7,
-                                bold: true,
-                                color: '333333'
-                            });
-                        } catch (e) {
-                            console.error(`Error adding chart to PPT:`, e);
-                        }
-                    }
-                }
-            }
-            
-            // Summary slide
-            const summarySlide = pptx.addSlide();
-            summarySlide.addText('Summary', {
-                x: 0.5, y: 0.5, w: 9, h: 0.5,
-                fontSize: 28, bold: true, color: '2F80ED'
-            });
-            
-            let summaryText = `Total Charts: ${allChartsForExport.length}\n`;
-            summaryText += `Layout: ${layout.rows}x${layout.cols} (${pptLayout} per slide)\n`;
-            summaryText += `Total Slides: ${Math.ceil(allChartsForExport.length / pptLayout) + 2}\n\n`;
-            summaryText += `Level: ${currentLevel === 'group' ? 'Group' : 'Site'}\n`;
-            
-            if (currentLevel === 'site') {
-                summaryText += `Selected Sites: ${selectedSites.length}\n`;
-            }
-            
-            // Count by technology
-            const techCount = {};
-            allChartsForExport.forEach(chart => {
-                techCount[chart.tech] = (techCount[chart.tech] || 0) + 1;
-            });
-            
-            for (const tech in techCount) {
-                summaryText += `${tech}: ${techCount[tech]} charts\n`;
-            }
-            
-            summarySlide.addText(summaryText, {
-                x: 0.5, y: 1.5, w: 9, h: 3,
-                fontSize: 14, color: '333333'
-            });
-            
-            // Download
-            const timestamp = new Date().getTime();
-            try {
-                await pptx.writeFile({ fileName: `KPI_Report_${currentLevel}_${timestamp}.pptx` });
-                closePPTExport();
-            } catch (e) {
-                alert("Error generating PPT: " + e.message);
-            }
-        }
-    </script>
-</body>
-</html>
+import sys
+import pandas as pd
+import warnings
+from PySide6.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
+    QFileDialog, QLabel, QTableWidget, QTableWidgetItem,
+    QMessageBox, QDateEdit, QTextEdit, QTabWidget
+)
+from PySide6.QtCore import QDate
+from PySide6.QtGui import QColor
+from openpyxl import Workbook
+from openpyxl.styles import PatternFill
+from datetime import datetime
+
+warnings.simplefilter("ignore", UserWarning)
+
+LOWER_IS_BETTER_KEYWORDS = ["drop", "bler", "congestion", "prb", "loss", "latency"]
+
+def is_lower_better(kpi_name):
+    kpi_name = kpi_name.lower()
+    return any(keyword in kpi_name for keyword in LOWER_IS_BETTER_KEYWORDS)
+
+class KPIComparator(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Pre vs Post KPI Comparator")
+        self.resize(1800, 900)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(QLabel("📊 KPI Comparator"))
+
+        # Date selectors
+        date_layout = QHBoxLayout()
+        today = QDate.currentDate()
+        post_end_default = today.addDays(-1)
+        post_start_default = post_end_default.addDays(-2)
+        pre_start_default = QDate(2025, 11, 22)
+        pre_end_default = QDate(2025, 11, 24)
+
+        self.pre_start = QDateEdit(pre_start_default)
+        self.pre_end = QDateEdit(pre_end_default)
+        self.post_start = QDateEdit(post_start_default)
+        self.post_end = QDateEdit(post_end_default)
+
+        for d in [self.pre_start, self.pre_end, self.post_start, self.post_end]:
+            d.setCalendarPopup(True)
+            d.setDisplayFormat("dd/MM/yyyy")
+
+        date_layout.addWidget(QLabel("Pre Start"))
+        date_layout.addWidget(self.pre_start)
+        date_layout.addWidget(QLabel("Pre End"))
+        date_layout.addWidget(self.pre_end)
+        date_layout.addWidget(QLabel("Post Start"))
+        date_layout.addWidget(self.post_start)
+        date_layout.addWidget(QLabel("Post End"))
+        date_layout.addWidget(self.post_end)
+        main_layout.addLayout(date_layout)
+
+        # Buttons
+        btn_layout = QHBoxLayout()
+        self.upload_btn = QPushButton("Upload Excel")
+        self.upload_btn.clicked.connect(self.load_excel)
+        self.export_btn = QPushButton("Export Result")
+        self.export_btn.clicked.connect(self.export_excel)
+        self.export_btn.setEnabled(False)
+        btn_layout.addWidget(self.upload_btn)
+        btn_layout.addWidget(self.export_btn)
+        main_layout.addLayout(btn_layout)
+
+        # Tabs: KPI Table + Degraded Summary
+        self.tabs = QTabWidget()
+        self.kpi_table = QTableWidget()
+        self.summary_table = QTableWidget()
+        self.tabs.addTab(self.kpi_table, "Pivoted KPI Table")
+        self.tabs.addTab(self.summary_table, "Degraded KPI Summary")
+        main_layout.addWidget(self.tabs)
+
+        # Debug panel
+        self.debug_panel = QTextEdit()
+        self.debug_panel.setReadOnly(True)
+        self.debug_panel.setPlaceholderText("Debug messages...")
+        main_layout.addWidget(QLabel("🛠 Debug / Issues Panel"))
+        main_layout.addWidget(self.debug_panel)
+
+        self.setLayout(main_layout)
+        self.result_df = None
+        self.summary_df = None
+        self.site_col = None
+        self.kpi_cols = None
+        self.raw_df = None
+        self.date_col = None
+
+    def log_debug(self, msg):
+        self.debug_panel.append(msg)
+
+    def find_date_column(self, df):
+        for c in df.columns:
+            try:
+                pd.to_datetime(df[c].dropna().iloc[0], dayfirst=True)
+                return c
+            except:
+                continue
+        return None
+
+    def load_excel(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select Excel File", "", "Excel Files (*.xlsx *.xls)")
+        if not file_path:
+            self.log_debug("No file selected.")
+            return
+
+        try:
+            self.log_debug(f"Reading file: {file_path}")
+            df = pd.read_excel(file_path, header=0)
+            df.columns = [str(c).strip() for c in df.columns]
+            self.raw_df = df
+
+            self.date_col = self.find_date_column(df)
+            if not self.date_col:
+                raise ValueError("No date column found")
+            self.log_debug(f"Detected date column: {self.date_col}")
+
+            df[self.date_col] = pd.to_datetime(df[self.date_col].astype(str).str.strip(), dayfirst=True, errors='coerce')
+
+            # Site column detection
+            if 'eNodeB Name' in df.columns:
+                self.site_col = 'eNodeB Name'
+            elif 'GBSC' in df.columns:
+                self.site_col = 'GBSC'
+            else:
+                for c in df.columns:
+                    if c != self.date_col and df[c].dtype == object:
+                        self.site_col = c
+                        break
+            self.log_debug(f"Detected site column: {self.site_col}")
+
+            # Numeric KPI columns
+            self.kpi_cols = [c for c in df.columns if c not in [self.date_col, self.site_col] and pd.api.types.is_numeric_dtype(df[c])]
+            self.log_debug(f"Detected KPI columns: {self.kpi_cols}")
+
+            # Dates
+            pre_s = pd.Timestamp(self.pre_start.date().toPython())
+            pre_e = pd.Timestamp(self.pre_end.date().toPython())
+            post_s = pd.Timestamp(self.post_start.date().toPython())
+            post_e = pd.Timestamp(self.post_end.date().toPython())
+            self.log_debug(f"Pre period: {pre_s.date()} to {pre_e.date()}")
+            self.log_debug(f"Post period: {post_s.date()} to {post_e.date()}")
+
+            pre_df = df[(df[self.date_col] >= pre_s) & (df[self.date_col] <= pre_e)]
+            post_df = df[(df[self.date_col] >= post_s) & (df[self.date_col] <= post_e)]
+
+            # Prepare pivoted data
+            rows = []
+            summary_rows = []
+            sites = sorted(set(pre_df[self.site_col].unique()).union(post_df[self.site_col].unique()))
+
+            for site in sites:
+                row = {'Site': site}
+                degraded_count = 0
+                no_data_count = 0
+                for kpi in self.kpi_cols:
+                    pre_values = pre_df[pre_df[self.site_col] == site][kpi]
+                    post_values = post_df[post_df[self.site_col] == site][kpi]
+
+                    pre_days_count = len(pre_values.dropna())
+                    post_days_count = len(post_values.dropna())
+
+                    # Initialize no_fill_flag
+                    no_fill_flag = False
+
+                    # Both periods have no data → No Data (gray)
+                    if pre_days_count == 0 and post_days_count == 0:
+                        res = "No Data"
+                        pre_val = post_val = pct = pd.NA
+                        no_data_count += 1
+                        no_fill_flag = True
+                    # Only one period missing → show available value, no fill
+                    elif pre_days_count == 0 or post_days_count == 0:
+                        pre_val = pre_values.mean() if pre_days_count > 0 else pd.NA
+                        post_val = post_values.mean() if post_days_count > 0 else pd.NA
+                        res = "No Change"
+                        pct = pd.NA
+                        no_fill_flag = True
+                    else:
+                        pre_val = pre_values.mean()
+                        post_val = post_values.mean()
+                        if pre_val == post_val:
+                            res = "No Change"
+                            pct = pd.NA
+                            no_fill_flag = False
+                        else:
+                            improved = (post_val < pre_val) if is_lower_better(kpi) else (post_val > pre_val)
+                            res = "Improved" if improved else "Degraded"
+                            pct = ((post_val - pre_val)/pre_val*100) if pre_val != 0 else pd.NA
+                            no_fill_flag = False
+                            if res == "Degraded":
+                                degraded_count += 1
+
+                    row[kpi] = {"text": f"Pre:{pre_val} | Post:{post_val} | Δ%:{pct} | {res}" if pd.notna(pct) else f"Pre:{pre_val} | Post:{post_val} | {res}",
+                                "no_fill": no_fill_flag}
+
+                row['Degraded KPI Count'] = degraded_count
+                row['No Data Count'] = no_data_count
+                rows.append(row)
+                summary_rows.append({'Site': site, 'Degraded KPI Count': degraded_count, 'No Data Count': no_data_count})
+
+            self.result_df = pd.DataFrame(rows)
+            self.summary_df = pd.DataFrame(summary_rows)
+
+            # Sort: most degraded first, mostly No Data last
+            self.summary_df.sort_values(by=['Degraded KPI Count', 'No Data Count'], ascending=[False, True], inplace=True)
+            self.result_df.set_index('Site', inplace=True)
+            self.result_df = self.result_df.loc[self.summary_df['Site']].reset_index()
+
+            self.populate_table()
+            self.populate_summary()
+            self.export_btn.setEnabled(True)
+            self.log_debug("Comparison completed successfully.")
+
+        except Exception as e:
+            self.log_debug(f"Error: {str(e)}")
+            QMessageBox.critical(self, "Error", str(e))
+
+    def populate_table(self):
+        df = self.result_df
+        self.kpi_table.setRowCount(len(df))
+        self.kpi_table.setColumnCount(len(df.columns))
+        self.kpi_table.setHorizontalHeaderLabels(df.columns)
+
+        for r in range(len(df)):
+            for c in range(len(df.columns)):
+                val = df.iat[r, c]
+                if isinstance(val, dict):
+                    item_text = val["text"]
+                    item = QTableWidgetItem(item_text)
+                    if c > 0 and not val.get("no_fill", False):
+                        if "Degraded" in item_text:
+                            item.setBackground(QColor(255, 100, 100))
+                        elif "Improved" in item_text:
+                            item.setBackground(QColor(150, 255, 150))
+                        elif "No Change" in item_text:
+                            item.setBackground(QColor(255, 255, 153))
+                    # Do NOT call setBackground if no_fill → stays default
+                else:
+                    item = QTableWidgetItem(str(val))
+                self.kpi_table.setItem(r, c, item)
+
+    def populate_summary(self):
+        df = self.summary_df
+        self.summary_table.setRowCount(len(df))
+        self.summary_table.setColumnCount(len(df.columns))
+        self.summary_table.setHorizontalHeaderLabels(df.columns)
+
+        for r in range(len(df)):
+            for c in range(len(df.columns)):
+                item = QTableWidgetItem(str(df.iat[r, c]))
+                if c == 1 and df.iat[r, c] > 0:
+                    item.setBackground(QColor(255, 150, 150))
+                elif c == 2 and df.iat[r, c] > 0:
+                    item.setBackground(QColor(200, 200, 200))
+                self.summary_table.setItem(r, c, item)
+
+    def export_excel(self):
+        if self.result_df is None:
+            self.log_debug("No data to export.")
+            return
+
+        network_type = "LTE" if self.site_col == "eNodeB Name" else "GSM"
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        default_name = f"kpi_comparison_{network_type}_{timestamp}.xlsx"
+
+        path, _ = QFileDialog.getSaveFileName(self, "Save Excel", default_name, "Excel Files (*.xlsx)")
+        if not path:
+            return
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Pivoted KPI Table"
+
+        # Write headers
+        for idx, col in enumerate(self.result_df.columns, 1):
+            ws.cell(row=1, column=idx, value=col)
+
+        red_fill = PatternFill(start_color="FF6464", end_color="FF6464", fill_type="solid")
+        green_fill = PatternFill(start_color="96FF96", end_color="96FF96", fill_type="solid")
+        yellow_fill = PatternFill(start_color="FFFF99", end_color="FFFF99", fill_type="solid")
+        gray_fill = PatternFill(start_color="C8C8C8", end_color="C8C8C8", fill_type="solid")
+
+        for r_idx, row in enumerate(self.result_df.itertuples(index=False), 2):
+            for c_idx, val in enumerate(row, 1):
+                cell = ws.cell(row=r_idx, column=c_idx)
+                if isinstance(val, dict):
+                    cell.value = val["text"]
+                    if not val.get("no_fill", False):
+                        if "Degraded" in val["text"]:
+                            cell.fill = red_fill
+                        elif "Improved" in val["text"]:
+                            cell.fill = green_fill
+                        elif "No Change" in val["text"]:
+                            cell.fill = yellow_fill
+                    # Do not assign fill if no_fill → default
+                else:
+                    cell.value = val
+
+        # Degraded summary
+        ws2 = wb.create_sheet("Degraded Summary")
+        for idx, col in enumerate(self.summary_df.columns, 1):
+            ws2.cell(row=1, column=idx, value=col)
+        for r_idx, row in enumerate(self.summary_df.itertuples(index=False), 2):
+            for c_idx, val in enumerate(row, 1):
+                cell = ws2.cell(row=r_idx, column=c_idx, value=val)
+                if c_idx == 2 and val > 0:
+                    cell.fill = red_fill
+                if c_idx == 3 and val > 0:
+                    cell.fill = gray_fill
+
+        wb.save(path)
+        self.log_debug(f"Results exported to {path}")
+        QMessageBox.information(self, "Export Completed", f"Excel exported to:\n{path}")
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = KPIComparator()
+    window.show()
+    sys.exit(app.exec())
