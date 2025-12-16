@@ -45,19 +45,15 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-        .tech-switcher button.gsm {
+        .tech-switcher button.gsm-lte {
             background: #2F80ED;
             color: white;
         }
-        .tech-switcher button.lte {
-            background: #27AE60;
-            color: white;
-        }
-        .tech-switcher button.nr {
+        .tech-switcher button.nr-nsa {
             background: #D24726;
             color: white;
         }
-               
+        
         /* --- CONTROLS --- */
         .controls {
             display: flex;
@@ -423,7 +419,7 @@
 
     <div class="tech-switcher">
         <button class="gsm-lte active" onclick="switchToDashboard('gsm-lte')">GSM/LTE</button>
-        <button class="nr" onclick="switchToDashboard('nr')">NR</button>
+        <button class="nr-nsa" onclick="switchToDashboard('nr-nsa')">NR/NSA</button>
     </div>
 
     <div class="controls">
@@ -573,8 +569,8 @@
 
         // --- Sheet URLs (GSM/LTE only) ---
         const sheetUrls = {
-            GSM: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1977848975&single=true&output=csv",
-            LTE: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=893314169&single=true&output=csv"
+            GSM: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1849454115&single=true&output=csv",
+            LTE: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=692796639&single=true&output=csv"
         };
         
         let activeChartStyle = null;
@@ -668,8 +664,8 @@
             if (type === 'gsm-lte') {
                 // Already here
                 return;
-            } else if (type === 'nr') {
-                window.location.href = 'nr.html';
+            } else if (type === 'nr-nsa') {
+                window.location.href = 'nr-nsa-dashboard.html';
             }
         }
 
