@@ -49,7 +49,7 @@
             background: #2F80ED;
             color: white;
         }
-        .tech-switcher button.nr-nsa {
+        .tech-switcher button.nr {
             background: #D24726;
             color: white;
         }
@@ -419,7 +419,7 @@
 
     <div class="tech-switcher">
         <button class="gsm-lte active" onclick="switchToDashboard('gsm-lte')">GSM/LTE</button>
-        <button class="nr-nsa" onclick="switchToDashboard('nr')">NR/NSA</button>
+        <button class="nr" onclick="switchToDashboard('nr')">NR</button>
     </div>
 
     <div class="controls">
@@ -664,7 +664,7 @@
             if (type === 'gsm-lte') {
                 // Already here
                 return;
-            } else if (type === 'nr-nsa') {
+            } else if (type === 'nr') {
                 window.location.href = 'nr.html';
             }
         }
