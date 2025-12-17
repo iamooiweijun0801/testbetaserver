@@ -1,1 +1,1026 @@
-abababab
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KPI Dashboard - NR/NSA</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <style>
+        /* Same CSS as GSM/LTE dashboard */
+        /* Use the same CSS as above, just change the tech-switcher colors */
+        .tech-switcher button.gsm-lte { background: #2F80ED; color: white; }
+        .tech-switcher button.nr-nsa { background: #D24726; color: white; }
+        
+        /* Update tech-color-buttons to show only NR */
+        .tech-color-btn.nr { background: #D24726; }
+    </style>
+</head>
+<body onload="initDashboard()">
+    <header>KPI Dashboard - NR/NSA</header>
+
+    <div class="tech-switcher">
+        <button class="gsm-lte" onclick="switchToDashboard('gsm-lte')">GSM/LTE</button>
+        <button class="nr-nsa active" onclick="switchToDashboard('nr-nsa')">NR/NSA</button>
+    </div>
+
+    <div class="controls">
+        <button class="action-btn" onclick="openPPTExport()">📊 Export PPT</button>
+    </div>
+
+    <div class="chart-grid" id="mainChartContainer">
+        <!-- Charts will be loaded here -->
+    </div>
+
+    <!-- Drawer Toggle Buttons -->
+    <div class="drawer-toggle-buttons">
+        <div class="chartStyleDrawerToggle" onclick="toggleChartStyleDrawer()">🎨</div>
+        <div class="kpiDrawerToggle" onclick="toggleDrawer()">⚙</div>
+    </div>
+
+    <!-- Chart Style Drawer -->
+    <div id="chartStyleDrawer" class="chartStyleDrawer">
+        <div class="drawer-header"> 
+            <h3>Chart Styles</h3> 
+            <button onclick="toggleChartStyleDrawer()" style="border:none; background:none; font-size:22px; cursor:pointer;">✕</button> 
+        </div>
+        <div class="style-options-body">
+            <div class="style-button" onclick="applyChartStyle(0)">Filled Area</div>
+            <div class="style-button" onclick="applyChartStyle(1)">Line with Dots</div>
+            <div class="style-button" onclick="applyChartStyle(2)">Smooth Line</div>
+            <div class="style-button" onclick="applyChartStyle(3)">Thick Line</div>
+            <div class="style-button" onclick="applyChartStyle(4)">Thin Line with dots</div>
+            
+            <div style="margin: 20px 0; border-top: 1px solid #eee; padding-top: 15px;">
+                <label><b>Technology Colors</b></label>
+                <div class="tech-color-buttons">
+                    <!-- Only NR color button since NSA data will be displayed as NR -->
+                    <button class="tech-color-btn nr" onclick="openColorPicker('NR')">NR Color</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Settings Drawer -->
+    <div id="kpiDrawer" class="kpiDrawer">
+        <div class="drawer-header"> 
+            <h3 id="drawerHeaderTitle">KPI Settings</h3> 
+            <button onclick="toggleDrawer()" style="border:none; background:none; font-size:24px; cursor:pointer; color:#777;">✕</button> 
+        </div>
+        <div class="drawer-controls">
+            <button class="action-btn" onclick="selectVisibleKpis()" style="background:#5cb85c;">Select All</button>
+            <button class="action-btn" onclick="clearVisibleKpis()" style="background:#f0ad4e;">Clear All</button>
+            <button class="action-btn" onclick="applyKpis()" style="background:#2F80ED;">Apply</button>
+        </div>
+        <div class="kpi-options-body" id="kpiOptionsList">
+            <!-- KPI options will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Color Picker Modal -->
+    <div id="colorPickerModal" class="color-picker-modal">
+        <div class="color-picker-content">
+            <h3 id="colorPickerTitle">Select Color for NR</h3>
+            <div class="color-picker-grid" id="colorPickerGrid">
+                <!-- Color options will be added here -->
+            </div>
+            <div class="color-picker-actions">
+                <button class="action-btn" onclick="closeColorPicker()" style="background:#888;">Cancel</button>
+                <button class="action-btn" onclick="applySelectedColor()" style="background:#27AE60;">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PPT Export Modal -->
+    <div id="pptModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>PPT Export Preview</span>
+                <button onclick="closePPTExport()" style="border:none; background:none; font-size:20px; cursor:pointer;">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="previewBody">
+                    <!-- Preview slides will be loaded here -->
+                </div>
+                <div id="previewSettingsPanel">
+                    <h3>Export Settings</h3>
+                    
+                    <div class="settings-group">
+                        <h4>Layout</h4>
+                        <div class="graph-options">
+                            <button onclick="updatePPTPreview(1)" data-count="1">1 Graph</button>
+                            <button onclick="updatePPTPreview(2)" data-count="2">2 Graphs</button>
+                            <button onclick="updatePPTPreview(3)" data-count="3">3 Graphs</button>
+                            <button onclick="updatePPTPreview(4)" data-count="4">4 Graphs</button>
+                            <button onclick="updatePPTPreview(6)" data-count="6">6 Graphs</button>
+                            <button onclick="updatePPTPreview(9)" data-count="9">9 Graphs</button>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <h4>Select Technologies</h4>
+                        <div class="tech-export-options" id="techExportOptions">
+                            <!-- Technology checkboxes will be added here -->
+                        </div>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <h4>Export Options</h4>
+                        <div style="font-size: 12px; color: #666; margin-top: 10px;">
+                            <p>• Maintains chart colors</p>
+                            <p>• Preserves chart titles</p>
+                            <p>• Optimized for PowerPoint</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn" onclick="closePPTExport()" style="background:#888;">Cancel</button>
+                <button class="action-btn ppt-btn" onclick="downloadPPT()" style="background:#D24726;">Download PPT</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIG & STATE ---
+        let allData = [];
+        let allCharts = {};
+        let selectedKpis = [];
+        let selectedTechForColor = '';
+        let selectedColor = '';
+        let pptLayout = 9;
+        let selectedTechForExport = {
+            NR: true  // Only NR since NSA data is displayed as NR
+        };
+
+        // --- KPI Definitions (NR + NSA but displayed as NR) ---
+        const kpiDefinitions = [
+            // NR KPIs (from NR sheet)
+            { tech: "NR", kpi: "SgNB Addition Success Rate (CU)(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "SCG PSCell Change Success Rate(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "SgNB TriSgNB Abnormal Release Rate(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "Intra-SgNB Pscell Change Success Rate(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "Inter-SgNB Pscell Change Success Rate(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "NSA Average User Number", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "DL Avg Latency (ms)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "DL Traffic Volume (GB)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "UL Traffic Volume (GB)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "DL User Throughput(Mbps)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "UL User Throughput(Mbps)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "DL PRB Utilization(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "UL PRB Utilization(%)", initialChecked: true, color: "#D24726" },
+            // NSA KPIs (from NSA sheet, but displayed as NR)
+            // Add your actual NSA KPIs here - they will show as "NR - [KPI Name]"
+            { tech: "NR", kpi: "Avg NSA DC User Num", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "SCG Mod Success Rate(4G initiated)(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "SCG Mod Success Rate(5G initiated)(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "NSA E-RAB Drop Rate(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "NSA Handover Success Rate(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "NSA Traffic Volume (GB)", initialChecked: true, color: "#D24726" }
+        ];
+
+        // --- Sheet URLs (NR + NSA sheets) ---
+        const sheetUrls = {
+            // NR sheet (actual NR data)
+            "NR": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1372365834&single=true&output=csv",
+            
+            // NSA sheet (will be displayed as NR)
+            // Replace with your actual NSA sheet URL
+            "NSA": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1503870746&single=true&output=csv" // <-- REPLACE THIS WITH ACTUAL NSA SHEET URL
+        };
+        
+        let activeChartStyle = null;
+        let techColors = {
+            NR: "#D24726"  // Single color for all NR/NSA charts
+        };
+
+        // --- Color Palette Options ---
+        const colorPalette = [
+            "#2F80ED", "#27AE60", "#D24726", "#8E44AD",
+            "#3498DB", "#2ECC71", "#E74C3C", "#9B59B6",
+            "#1ABC9C", "#F39C12", "#34495E", "#95A5A6",
+            "#2980B9", "#16A085", "#C0392B", "#8E44AD"
+        ];
+
+        // --- Chart Styles (same as before) ---
+        const chartStyles = [
+            { 
+                name: "Filled Area", 
+                borderWidth: 2, 
+                pointRadius: 0, 
+                borderDash: [], 
+                tension: 0.2, 
+                fill: true, 
+                backgroundColor: "rgba(47, 128, 237, 0.1)" 
+            },
+            { 
+                name: "Line with Dots", 
+                borderWidth: 3, 
+                pointRadius: 5, 
+                borderDash: [], 
+                tension: 0.4, 
+                fill: false 
+            },
+            { 
+                name: "Smooth Line", 
+                borderWidth: 2, 
+                pointRadius: 0, 
+                borderDash: [], 
+                tension: 0.4, 
+                fill: false 
+            },
+            { 
+                name: "Thick Line", 
+                borderWidth: 4, 
+                pointRadius: 0, 
+                borderDash: [], 
+                tension: 0.3, 
+                fill: false 
+            },
+            { 
+                name: "Thin Line with dots", 
+                borderWidth: 2, 
+                pointRadius: 4, 
+                borderDash: [], 
+                tension: 0, 
+                fill: false 
+            }
+        ];
+
+        // --- DASHBOARD SWITCHER ---
+        function switchToDashboard(type) {
+            if (type === 'gsm-lte') {
+                window.location.href = 'index.html';  // Main GSM/LTE dashboard
+            } else if (type === 'nr-nsa') {
+                // Already here
+                return;
+            }
+        }
+
+        // --- INITIALIZATION ---
+        function initDashboard() {
+            selectedKpis = kpiDefinitions.filter(k => k.initialChecked).map(k => k.tech + " - " + k.kpi);
+            applyChartStyle(1);
+            fetchData();
+        }
+
+        // --- DATA FETCHING (Modified to combine NR and NSA data) ---
+        async function fetchData(){
+            document.getElementById("mainChartContainer").innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>Loading NR/NSA data...</h2>";
+            allData = [];
+            let timeline = [];
+            
+            try {
+                // Process NR sheet
+                if (sheetUrls["NR"]) {
+                    try {
+                        const url = sheetUrls["NR"] + "&t=" + Date.now();
+                        const res = await fetch(url);
+                        if (res.ok) {
+                            const text = await res.text();
+                            if (text && text.trim() !== '') {
+                                const rows = text.trim().split('\n').map(r => r.split(','));
+                                
+                                if (rows.length >= 2) {
+                                    const headers = rows.shift().map(h => h.trim());
+                                    const dateHeader = headers.find(h => h.toLowerCase().includes('date'));
+                                    
+                                    rows.forEach(r => {
+                                        const obj = {};
+                                        headers.forEach((h, i) => {
+                                            const val = r[i] ? r[i].trim() : "";
+                                            obj[h] = val === "" ? null : (isNaN(val) ? val : parseFloat(val));
+                                        });
+                                        if (obj[dateHeader]) {
+                                            obj.Tech = "NR"; // Mark as NR
+                                            allData.push(obj);
+                                            if (!timeline.includes(obj[dateHeader])) {
+                                                timeline.push(obj[dateHeader]);
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error(`Error loading NR data:`, e);
+                    }
+                }
+                
+                // Process NSA sheet (but store as NR)
+                if (sheetUrls["NSA"] && sheetUrls["NSA"] !== "YOUR_NSA_SHEET_URL_HERE") {
+                    try {
+                        const url = sheetUrls["NSA"] + "&t=" + Date.now();
+                        const res = await fetch(url);
+                        if (res.ok) {
+                            const text = await res.text();
+                            if (text && text.trim() !== '') {
+                                const rows = text.trim().split('\n').map(r => r.split(','));
+                                
+                                if (rows.length >= 2) {
+                                    const headers = rows.shift().map(h => h.trim());
+                                    const dateHeader = headers.find(h => h.toLowerCase().includes('date'));
+                                    
+                                    rows.forEach(r => {
+                                        const obj = {};
+                                        headers.forEach((h, i) => {
+                                            const val = r[i] ? r[i].trim() : "";
+                                            obj[h] = val === "" ? null : (isNaN(val) ? val : parseFloat(val));
+                                        });
+                                        if (obj[dateHeader]) {
+                                            obj.Tech = "NR"; // Store as NR (not NSA)
+                                            allData.push(obj);
+                                            if (!timeline.includes(obj[dateHeader])) {
+                                                timeline.push(obj[dateHeader]);
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error(`Error loading NSA data:`, e);
+                    }
+                }
+
+                if (allData.length === 0) {
+                    throw new Error("No data loaded from any source");
+                }
+
+                // Sort the timeline
+                timeline.sort((a,b)=>{
+                    const [da,ma,ya]=a.split('/').map(Number);
+                    const [db,mb,yb]=b.split('/').map(Number);
+                    return new Date(ya,ma-1,da)-new Date(yb,mb-1,db);
+                });
+                
+                renderCharts(timeline);
+
+            } catch(e) {
+                console.error("Data loading error:", e);
+                document.getElementById("mainChartContainer").innerHTML = "<h2 style='text-align:center;padding:40px;color:#D24726;'>Failed to load data. Check console for details.</h2>";
+            }
+        }
+
+        // --- CHART RENDERING (Same as GSM/LTE but for NR only) ---
+        function renderCharts(timeline = []) {
+            const container = document.getElementById("mainChartContainer");
+            container.innerHTML = "";
+            allCharts = {};
+            
+            if (timeline.length === 0 || allData.length === 0) {
+                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No data available.</h2>";
+                return;
+            }
+
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const timelineLabels = timeline.map(d => {
+                const [day, month] = d.split('/').map(Number);
+                return `${day} ${monthNames[month - 1]}`;
+            });
+
+            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
+            if (!dateHeaderName) return;
+
+            const chartsToRender = kpiDefinitions.filter(k => selectedKpis.includes(k.tech + " - " + k.kpi));
+            
+            if (chartsToRender.length === 0) {
+                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No KPIs selected. Please select KPIs from settings drawer.</h2>";
+                return;
+            }
+
+            chartsToRender.forEach((kpiDef, idx) => {
+                const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
+                const tech = kpiDef.tech; // Always "NR"
+                const kpi = kpiDef.kpi;
+
+                const card = document.createElement("div");
+                card.className = "chart-card";
+                const wrapper = document.createElement("div");
+                wrapper.className = "chart-container";
+                const canvas = document.createElement("canvas");
+                canvas.id = `chart_${idx}`;
+                wrapper.appendChild(canvas);
+                card.appendChild(wrapper);
+                container.appendChild(card);
+
+                // Data Processing
+                const dataPoints = timeline.map(date => {
+                    const values = allData
+                        .filter(d => d.Tech === tech && d[dateHeaderName] === date)
+                        .map(d => d[kpi])
+                        .filter(v => v !== null && v !== "")
+                        .map(Number)
+                        .filter(v => !isNaN(v));
+                    
+                    if (values.length === 0) return null;
+                    
+                    const kpiLower = kpi.toLowerCase();
+                    if (kpiLower.includes('%') || kpiLower.includes('rate') || kpiLower.includes('avg') || kpiLower.includes('average')|| kpiLower.includes('max')) {
+                        return values.reduce((a, b) => a + b, 0) / values.length;
+                    } else {
+                        return values.reduce((a, b) => a + b, 0);
+                    }
+                });
+
+                const validValues = dataPoints.filter(v => v !== null);
+                if (validValues.length === 0) {
+                    const noDataMsg = document.createElement("div");
+                    noDataMsg.style.textAlign = "center";
+                    noDataMsg.style.padding = "20px";
+                    noDataMsg.style.color = "#666";
+                    noDataMsg.textContent = "No data available for this KPI";
+                    card.appendChild(noDataMsg);
+                    return;
+                }
+
+                let minVal = Math.min(...validValues);
+                let maxVal = Math.max(...validValues);
+
+                // Y-Axis Helper Functions
+                function niceNumber(value, round) {
+                    if (value === 0) return 0;
+                    const exponent = Math.floor(Math.log10(value));
+                    const fraction = value / Math.pow(10, exponent);
+                    let niceFraction;
+                    if (round) {
+                        if (fraction < 1.5) niceFraction = 1; 
+                        else if (fraction < 3) niceFraction = 2; 
+                        else if (fraction < 7) niceFraction = 5; 
+                        else niceFraction = 10;
+                    } else {
+                        if (fraction <= 1) niceFraction = 1; 
+                        else if (fraction <= 2) niceFraction = 2; 
+                        else if (fraction <= 5) niceFraction = 5; 
+                        else niceFraction = 10;
+                    }
+                    return niceFraction * Math.pow(10, exponent);
+                }
+      
+                function computeYAxis(minVal, maxVal) {
+                    if (minVal >= 98 && maxVal <= 100) {
+                        return { niceMin: 98, niceMax: 100, tickSpacing: 0.5 };
+                    }
+                    let minV = minVal * 0.95; 
+                    let maxV = maxVal * 1.05;
+                    if (maxVal < 10) minV = 0;
+                    if (maxVal > 90 && maxVal <= 100) maxV = 100;
+                    let range = maxV - minV;
+                    if (range === 0) range = Math.abs(maxV) * 0.1 || 1;
+                    const tickSpacing = niceNumber(range / 5, true);
+                    const niceMin = Math.floor(minV / tickSpacing) * tickSpacing;
+                    const niceMax = Math.ceil(maxV / tickSpacing) * tickSpacing;
+                    return { niceMin, niceMax, tickSpacing };
+                }
+                
+                const { niceMin, niceMax, tickSpacing } = computeYAxis(minVal, maxVal);
+                let chartColor = techColors[tech];
+
+                // Chart Config
+                const chartConfig = {
+                    type: 'line',
+                    data: {
+                        labels: timelineLabels,
+                        datasets: [{ 
+                            label: kpi,
+                            data: dataPoints,
+                            borderColor: chartColor,
+                            backgroundColor: activeChartStyle && activeChartStyle.fill ? 
+                                chartColor.replace(')', ', 0.1)').replace('rgb', 'rgba') : 'transparent',
+                            borderWidth: activeChartStyle ? activeChartStyle.borderWidth : 2, 
+                            pointRadius: activeChartStyle ? activeChartStyle.pointRadius : 5, 
+                            pointBackgroundColor: chartColor,
+                            pointBorderColor: chartColor,
+                            pointBorderWidth: 1,
+                            tension: activeChartStyle ? activeChartStyle.tension : 0.4, 
+                            spanGaps: true
+                        }]
+                    },
+                    options: {
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { 
+                                display: false 
+                            },
+                            title: { 
+                                display: true, 
+                                text: `${tech} - ${kpi}`,
+                                font: { 
+                                    size: 14, 
+                                    weight: 'bold' 
+                                }, 
+                                color: '#333'
+                            }
+                        },
+                        scales: {
+                            x: { 
+                                ticks: { 
+                                    font: { size: 8 } 
+                                }, 
+                                grid: { 
+                                    display: false 
+                                } 
+                            },
+                            y: { 
+                                grid: { 
+                                    color: '#eee' 
+                                }, 
+                                min: niceMin, 
+                                max: niceMax, 
+                                ticks: { 
+                                    stepSize: tickSpacing 
+                                }, 
+                                beginAtZero: maxVal < 10 
+                            }
+                        }
+                    }
+                };
+
+                if (activeChartStyle) {
+                    const style = activeChartStyle;
+                    chartConfig.data.datasets[0].borderWidth = style.borderWidth;
+                    chartConfig.data.datasets[0].pointRadius = style.pointRadius;
+                    chartConfig.data.datasets[0].borderDash = style.borderDash;
+                    chartConfig.data.datasets[0].tension = style.tension;
+                    chartConfig.data.datasets[0].fill = style.fill;
+                    if (style.fill && style.backgroundColor) {
+                        chartConfig.data.datasets[0].backgroundColor = style.backgroundColor.replace('47, 128, 237', 
+                            chartColor.substring(1).match(/.{2}/g).map(x => parseInt(x, 16)).join(', '));
+                    }
+                }
+
+                try {
+                    allCharts[fullKpiName] = new Chart(canvas.getContext("2d"), chartConfig);
+                } catch (e) {
+                    console.error(`Error creating chart for ${fullKpiName}:`, e);
+                    const errorMsg = document.createElement("div");
+                    errorMsg.style.textAlign = "center";
+                    errorMsg.style.padding = "20px";
+                    errorMsg.style.color = "#D24726";
+                    errorMsg.textContent = "Error creating chart";
+                    card.appendChild(errorMsg);
+                }
+            });
+        }
+        
+        // --- KPI DRAWER FUNCTIONS ---
+        function toggleDrawer(){
+            const d = document.getElementById("kpiDrawer");
+            d.classList.toggle("open");
+            if(d.classList.contains("open")) populateKpiOptions();
+        }
+
+        function populateKpiOptions(){
+            const list = document.getElementById("kpiOptionsList");
+            list.innerHTML = "";
+            
+            // Show all KPIs under "NR" group (even NSA KPIs)
+            list.innerHTML += `<div class="kpi-group-title">NR/NSA KPIs</div>`;
+
+            kpiDefinitions.forEach(kpiDef => {
+                const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
+                
+                const checked = selectedKpis.includes(fullKpiName) ? "checked" : "";
+                const d = document.createElement("label");
+                d.className = "kpi-option";
+                d.innerHTML = `<input type='checkbox' value='${fullKpiName}' class='kpi-chk' ${checked}> ${kpiDef.kpi}`;
+                d.onclick = (e) => {
+                    const chk = d.querySelector("input");
+                    if (e.target.tagName !== "INPUT") {
+                        chk.checked = !chk.checked;
+                    }
+                };
+                list.appendChild(d);
+            });
+        }
+        
+        function applyKpis() {
+            const list = document.getElementById("kpiOptionsList");
+            selectedKpis = Array.from(list.querySelectorAll(".kpi-chk:checked")).map(c => c.value);
+            document.getElementById("kpiDrawer").classList.remove("open");
+            
+            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
+            if (dateHeaderName && allData.length > 0) {
+                const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
+                    const [da,ma,ya] = a.split('/').map(Number);
+                    const [db,mb,yb] = b.split('/').map(Number);
+                    return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
+                });
+                renderCharts(timeline);
+            }
+        }
+
+        function selectVisibleKpis() {
+            selectedKpis = kpiDefinitions.map(k => k.tech + " - " + k.kpi);
+            populateKpiOptions();
+        }
+        
+        function clearVisibleKpis() {
+            selectedKpis = [];
+            populateKpiOptions();
+        }
+
+        // --- CHART STYLING FUNCTIONS ---
+        function toggleChartStyleDrawer(){
+            const d = document.getElementById("chartStyleDrawer");
+            d.classList.toggle("open");
+        }
+
+        function applyChartStyle(styleIndex){
+            activeChartStyle = chartStyles[styleIndex];
+            document.querySelectorAll('.style-button').forEach((btn, idx) => {
+                if (idx === styleIndex) { 
+                    btn.classList.add('active'); 
+                } else { 
+                    btn.classList.remove('active'); 
+                }
+            });
+            
+            updateTechColorButtons();
+            
+            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
+            if (dateHeaderName && allData.length > 0) {
+                const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
+                    const [da,ma,ya] = a.split('/').map(Number);
+                    const [db,mb,yb] = b.split('/').map(Number);
+                    return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
+                });
+                renderCharts(timeline);
+            }
+        }
+
+        function updateTechColorButtons() {
+            const nrBtn = document.querySelector('.tech-color-btn.nr');
+            if (nrBtn) nrBtn.style.background = techColors.NR;
+        }
+
+        // --- COLOR PICKER FUNCTIONS ---
+        function openColorPicker(tech) {
+            selectedTechForColor = tech;
+            selectedColor = techColors[tech];
+            document.getElementById('colorPickerTitle').textContent = `Select Color for ${tech}`;
+            
+            const colorGrid = document.getElementById('colorPickerGrid');
+            colorGrid.innerHTML = '';
+            
+            colorPalette.forEach(color => {
+                const colorOption = document.createElement('div');
+                colorOption.className = 'color-option';
+                colorOption.style.backgroundColor = color;
+                colorOption.dataset.color = color;
+                
+                if (color === selectedColor) {
+                    colorOption.classList.add('selected');
+                }
+                
+                colorOption.onclick = () => {
+                    document.querySelectorAll('.color-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    colorOption.classList.add('selected');
+                    selectedColor = color;
+                };
+                
+                colorGrid.appendChild(colorOption);
+            });
+            
+            document.getElementById('colorPickerModal').style.display = 'flex';
+        }
+
+        function closeColorPicker() {
+            document.getElementById('colorPickerModal').style.display = 'none';
+        }
+
+        function applySelectedColor() {
+            if (selectedTechForColor && selectedColor) {
+                techColors[selectedTechForColor] = selectedColor;
+                
+                kpiDefinitions.forEach(kpi => {
+                    if (kpi.tech === selectedTechForColor) {
+                        kpi.color = selectedColor;
+                    }
+                });
+                
+                updateTechColorButtons();
+                
+                const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
+                if (dateHeaderName && allData.length > 0) {
+                    const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
+                        const [da,ma,ya] = a.split('/').map(Number);
+                        const [db,mb,yb] = b.split('/').map(Number);
+                        return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
+                    });
+                    renderCharts(timeline);
+                }
+                
+                closeColorPicker();
+            }
+        }
+
+        // --- PPT EXPORT FUNCTIONS ---
+        function openPPTExport() {
+            const charts = document.querySelectorAll("canvas");
+            if (charts.length === 0) {
+                alert("No charts to export. Please select some KPIs first.");
+                return;
+            }
+            
+            const techOptions = document.getElementById('techExportOptions');
+            techOptions.innerHTML = '';
+            
+            for (const tech in selectedTechForExport) {
+                const div = document.createElement('div');
+                div.className = 'tech-export-option';
+                div.innerHTML = `
+                    <input type="checkbox" id="export-${tech}" ${selectedTechForExport[tech] ? 'checked' : ''} 
+                           onchange="updateTechExportSelection('${tech}', this.checked)">
+                    <label for="export-${tech}">${tech}</label>
+                `;
+                techOptions.appendChild(div);
+            }
+            
+            document.querySelectorAll('.graph-options button').forEach(btn => {
+                if (parseInt(btn.dataset.count) === pptLayout) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            updatePPTPreview(pptLayout);
+            document.getElementById('pptModal').style.display = 'flex';
+        }
+
+        function closePPTExport() {
+            document.getElementById('pptModal').style.display = 'none';
+        }
+
+        function updateTechExportSelection(tech, isSelected) {
+            selectedTechForExport[tech] = isSelected;
+            updatePPTPreview(pptLayout);
+        }
+
+        function updatePPTPreview(layoutCount) {
+            pptLayout = layoutCount;
+            
+            document.querySelectorAll('.graph-options button').forEach(btn => {
+                if (parseInt(btn.dataset.count) === layoutCount) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // Get ALL selected charts mixed together
+            const allChartsForExport = [];
+            const chartElements = document.querySelectorAll("canvas");
+            
+            chartElements.forEach((canvas, index) => {
+                const chart = Chart.getChart(canvas.id);
+                if (chart) {
+                    const title = chart.options.plugins.title.text;
+                    const tech = title.split(' - ')[0];
+                    
+                    if (selectedTechForExport[tech]) {
+                        allChartsForExport.push({
+                            canvas: canvas,
+                            chart: chart,
+                            title: title,
+                            tech: tech
+                        });
+                    }
+                }
+            });
+            
+            if (allChartsForExport.length === 0) {
+                document.getElementById('previewBody').innerHTML = 
+                    '<div style="text-align:center;padding:40px;color:#666;">No charts selected for export.</div>';
+                return;
+            }
+            
+            const previewBody = document.getElementById('previewBody');
+            previewBody.innerHTML = '';
+            
+            // Calculate grid layout based on selected layout
+            const layout = getLayoutConfig(layoutCount);
+            const gridTemplateCols = `repeat(${layout.cols}, 1fr)`;
+            const gridTemplateRows = `repeat(${layout.rows}, 1fr)`;
+            
+            for (let i = 0; i < allChartsForExport.length; i += layoutCount) {
+                const slideDiv = document.createElement('div');
+                slideDiv.className = 'preview-slide';
+                
+                const slideTitle = document.createElement('div');
+                slideTitle.className = 'preview-slide-title';
+                slideTitle.textContent = `Slide ${Math.floor(i/layoutCount) + 1}`;
+                slideDiv.appendChild(slideTitle);
+                
+                const grid = document.createElement('div');
+                grid.className = 'preview-grid';
+                grid.style.display = 'grid';
+                grid.style.gridTemplateColumns = gridTemplateCols;
+                grid.style.gridTemplateRows = gridTemplateRows;
+                grid.style.gap = '10px';
+                grid.style.height = '100%';
+                grid.style.paddingTop = '30px';
+                grid.style.alignContent = 'start';
+                
+                // Fill the grid
+                for (let j = 0; j < layoutCount; j++) {
+                    const cellIndex = i + j;
+                    if (cellIndex < allChartsForExport.length) {
+                        const chartData = allChartsForExport[cellIndex];
+                        const box = createPreviewBox(chartData.canvas, chartData.title);
+                        grid.appendChild(box);
+                    } else {
+                        // Empty cell for 1-0-0 layout
+                        const emptyBox = document.createElement('div');
+                        emptyBox.className = 'preview-img-box';
+                        emptyBox.style.border = '1px dashed #eee';
+                        emptyBox.style.background = '#f9f9f9';
+                        emptyBox.innerHTML = '<div style="color:#999;font-size:12px;"></div>';
+                        grid.appendChild(emptyBox);
+                    }
+                }
+                
+                slideDiv.appendChild(grid);
+                previewBody.appendChild(slideDiv);
+            }
+        }
+
+        function getLayoutConfig(count) {
+            let rows, cols;
+            switch(parseInt(count)) {
+                case 1: rows = 1; cols = 1; break;
+                case 2: rows = 1; cols = 2; break;
+                case 3: rows = 2; cols = 2; break;
+                case 4: rows = 2; cols = 2; break;
+                case 6: rows = 2; cols = 3; break;
+                case 9: rows = 3; cols = 3; break;
+                default: rows = 3; cols = 3;
+            }
+            return { rows, cols };
+        }
+
+        function createPreviewBox(canvas, title) {
+            const box = document.createElement('div');
+            box.className = 'preview-img-box';
+            
+            try {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(canvas, 0, 0);
+                const imgData = tempCanvas.toDataURL("image/png");
+                
+                const img = document.createElement('img');
+                img.src = imgData;
+                img.style.maxHeight = '100%';
+                img.style.maxWidth = '100%';
+                img.style.objectFit = 'contain';
+                
+                const titleLabel = document.createElement('div');
+                titleLabel.textContent = title.length > 50 ? title.substring(0, 50) + '...' : title;
+                titleLabel.style.fontSize = '12px';
+                titleLabel.style.color = '#666';
+                titleLabel.style.marginTop = '5px';
+                titleLabel.style.textAlign = 'center';
+                
+                box.appendChild(img);
+                box.appendChild(titleLabel);
+            } catch (e) {
+                box.innerHTML = '<div style="color:#D24726;font-size:12px;">Preview Error</div>';
+            }
+            
+            return box;
+        }
+
+        async function downloadPPT() {
+            const pptx = new PptxGenJS();
+            pptx.layout = 'LAYOUT_16x9';
+            
+            // Title slide
+            const titleSlide = pptx.addSlide();
+            titleSlide.addText('KPI Dashboard Report - NR/NSA', {
+                x: 0.5, y: 1, w: 9, h: 1,
+                fontSize: 36, bold: true, color: 'D24726'
+            });
+            
+            const date = new Date().toLocaleDateString();
+            titleSlide.addText(`Generated: ${date}`, {
+                x: 0.5, y: 2, w: 9, h: 0.5,
+                fontSize: 16, color: '666666'
+            });
+            
+            // Get all selected charts mixed together
+            const allChartsForExport = [];
+            const chartElements = document.querySelectorAll("canvas");
+            
+            chartElements.forEach((canvas, index) => {
+                const chart = Chart.getChart(canvas.id);
+                if (chart) {
+                    const title = chart.options.plugins.title.text;
+                    const tech = title.split(' - ')[0];
+                    
+                    if (selectedTechForExport[tech]) {
+                        allChartsForExport.push({
+                            canvas: canvas,
+                            chart: chart,
+                            title: title,
+                            tech: tech
+                        });
+                    }
+                }
+            });
+            
+            if (allChartsForExport.length === 0) {
+                alert("No charts selected for export.");
+                return;
+            }
+            
+            // PPT layout calculations
+            const layout = getLayoutConfig(pptLayout);
+            const slideWidth = 10.0;
+            const slideHeight = 5.625;
+            const marginX = 0.5;
+            const marginTop = 0.8;
+            const marginBottom = 0.5;
+            const gap = 0.2;
+            
+            const usableW = slideWidth - (marginX * 2);
+            const usableH = slideHeight - marginTop - marginBottom;
+            const chartW = (usableW - ((layout.cols - 1) * gap)) / layout.cols;
+            const chartH = (usableH - ((layout.rows - 1) * gap)) / layout.rows;
+            
+            // Add chart slides
+            for (let i = 0; i < allChartsForExport.length; i += pptLayout) {
+                const slide = pptx.addSlide();
+                
+                for (let j = 0; j < pptLayout; j++) {
+                    const chartIndex = i + j;
+                    if (chartIndex < allChartsForExport.length) {
+                        const chartData = allChartsForExport[chartIndex];
+                        const rowIndex = Math.floor(j / layout.cols);
+                        const colIndex = j % layout.cols;
+                        
+                        const xPos = marginX + (colIndex * (chartW + gap));
+                        const yPos = marginTop + (rowIndex * (chartH + gap));
+                        
+                        try {
+                            slide.addImage({
+                                data: chartData.canvas.toDataURL("image/png"),
+                                x: xPos,
+                                y: yPos,
+                                w: chartW,
+                                h: chartH
+                            });
+                            
+                            // Add chart title
+                            const shortTitle = chartData.title.length > 40 ? 
+                                chartData.title.substring(0, 40) + '...' : chartData.title;
+                            slide.addText(shortTitle, {
+                                x: xPos,
+                                y: yPos - 0.25,
+                                w: chartW,
+                                h: 0.25,
+                                fontSize: 7,
+                                bold: true,
+                                color: '333333'
+                            });
+                        } catch (e) {
+                            console.error(`Error adding chart to PPT:`, e);
+                        }
+                    }
+                }
+            }
+            
+            // Summary slide
+            const summarySlide = pptx.addSlide();
+            summarySlide.addText('Summary', {
+                x: 0.5, y: 0.5, w: 9, h: 0.5,
+                fontSize: 28, bold: true, color: 'D24726'
+            });
+            
+            let summaryText = `Total Charts: ${allChartsForExport.length}\n`;
+            summaryText += `Layout: ${layout.rows}x${layout.cols} (${pptLayout} per slide)\n`;
+            summaryText += `Total Slides: ${Math.ceil(allChartsForExport.length / pptLayout) + 2}\n\n`;
+            summaryText += `Includes both NR and NSA KPIs displayed as NR\n`;
+            
+            summarySlide.addText(summaryText, {
+                x: 0.5, y: 1.5, w: 9, h: 3,
+                fontSize: 14, color: '333333'
+            });
+            
+            // Download
+            const timestamp = new Date().getTime();
+            try {
+                await pptx.writeFile({ fileName: `NR_NSA_KPI_Report_${timestamp}.pptx` });
+                closePPTExport();
+            } catch (e) {
+                alert("Error generating PPT: " + e.message);
+            }
+        }
+    </script>
+</body>
+</html>
