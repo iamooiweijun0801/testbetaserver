@@ -6,13 +6,412 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
     <style>
-        /* Same CSS as GSM/LTE dashboard */
-        /* Use the same CSS as above, just change the tech-switcher colors */
-        .tech-switcher button.gsm-lte { background: #2F80ED; color: white; }
-        .tech-switcher button.nr-nsa { background: #D24726; color: white; }
+        /* --- COMPLETE CSS FROM GSM/LTE DASHBOARD --- */
+        /* --- BASE STYLES --- */
+        body { 
+            font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin:0; 
+            padding:0; 
+            background:#f4f7f6; 
+            overflow-x:hidden; 
+        }
+        header { 
+            text-align:center; 
+            padding:15px 0; 
+            font-size:28px; 
+            font-weight:700; 
+            color:#333; 
+            background:white; 
+            box-shadow:0 2px 4px rgba(0,0,0,0.05); 
+            margin-bottom:15px; 
+        }
         
-        /* Update tech-color-buttons to show only NR */
+        /* --- TECH SWITCHER --- */
+        .tech-switcher {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tech-switcher button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .tech-switcher button.active {
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .tech-switcher button.gsm-lte {
+            background: #2F80ED;
+            color: white;
+        }
+        .tech-switcher button.nr-nsa {
+            background: #D24726;
+            color: white;
+        }
+        
+        /* --- CONTROLS --- */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        /* --- DRAWER TOGGLE BUTTONS --- */
+        .drawer-toggle-buttons { 
+            position: fixed; 
+            top: 20px; 
+            right: 0; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+            z-index: 900; 
+        }
+        .chartStyleDrawerToggle, .kpiDrawerToggle { 
+            width: 36px; 
+            height: 36px; 
+            background: #8E44AD; 
+            color: white; 
+            border-radius: 6px 0 0 6px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 20px; 
+            transition: 0.2s; 
+        }
+        .kpiDrawerToggle { 
+            background: #2F80ED; 
+            margin-top: 8px; 
+        }
+        .chartStyleDrawerToggle:hover, .kpiDrawerToggle:hover { 
+            opacity: 0.9; 
+        }
+        
+        /* --- GRID LAYOUT (3 Graphs per row) --- */
+        .chart-grid { 
+            display:grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap:20px; 
+            padding:0 20px 40px 20px; 
+            max-width: 1800px; 
+            margin: 0 auto; 
+        }
+        @media (max-width: 1400px) { 
+            .chart-grid { 
+                grid-template-columns: repeat(2, 1fr); 
+            } 
+        }
+        @media (max-width: 768px) { 
+            .chart-grid { 
+                grid-template-columns: 1fr; 
+            } 
+        }
+        
+        /* --- CARDS & CHARTS --- */
+        .chart-card { 
+            background:white; 
+            border-radius:8px; 
+            padding:15px; 
+            box-shadow:0 2px 8px rgba(0,0,0,0.08); 
+            display:flex; 
+            flex-direction:column; 
+        }
+        .chart-container { 
+            position: relative; 
+            height: 280px; 
+            width: 100%; 
+        }
+        
+        /* --- DRAWERS --- */
+        .chartStyleDrawer, .kpiDrawer { 
+            position: fixed; 
+            top: 0; 
+            right: 0; 
+            width: 320px; 
+            height: 100%; 
+            background: white; 
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1); 
+            z-index: 1000; 
+            transform: translateX(100%); 
+            transition: 0.3s; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+        }
+        .chartStyleDrawer.open, .kpiDrawer.open { 
+            transform: translateX(0); 
+        }
+        .drawer-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 15px; 
+            padding-bottom: 10px; 
+            border-bottom: 1px solid #eee; 
+        }
+        .kpi-options-body, .style-options-body { 
+            flex-grow: 1; 
+            overflow-y: auto; 
+            padding-right: 5px; 
+            padding-bottom: 40px; 
+        }
+        .drawer-controls { 
+            display: flex; 
+            gap: 5px; 
+            align-items: center; 
+        }
+        .drawer-controls .action-btn { 
+            padding: 6px 10px; 
+            font-size: 13px; 
+        }
+
+        /* --- KPI OPTIONS STYLING --- */
+        .kpi-group-title { 
+            font-weight: bold; 
+            color: #2F80ED; 
+            margin-top: 15px; 
+            margin-bottom: 5px; 
+            border-bottom: 1px solid #eee; 
+            padding-bottom: 3px; 
+        }
+        .kpi-option { 
+            display: block; 
+            margin-bottom: 5px; 
+            cursor: pointer; 
+            user-select: none; 
+        }
+        .kpi-option input[type="checkbox"] { 
+            margin-right: 8px; 
+        }
+        
+        /* --- Chart Style Buttons --- */
+        .style-button { 
+            padding: 10px 12px; 
+            margin: 6px 0; 
+            background: #f5f5f5; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 500; 
+            border: 1px solid #ddd; 
+            transition: 0.2s; 
+        }
+        .style-button:hover { 
+            background: #e9e9e9; 
+        }
+        .style-button.active { 
+            background: #8E44AD; 
+            color: white; 
+            border-color: #8E44AD; 
+        }
+        
+        /* --- TECH COLOR BUTTONS --- */
+        .tech-color-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .tech-color-btn {
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            color: white;
+            text-align: center;
+        }
         .tech-color-btn.nr { background: #D24726; }
+
+        /* --- COLOR PICKER MODAL --- */
+        .color-picker-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .color-picker-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+            text-align: center;
+        }
+        .color-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .color-option {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0 auto;
+            border: 2px solid transparent;
+        }
+        .color-option.selected {
+            border: 2px solid #333;
+        }
+        .color-picker-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        
+        /* --- PPT EXPORT MODAL --- */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 2001;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(3px);
+        }
+        .modal-content {
+            background: white;
+            width: 95%;
+            max-width: 1400px;
+            height: 90vh;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .modal-body {
+            flex: 1;
+            display: flex;
+            padding: 0;
+            overflow: hidden;
+        }
+        #previewBody {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .preview-slide {
+            background: white;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            aspect-ratio: 16/9;
+            position: relative;
+        }
+        .preview-slide-title {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #D24726;
+        }
+        .preview-grid {
+            display: grid;
+            height: 100%;
+            align-items: center;
+            padding-top: 30px;
+        }
+        .preview-img-box {
+            text-align: center;
+            padding: 5px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .preview-img-box img {
+            max-width: 100%;
+            max-height: calc(100% - 20px);
+            object-fit: contain;
+            border: 1px solid #eee;
+        }
+        #previewSettingsPanel {
+            width: 250px;
+            background: #fff;
+            border-left: 1px solid #eee;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .settings-group {
+            margin-bottom: 20px;
+        }
+        .settings-group h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #555;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .graph-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .graph-options button {
+            padding: 6px 10px;
+            font-size: 13px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .graph-options button.active {
+            background: #2F80ED;
+            color: white;
+            border-color: #2F80ED;
+        }
+        .tech-export-options {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .tech-export-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tech-export-option input {
+            margin: 0;
+        }
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            text-align: right;
+            flex-shrink: 0;
+        }
     </style>
 </head>
 <body onload="initDashboard()">
@@ -169,7 +568,6 @@
             { tech: "NR", kpi: "DL PRB Utilization(%)", initialChecked: true, color: "#D24726" },
             { tech: "NR", kpi: "UL PRB Utilization(%)", initialChecked: true, color: "#D24726" },
             // NSA KPIs (from NSA sheet, but displayed as NR)
-            // Add your actual NSA KPIs here - they will show as "NR - [KPI Name]"
             { tech: "NR", kpi: "Avg NSA DC User Num", initialChecked: true, color: "#D24726" },
             { tech: "NR", kpi: "SCG Mod Success Rate(4G initiated)(%)", initialChecked: true, color: "#D24726" },
             { tech: "NR", kpi: "SCG Mod Success Rate(5G initiated)(%)", initialChecked: true, color: "#D24726" },
@@ -184,8 +582,7 @@
             "NR": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1372365834&single=true&output=csv",
             
             // NSA sheet (will be displayed as NR)
-            // Replace with your actual NSA sheet URL
-            "NSA": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1503870746&single=true&output=csv" // <-- REPLACE THIS WITH ACTUAL NSA SHEET URL
+            "NSA": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1503870746&single=true&output=csv"
         };
         
         let activeChartStyle = null;
@@ -201,7 +598,7 @@
             "#2980B9", "#16A085", "#C0392B", "#8E44AD"
         ];
 
-        // --- Chart Styles (same as before) ---
+        // --- Chart Styles ---
         const chartStyles = [
             { 
                 name: "Filled Area", 
@@ -245,6 +642,33 @@
                 fill: false 
             }
         ];
+
+        // --- ACTION BUTTON STYLING ---
+        const actionBtnStyle = `
+            .action-btn { 
+                padding: 8px 16px; 
+                cursor: pointer; 
+                border: none; 
+                background: #2F80ED; 
+                color: white; 
+                border-radius: 6px; 
+                font-weight: 600; 
+                transition: 0.2s; 
+            }
+            .action-btn:hover { 
+                background: #1f5ab5; 
+            }
+            .ppt-btn {
+                background: #D24726 !important;
+            }
+            .ppt-btn:hover {
+                background: #a8381e !important;
+            }
+        `;
+        
+        const style = document.createElement('style');
+        style.textContent = actionBtnStyle;
+        document.head.appendChild(style);
 
         // --- DASHBOARD SWITCHER ---
         function switchToDashboard(type) {
@@ -307,7 +731,7 @@
                 }
                 
                 // Process NSA sheet (but store as NR)
-                if (sheetUrls["NSA"] && sheetUrls["NSA"] !== "YOUR_NSA_SHEET_URL_HERE") {
+                if (sheetUrls["NSA"]) {
                     try {
                         const url = sheetUrls["NSA"] + "&t=" + Date.now();
                         const res = await fetch(url);
