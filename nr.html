@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>KPI Dashboard - NR/NSA</title>
+    <title>KPI Dashboard - NR</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
     <style>
@@ -50,7 +50,7 @@
             background: #2F80ED;
             color: white;
         }
-        .tech-switcher button.nr-nsa {
+        .tech-switcher button.nr {
             background: #D24726;
             color: white;
         }
@@ -415,11 +415,11 @@
     </style>
 </head>
 <body onload="initDashboard()">
-    <header>KPI Dashboard - NR/NSA</header>
+    <header>KPI Dashboard - NR</header>
 
     <div class="tech-switcher">
         <button class="gsm-lte" onclick="switchToDashboard('gsm-lte')">GSM/LTE</button>
-        <button class="nr-nsa active" onclick="switchToDashboard('nr-nsa')">NR/NSA</button>
+        <button class="nr active" onclick="switchToDashboard('nr')">NR</button>
     </div>
 
     <div class="controls">
@@ -571,9 +571,7 @@
             { tech: "NR", kpi: "Avg NSA DC User Num", initialChecked: true, color: "#D24726" },
             { tech: "NR", kpi: "SCG Mod Success Rate(4G initiated)(%)", initialChecked: true, color: "#D24726" },
             { tech: "NR", kpi: "SCG Mod Success Rate(5G initiated)(%)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "NSA E-RAB Drop Rate(%)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "NSA Handover Success Rate(%)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "NSA Traffic Volume (GB)", initialChecked: true, color: "#D24726" }
+            { tech: "NR", kpi: "NSA E-RAB Drop Rate(%)", initialChecked: true, color: "#D24726" }
         ];
 
         // --- Sheet URLs (NR + NSA sheets) ---
@@ -674,7 +672,7 @@
         function switchToDashboard(type) {
             if (type === 'gsm-lte') {
                 window.location.href = 'index.html';  // Main GSM/LTE dashboard
-            } else if (type === 'nr-nsa') {
+            } else if (type === 'nr') {
                 // Already here
                 return;
             }
@@ -689,7 +687,7 @@
 
         // --- DATA FETCHING (Modified to combine NR and NSA data) ---
         async function fetchData(){
-            document.getElementById("mainChartContainer").innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>Loading NR/NSA data...</h2>";
+            document.getElementById("mainChartContainer").innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>Loading NR data...</h2>";
             allData = [];
             let timeline = [];
             
@@ -999,7 +997,7 @@
             list.innerHTML = "";
             
             // Show all KPIs under "NR" group (even NSA KPIs)
-            list.innerHTML += `<div class="kpi-group-title">NR/NSA KPIs</div>`;
+            list.innerHTML += `<div class="kpi-group-title">NR KPIs</div>`;
 
             kpiDefinitions.forEach(kpiDef => {
                 const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
@@ -1326,7 +1324,7 @@
             
             // Title slide
             const titleSlide = pptx.addSlide();
-            titleSlide.addText('KPI Dashboard Report - NR/NSA', {
+            titleSlide.addText('KPI Dashboard Report - NR', {
                 x: 0.5, y: 1, w: 9, h: 1,
                 fontSize: 36, bold: true, color: 'D24726'
             });
@@ -1429,8 +1427,7 @@
             let summaryText = `Total Charts: ${allChartsForExport.length}\n`;
             summaryText += `Layout: ${layout.rows}x${layout.cols} (${pptLayout} per slide)\n`;
             summaryText += `Total Slides: ${Math.ceil(allChartsForExport.length / pptLayout) + 2}\n\n`;
-            summaryText += `Includes both NR and NSA KPIs displayed as NR\n`;
-            
+                        
             summarySlide.addText(summaryText, {
                 x: 0.5, y: 1.5, w: 9, h: 3,
                 fontSize: 14, color: '333333'
@@ -1439,7 +1436,7 @@
             // Download
             const timestamp = new Date().getTime();
             try {
-                await pptx.writeFile({ fileName: `NR_NSA_KPI_Report_${timestamp}.pptx` });
+                await pptx.writeFile({ fileName: `NR_KPI_Report_${timestamp}.pptx` });
                 closePPTExport();
             } catch (e) {
                 alert("Error generating PPT: " + e.message);
