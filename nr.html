@@ -794,64 +794,56 @@
             }
         }
 
+        // --- CSV PARSING FUNCTION (Improved) ---
+        function parseCSV(text) {
+            const lines = text.split('\n');
+            const result = [];
+            
+            for (let line of lines) {
+                if (line.trim() === '') continue;
+                
+                // Handle quoted fields with commas
+                const fields = [];
+                let currentField = '';
+                let inQuotes = false;
+                
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    
+                    if (char === '"') {
+                        // Check if next char is also a quote (escaped quote)
+                        if (i + 1 < line.length && line[i + 1] === '"') {
+                            currentField += '"';
+                            i++; // Skip next quote
+                        } else {
+                            inQuotes = !inQuotes;
+                        }
+                    } else if (char === ',' && !inQuotes) {
+                        fields.push(currentField.trim());
+                        currentField = '';
+                    } else {
+                        currentField += char;
+                    }
+                }
+                
+                // Add the last field
+                fields.push(currentField.trim());
+                result.push(fields);
+            }
+            
+            return result;
+        }
+
         // --- INITIALIZATION ---
         function initDashboard() {
+            dateHeaderName = ''; // Reset date header
             selectedKpis = kpiDefinitions.filter(k => k.initialChecked).map(k => k.tech + " - " + k.kpi);
             applyChartStyle(1);
             fetchData();
         }
 
-        // --- CSV PARSING FUNCTION (Improved) ---
-        function parseCSV(text) {
-            const rows = [];
-            let currentRow = [];
-            let currentField = '';
-            let inQuotes = false;
-            
-            for (let i = 0; i < text.length; i++) {
-                const char = text[i];
-                const nextChar = text[i + 1];
-                
-                if (char === '"' && nextChar === '"') {
-                    // Handle escaped quotes
-                    currentField += '"';
-                    i++; // Skip next quote
-                } else if (char === '"') {
-                    // Toggle quote mode
-                    inQuotes = !inQuotes;
-                } else if (char === ',' && !inQuotes) {
-                    // End of field
-                    currentRow.push(currentField);
-                    currentField = '';
-                } else if (char === '\n' && !inQuotes) {
-                    // End of row
-                    currentRow.push(currentField);
-                    rows.push(currentRow);
-                    currentRow = [];
-                    currentField = '';
-                } else if (char === '\r' && nextChar === '\n' && !inQuotes) {
-                    // Handle Windows line endings
-                    currentRow.push(currentField);
-                    rows.push(currentRow);
-                    currentRow = [];
-                    currentField = '';
-                    i++; // Skip the \n
-                } else {
-                    currentField += char;
-                }
-            }
-            
-            // Add last row if exists
-            if (currentField !== '' || currentRow.length > 0) {
-                currentRow.push(currentField);
-                rows.push(currentRow);
-            }
-            
-            return rows;
-        }
-
         // --- DATA FETCHING (Fixed CSV parsing) ---
-        async function fetchData(){
+        async function fetchData() {
             document.getElementById("mainChartContainer").innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>Loading NR data...</h2>";
             allData = [];
             availableGroups = [];
@@ -859,29 +851,39 @@
             isAllGroupsSelected = false;
             
             try {
+                // Clear date header name at start
+                dateHeaderName = '';
+                
                 // Process NR sheet
                 if (sheetUrls["NR"]) {
                     try {
+                        console.log("Fetching NR data...");
                         const url = sheetUrls["NR"] + "&t=" + Date.now();
                         const res = await fetch(url);
                         if (res.ok) {
                             const text = await res.text();
+                            console.log("NR data received, length:", text.length);
+                            
                             if (text && text.trim() !== '') {
                                 const rows = parseCSV(text);
+                                console.log("NR rows parsed:", rows.length);
                                 
                                 if (rows.length >= 2) {
                                     const headers = rows[0].map(h => h.trim());
+                                    console.log("NR Headers:", headers);
                                     
                                     // Find date header
-                                    const dateHeader = headers.find(h => h.toLowerCase().includes('date'));
+                                    const dateHeader = headers.find(h => 
+                                        h.toLowerCase().includes('date') || 
+                                        h.toLowerCase().includes('day') ||
+                                        h.toLowerCase().includes('time')
+                                    );
                                     if (!dateHeaderName && dateHeader) {
                                         dateHeaderName = dateHeader;
+                                        console.log("Date header found (NR):", dateHeaderName);
                                     }
                                     
-                                    console.log("NR Headers:", headers);
-                                    console.log("Date header found:", dateHeader);
-                                    
-                                    // Find group column - check for common patterns
+                                    // Find group column
                                     let groupColumn = headers.find(h => 
                                         h.toLowerCase().includes('enodeb') || 
                                         h.toLowerCase().includes('site') ||
@@ -890,42 +892,38 @@
                                         h.toLowerCase().includes('group')
                                     );
                                     
-                                    console.log("Group column found:", groupColumn);
+                                    if (!groupColumn && headers.length > 0) {
+                                        groupColumn = headers[1]; // Use second column as fallback
+                                    }
+                                    
+                                    console.log("Group column (NR):", groupColumn);
                                     
                                     // Process data rows
+                                    let rowCount = 0;
                                     for (let i = 1; i < rows.length; i++) {
                                         const row = rows[i];
-                                        if (row.length < headers.length) {
-                                            console.warn(`Row ${i} has ${row.length} columns, expected ${headers.length}`);
-                                            continue;
-                                        }
+                                        if (row.length < 2) continue; // Skip empty rows
                                         
                                         const obj = {};
-                                        let hasDate = false;
-                                        
                                         headers.forEach((h, j) => {
-                                            const val = row[j] ? row[j].trim() : "";
-                                            
-                                            // Handle different cases
-                                            if (val === "") {
-                                                obj[h] = null;  // Truly blank cell
-                                            } else if (val === "0" || val === "0.0" || val === "0.00") {
-                                                obj[h] = 0;  // Explicit zero value
-                                            } else {
-                                                const num = parseFloat(val);
-                                                obj[h] = isNaN(num) ? val : num;  // Either number or string
-                                            }
-                                            
-                                            // Check if this is a date field
-                                            if (h === dateHeader && obj[h]) {
-                                                hasDate = true;
+                                            if (j < row.length) {
+                                                const val = row[j] ? row[j].trim() : "";
+                                                if (val === "" || val.toLowerCase() === "null" || val.toLowerCase() === "n/a") {
+                                                    obj[h] = null;
+                                                } else if (!isNaN(val) && val !== "") {
+                                                    obj[h] = parseFloat(val);
+                                                } else {
+                                                    obj[h] = val;
+                                                }
                                             }
                                         });
                                         
-                                        if (hasDate) {
-                                            obj.Tech = "NR"; // Mark as NR
+                                        // Only add if we have a date
+                                        if (dateHeaderName && obj[dateHeaderName]) {
+                                            obj.Tech = "NR";
                                             obj.Group = groupColumn ? (obj[groupColumn] || 'Unknown') : 'Unknown';
                                             allData.push(obj);
+                                            rowCount++;
                                             
                                             // Add to available groups
                                             const groupValue = obj.Group;
@@ -934,8 +932,11 @@
                                             }
                                         }
                                     }
+                                    console.log(`NR: Added ${rowCount} rows, total groups: ${availableGroups.length}`);
                                 }
                             }
+                        } else {
+                            console.error("NR fetch failed:", res.status);
                         }
                     } catch (e) {
                         console.error(`Error loading NR data:`, e);
@@ -945,26 +946,33 @@
                 // Process NSA sheet (but store as NR)
                 if (sheetUrls["NSA"]) {
                     try {
+                        console.log("Fetching NSA data...");
                         const url = sheetUrls["NSA"] + "&t=" + Date.now();
                         const res = await fetch(url);
                         if (res.ok) {
                             const text = await res.text();
+                            console.log("NSA data received, length:", text.length);
+                            
                             if (text && text.trim() !== '') {
                                 const rows = parseCSV(text);
+                                console.log("NSA rows parsed:", rows.length);
                                 
                                 if (rows.length >= 2) {
                                     const headers = rows[0].map(h => h.trim());
+                                    console.log("NSA Headers:", headers);
                                     
                                     // Find date header
-                                    const dateHeader = headers.find(h => h.toLowerCase().includes('date'));
+                                    const dateHeader = headers.find(h => 
+                                        h.toLowerCase().includes('date') || 
+                                        h.toLowerCase().includes('day') ||
+                                        h.toLowerCase().includes('time')
+                                    );
                                     if (!dateHeaderName && dateHeader) {
                                         dateHeaderName = dateHeader;
+                                        console.log("Date header found (NSA):", dateHeaderName);
                                     }
                                     
-                                    console.log("NSA Headers:", headers);
-                                    console.log("Date header found:", dateHeader);
-                                    
-                                    // Find group column - check for common patterns
+                                    // Find group column
                                     let groupColumn = headers.find(h => 
                                         h.toLowerCase().includes('enodeb') || 
                                         h.toLowerCase().includes('site') ||
@@ -973,42 +981,38 @@
                                         h.toLowerCase().includes('group')
                                     );
                                     
-                                    console.log("Group column found:", groupColumn);
+                                    if (!groupColumn && headers.length > 0) {
+                                        groupColumn = headers[1]; // Use second column as fallback
+                                    }
+                                    
+                                    console.log("Group column (NSA):", groupColumn);
                                     
                                     // Process data rows
+                                    let rowCount = 0;
                                     for (let i = 1; i < rows.length; i++) {
                                         const row = rows[i];
-                                        if (row.length < headers.length) {
-                                            console.warn(`Row ${i} has ${row.length} columns, expected ${headers.length}`);
-                                            continue;
-                                        }
+                                        if (row.length < 2) continue; // Skip empty rows
                                         
                                         const obj = {};
-                                        let hasDate = false;
-                                        
                                         headers.forEach((h, j) => {
-                                            const val = row[j] ? row[j].trim() : "";
-                                            
-                                            // Handle different cases
-                                            if (val === "") {
-                                                obj[h] = null;  // Truly blank cell
-                                            } else if (val === "0" || val === "0.0" || val === "0.00") {
-                                                obj[h] = 0;  // Explicit zero value
-                                            } else {
-                                                const num = parseFloat(val);
-                                                obj[h] = isNaN(num) ? val : num;  // Either number or string
-                                            }
-                                            
-                                            // Check if this is a date field
-                                            if (h === dateHeader && obj[h]) {
-                                                hasDate = true;
+                                            if (j < row.length) {
+                                                const val = row[j] ? row[j].trim() : "";
+                                                if (val === "" || val.toLowerCase() === "null" || val.toLowerCase() === "n/a") {
+                                                    obj[h] = null;
+                                                } else if (!isNaN(val) && val !== "") {
+                                                    obj[h] = parseFloat(val);
+                                                } else {
+                                                    obj[h] = val;
+                                                }
                                             }
                                         });
                                         
-                                        if (hasDate) {
+                                        // Only add if we have a date
+                                        if (dateHeaderName && obj[dateHeaderName]) {
                                             obj.Tech = "NR"; // Store as NR (not NSA)
                                             obj.Group = groupColumn ? (obj[groupColumn] || 'Unknown') : 'Unknown';
                                             allData.push(obj);
+                                            rowCount++;
                                             
                                             // Add to available groups
                                             const groupValue = obj.Group;
@@ -1017,29 +1021,30 @@
                                             }
                                         }
                                     }
+                                    console.log(`NSA: Added ${rowCount} rows, total groups: ${availableGroups.length}`);
                                 }
                             }
+                        } else {
+                            console.error("NSA fetch failed:", res.status);
                         }
                     } catch (e) {
                         console.error(`Error loading NSA data:`, e);
                     }
                 }
 
-                if (allData.length === 0) {
-                    throw new Error("No data loaded from any source");
-                }
-                
+                console.log("DEBUG: Total data loaded:", allData.length);
                 console.log("DEBUG: Available groups:", availableGroups);
-                console.log("DEBUG: First few groups:", availableGroups.slice(0, 5));
-                console.log("DEBUG: Group column name:", groupColumnName);
-                console.log("DEBUG: Date header name:", dateHeaderName);
-                console.log("DEBUG: Total data points:", allData.length);
-                console.log("DEBUG: Sample data:", allData.slice(0, 2));
+                console.log("DEBUG: Date header:", dateHeaderName);
+                
+                if (allData.length === 0) {
+                    throw new Error("No data loaded from any source. Check CSV format and column names.");
+                }
                 
                 // Initialize selected groups (FIRST GROUP SELECTED BY DEFAULT)
                 if (availableGroups.length > 0) {
                     selectedGroups = [availableGroups[0]]; // Only first group
                     isAllGroupsSelected = false;
+                    console.log("DEBUG: Default selected group:", selectedGroups[0]);
                 }
                 
                 populateGroupFilter();
@@ -1050,7 +1055,15 @@
 
             } catch(e) {
                 console.error("Data loading error:", e);
-                document.getElementById("mainChartContainer").innerHTML = "<h2 style='text-align:center;padding:40px;color:#D24726;'>Failed to load data. Check console for details.</h2>";
+                document.getElementById("mainChartContainer").innerHTML = `
+                    <div style="text-align:center;padding:40px;color:#D24726;">
+                        <h2>Failed to load data</h2>
+                        <p>Error: ${e.message}</p>
+                        <p>Check browser console (F12) for details</p>
+                        <button onclick="fetchData()" style="padding:10px 20px;background:#D24726;color:white;border:none;border-radius:5px;cursor:pointer;margin-top:20px;">
+                            Retry Loading Data
+                        </button>
+                    </div>`;
             }
         }
 
@@ -1156,6 +1169,14 @@
         // --- CHART RENDERING with DYNAMIC TIMELINE ---
         function renderCharts() {
             console.log("DEBUG: Rendering charts...");
+            console.log("DEBUG: Date header name:", dateHeaderName);
+            
+            if (!dateHeaderName || dateHeaderName.trim() === '') {
+                const container = document.getElementById("mainChartContainer");
+                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#D24726;'>Error: Date column not found in data. Please check CSV format.</h2>";
+                return;
+            }
+            
             const container = document.getElementById("mainChartContainer");
             container.innerHTML = "";
             allCharts = {};
