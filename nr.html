@@ -134,6 +134,16 @@
             font-weight: 500;
             color: #333;
         }
+        .controls-spacer {
+            width: 20px;
+            height: 1px;
+        }
+        
+        /* --- EXPORT BUTTON --- */
+        .export-btn-wrapper {
+            display: flex;
+            align-items: center;
+        }
         
         /* --- DRAWER TOGGLE BUTTONS --- */
         .drawer-toggle-buttons { 
@@ -158,6 +168,8 @@
             font-size: 20px; 
             transition: 0.2s; 
         }
+
+       
         .kpiDrawerToggle { 
             background: #2F80ED; 
             margin-top: 8px; 
@@ -507,7 +519,10 @@
                 </div>
             </div>
         </div>
-        <button class="action-btn" onclick="openPPTExport()">📊 Export PPT</button>
+        <div class="controls-spacer"></div>
+       <div class="export-btn-wrapper">
+            <button class="action-btn" onclick="openPPTExport()">📊 Export PPT</button>
+        </div>
     </div>
 
     <div class="chart-grid" id="mainChartContainer">
