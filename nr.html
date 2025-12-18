@@ -58,7 +58,7 @@
         .controls-container {
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 20px;
             margin-bottom: 20px;
             flex-wrap: wrap;
             align-items: center;
@@ -68,7 +68,6 @@
         /* --- GROUP FILTER --- */
         .group-filter-wrapper {
             display: flex;
-            gap: 10px;
             align-items: center;
         }
         .group-filter-container {
@@ -139,6 +138,12 @@
         .selected-group-display {
             font-weight: 500;
             color: #333;
+        }
+        
+        /* --- SPACER BETWEEN FILTER AND EXPORT BUTTON --- */
+        .controls-spacer {
+            width: 20px;
+            height: 1px;
         }
         
         /* --- EXPORT BUTTON --- */
@@ -522,6 +527,10 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Invisible spacer to prevent overlap -->
+        <div class="controls-spacer"></div>
+        
         <div class="export-btn-wrapper">
             <button class="action-btn" onclick="openPPTExport()">📊 Export PPT</button>
         </div>
@@ -658,6 +667,7 @@
         let selectedGroups = []; // Will contain either ONE group name or be empty (for "All")
         let groupColumnName = ''; // Will be detected from data (eNodeB Name for LTE, GBSC for GSM)
         let isAllGroupsSelected = false; // Flag to track if "Select All" is active
+        let dateHeaderName = ''; // Store the date header name globally
 
         // --- KPI Definitions (GSM/LTE only) ---
         const kpiDefinitions = [
@@ -790,7 +800,6 @@
             availableGroups = [];
             selectedGroups = [];
             isAllGroupsSelected = false;
-            let timeline = [];
             
             try {
                 for (const tech in sheetUrls) {
@@ -806,6 +815,10 @@
                         
                         const headers = rows.shift().map(h => h.trim());
                         const dateHeader = headers.find(h => h.toLowerCase().includes('date'));
+                        
+                        if (!dateHeaderName && dateHeader) {
+                            dateHeaderName = dateHeader;
+                        }
                         
                         // Detect group column name for this technology
                         let groupColumn = '';
@@ -843,10 +856,6 @@
                                 if (obj[groupColumn] && !availableGroups.includes(obj[groupColumn])) {
                                     availableGroups.push(obj[groupColumn]);
                                 }
-                                
-                                if (!timeline.includes(obj[dateHeader])) {
-                                    timeline.push(obj[dateHeader]);
-                                }
                             }
                         });
                     } catch (e) {
@@ -857,13 +866,6 @@
                 if (allData.length === 0) {
                     throw new Error("No data loaded from any source");
                 }
-
-                // Sort the timeline
-                timeline.sort((a,b)=>{
-                    const [da,ma,ya]=a.split('/').map(Number);
-                    const [db,mb,yb]=b.split('/').map(Number);
-                    return new Date(ya,ma-1,da)-new Date(yb,mb-1,db);
-                });
                 
                 // Initialize selected groups (FIRST GROUP SELECTED BY DEFAULT)
                 if (availableGroups.length > 0) {
@@ -874,7 +876,8 @@
                 populateGroupFilter();
                 updateSelectedGroupDisplay();
                 
-                renderCharts(timeline);
+                // Render charts with timeline for selected group
+                renderCharts();
 
             } catch(e) {
                 console.error("Data loading error:", e);
@@ -973,25 +976,48 @@
         }
         
         function applyGroupFilter() {
-            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
-            if (dateHeaderName && allData.length > 0) {
-                const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
-                    const [da,ma,ya] = a.split('/').map(Number);
-                    const [db,mb,yb] = b.split('/').map(Number);
-                    return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
-                });
-                renderCharts(timeline);
-            }
+            renderCharts();
         }
 
-        // --- CHART RENDERING ---
-        function renderCharts(timeline = []) {
+        // --- CHART RENDERING with DYNAMIC TIMELINE ---
+        function renderCharts() {
             const container = document.getElementById("mainChartContainer");
             container.innerHTML = "";
             allCharts = {};
             
-            if (timeline.length === 0 || allData.length === 0) {
+            if (allData.length === 0) {
                 container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No data available.</h2>";
+                return;
+            }
+
+            // Get timeline based on selected filter
+            let timeline = [];
+            
+            if (isAllGroupsSelected) {
+                // For "All Groups", get dates from ALL data
+                timeline = [...new Set(allData.map(d => d[dateHeaderName]))];
+            } else if (selectedGroups.length > 0) {
+                // For single group, get dates only for that group
+                timeline = [...new Set(
+                    allData
+                        .filter(d => d.Group === selectedGroups[0])
+                        .map(d => d[dateHeaderName])
+                )];
+            } else {
+                // No group selected (shouldn't happen)
+                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No group selected.</h2>";
+                return;
+            }
+
+            // Sort timeline
+            timeline.sort((a,b)=>{
+                const [da,ma,ya]=a.split('/').map(Number);
+                const [db,mb,yb]=b.split('/').map(Number);
+                return new Date(ya,ma-1,da)-new Date(yb,mb-1,db);
+            });
+
+            if (timeline.length === 0) {
+                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No timeline data available.</h2>";
                 return;
             }
 
@@ -1000,9 +1026,6 @@
                 const [day, month] = d.split('/').map(Number);
                 return `${day} ${monthNames[month - 1]}`;
             });
-
-            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
-            if (!dateHeaderName) return;
 
             const chartsToRender = kpiDefinitions.filter(k => selectedKpis.includes(k.tech + " - " + k.kpi));
             
@@ -1026,7 +1049,7 @@
                 card.appendChild(wrapper);
                 container.appendChild(card);
 
-                // Data Processing with Group Filter
+                // Data Processing with Group Filter and Dynamic Timeline
                 const dataPoints = timeline.map(date => {
                     // Filter data by technology and date
                     let filteredData = allData.filter(d => d.Tech === tech && d[dateHeaderName] === date);
@@ -1250,15 +1273,7 @@
             selectedKpis = Array.from(list.querySelectorAll(".kpi-chk:checked")).map(c => c.value);
             document.getElementById("kpiDrawer").classList.remove("open");
             
-            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
-            if (dateHeaderName && allData.length > 0) {
-                const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
-                    const [da,ma,ya] = a.split('/').map(Number);
-                    const [db,mb,yb] = b.split('/').map(Number);
-                    return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
-                });
-                renderCharts(timeline);
-            }
+            renderCharts();
         }
 
         function selectVisibleKpis() {
@@ -1289,15 +1304,7 @@
             
             updateTechColorButtons();
             
-            const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
-            if (dateHeaderName && allData.length > 0) {
-                const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
-                    const [da,ma,ya] = a.split('/').map(Number);
-                    const [db,mb,yb] = b.split('/').map(Number);
-                    return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
-                });
-                renderCharts(timeline);
-            }
+            renderCharts();
         }
 
         function updateTechColorButtons() {
@@ -1357,15 +1364,7 @@
                 
                 updateTechColorButtons();
                 
-                const dateHeaderName = Object.keys(allData[0] || {}).find(h => h.toLowerCase().includes('date'));
-                if (dateHeaderName && allData.length > 0) {
-                    const timeline = [...new Set(allData.map(d => d[dateHeaderName]))].sort((a,b) => { 
-                        const [da,ma,ya] = a.split('/').map(Number);
-                        const [db,mb,yb] = b.split('/').map(Number);
-                        return new Date(ya,ma-1,da) - new Date(yb,mb-1,db);
-                    });
-                    renderCharts(timeline);
-                }
+                renderCharts();
                 
                 closeColorPicker();
             }
