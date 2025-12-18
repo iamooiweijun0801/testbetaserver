@@ -55,19 +55,25 @@
         }
         
         /* --- CONTROLS --- */
-        .controls {
+        .controls-container {
             display: flex;
             justify-content: center;
-            gap: 10px;
+            gap: 15px;
             margin-bottom: 20px;
             flex-wrap: wrap;
             align-items: center;
+            padding: 0 20px;
         }
         
         /* --- GROUP FILTER --- */
+        .group-filter-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
         .group-filter-container {
             position: relative;
-            min-width: 300px;
+            min-width: 250px;
         }
         .group-filter-dropdown {
             width: 100%;
@@ -79,6 +85,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            min-height: 40px;
         }
         .group-filter-dropdown:hover {
             border-color: #2F80ED;
@@ -103,45 +110,41 @@
             display: block;
         }
         .group-option {
-            padding: 6px 8px;
+            padding: 8px 10px;
             cursor: pointer;
             border-radius: 4px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            margin-bottom: 2px;
         }
         .group-option:hover {
             background: #f5f5f5;
         }
-        .group-option input[type="checkbox"] {
-            margin: 0;
+        .group-option.selected {
+            background: #2F80ED;
+            color: white;
         }
-        .group-select-actions {
-            display: flex;
-            gap: 5px;
-            padding: 10px 0;
-            border-bottom: 1px solid #eee;
-            margin-bottom: 5px;
-        }
-        .group-select-actions button {
-            padding: 4px 8px;
-            font-size: 12px;
+        .group-select-all-btn {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            background: #5cb85c;
+            color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-weight: 600;
         }
-        .group-select-actions button.select-all {
-            background: #5cb85c;
-            color: white;
+        .group-select-all-btn:hover {
+            background: #4cae4c;
         }
-        .group-select-actions button.clear-all {
-            background: #f0ad4e;
-            color: white;
+        .selected-group-display {
+            font-weight: 500;
+            color: #333;
         }
-        .selected-groups-count {
-            font-size: 12px;
-            color: #666;
-            margin-left: 5px;
+        
+        /* --- EXPORT BUTTON --- */
+        .export-btn-wrapper {
+            display: flex;
+            align-items: center;
         }
         
         /* --- DRAWER TOGGLE BUTTONS --- */
@@ -504,23 +507,24 @@
         <button class="nr" onclick="switchToDashboard('nr')">NR</button>
     </div>
 
-    <div class="controls">
-        <div class="group-filter-container">
-            <div class="group-filter-dropdown" onclick="toggleGroupFilter()">
-                <span>Filter Groups 
-                    <span class="selected-groups-count" id="selectedGroupsCount">(All)</span>
-                </span>
-                <span>▼</span>
-            </div>
-            <div class="group-options" id="groupOptions">
-                <div class="group-select-actions">
-                    <button class="select-all" onclick="selectAllGroups()">Select All</button>
-                    <button class="clear-all" onclick="clearAllGroups()">Clear All</button>
+    <div class="controls-container">
+        <div class="group-filter-wrapper">
+            <div class="group-filter-container">
+                <div class="group-filter-dropdown" onclick="toggleGroupFilter()">
+                    <span class="selected-group-display" id="selectedGroupDisplay">Select Group</span>
+                    <span>▼</span>
                 </div>
-                <!-- Group options will be loaded here -->
+                <div class="group-options" id="groupOptions">
+                    <button class="group-select-all-btn" onclick="selectAllGroups()">Select All (Aggregate)</button>
+                    <div id="groupOptionsList">
+                        <!-- Group options will be loaded here -->
+                    </div>
+                </div>
             </div>
         </div>
-        <button class="action-btn" onclick="openPPTExport()">📊 Export PPT</button>
+        <div class="export-btn-wrapper">
+            <button class="action-btn" onclick="openPPTExport()">📊 Export PPT</button>
+        </div>
     </div>
 
     <div class="chart-grid" id="mainChartContainer">
@@ -651,8 +655,9 @@
         
         // --- GROUP FILTER STATE ---
         let availableGroups = [];
-        let selectedGroups = [];
+        let selectedGroups = []; // Will contain either ONE group name or be empty (for "All")
         let groupColumnName = ''; // Will be detected from data (eNodeB Name for LTE, GBSC for GSM)
+        let isAllGroupsSelected = false; // Flag to track if "Select All" is active
 
         // --- KPI Definitions (GSM/LTE only) ---
         const kpiDefinitions = [
@@ -784,6 +789,7 @@
             allData = [];
             availableGroups = [];
             selectedGroups = [];
+            isAllGroupsSelected = false;
             let timeline = [];
             
             try {
@@ -859,9 +865,14 @@
                     return new Date(ya,ma-1,da)-new Date(yb,mb-1,db);
                 });
                 
-                // Initialize selected groups (all groups selected by default)
-                selectedGroups = [...availableGroups];
+                // Initialize selected groups (FIRST GROUP SELECTED BY DEFAULT)
+                if (availableGroups.length > 0) {
+                    selectedGroups = [availableGroups[0]]; // Only first group
+                    isAllGroupsSelected = false;
+                }
+                
                 populateGroupFilter();
+                updateSelectedGroupDisplay();
                 
                 renderCharts(timeline);
 
@@ -873,40 +884,28 @@
 
         // --- GROUP FILTER FUNCTIONS ---
         function populateGroupFilter() {
-            const groupOptionsDiv = document.getElementById('groupOptions');
-            groupOptionsDiv.innerHTML = '';
+            const groupOptionsList = document.getElementById('groupOptionsList');
+            groupOptionsList.innerHTML = '';
             
-            // Add select actions
-            const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'group-select-actions';
-            actionsDiv.innerHTML = `
-                <button class="select-all" onclick="selectAllGroups()">Select All</button>
-                <button class="clear-all" onclick="clearAllGroups()">Clear All</button>
-            `;
-            groupOptionsDiv.appendChild(actionsDiv);
-            
-            // Add group options
+            // Sort groups
             availableGroups.sort().forEach(group => {
                 const optionDiv = document.createElement('div');
                 optionDiv.className = 'group-option';
-                optionDiv.innerHTML = `
-                    <input type="checkbox" value="${group}" ${selectedGroups.includes(group) ? 'checked' : ''}>
-                    <span>${group}</span>
-                `;
+                optionDiv.textContent = group;
+                optionDiv.dataset.group = group;
+                
+                // Check if this group is selected (for single selection)
+                if (selectedGroups[0] === group && !isAllGroupsSelected) {
+                    optionDiv.classList.add('selected');
+                }
                 
                 optionDiv.onclick = (e) => {
-                    if (e.target.type !== 'checkbox') {
-                        const checkbox = optionDiv.querySelector('input');
-                        checkbox.checked = !checkbox.checked;
-                        e.stopPropagation();
-                    }
-                    updateSelectedGroups();
+                    selectSingleGroup(group);
+                    e.stopPropagation();
                 };
                 
-                groupOptionsDiv.appendChild(optionDiv);
+                groupOptionsList.appendChild(optionDiv);
             });
-            
-            updateSelectedGroupsCount();
         }
         
         function toggleGroupFilter() {
@@ -922,44 +921,54 @@
             });
         }
         
-        function selectAllGroups() {
-            selectedGroups = [...availableGroups];
-            const checkboxes = document.querySelectorAll('#groupOptions input[type="checkbox"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = true;
-            });
-            updateSelectedGroups();
-        }
-        
-        function clearAllGroups() {
-            selectedGroups = [];
-            const checkboxes = document.querySelectorAll('#groupOptions input[type="checkbox"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = false;
-            });
-            updateSelectedGroups();
-        }
-        
-        function updateSelectedGroups() {
-            const checkboxes = document.querySelectorAll('#groupOptions input[type="checkbox"]');
-            selectedGroups = [];
-            checkboxes.forEach(checkbox => {
-                if (checkbox.checked) {
-                    selectedGroups.push(checkbox.value);
+        function selectSingleGroup(group) {
+            // Single selection mode - only select one group
+            selectedGroups = [group];
+            isAllGroupsSelected = false;
+            
+            // Update UI
+            const options = document.querySelectorAll('.group-option');
+            options.forEach(opt => {
+                if (opt.dataset.group === group) {
+                    opt.classList.add('selected');
+                } else {
+                    opt.classList.remove('selected');
                 }
             });
-            updateSelectedGroupsCount();
+            
+            updateSelectedGroupDisplay();
             applyGroupFilter();
+            
+            // Close dropdown
+            document.getElementById('groupOptions').classList.remove('show');
         }
         
-        function updateSelectedGroupsCount() {
-            const countElement = document.getElementById('selectedGroupsCount');
-            if (selectedGroups.length === availableGroups.length) {
-                countElement.textContent = '(All)';
-            } else if (selectedGroups.length === 0) {
-                countElement.textContent = '(None)';
+        function selectAllGroups() {
+            // Select all groups (aggregate mode)
+            selectedGroups = []; // Empty array means all groups
+            isAllGroupsSelected = true;
+            
+            // Update UI
+            const options = document.querySelectorAll('.group-option');
+            options.forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            updateSelectedGroupDisplay();
+            applyGroupFilter();
+            
+            // Close dropdown
+            document.getElementById('groupOptions').classList.remove('show');
+        }
+        
+        function updateSelectedGroupDisplay() {
+            const displayElement = document.getElementById('selectedGroupDisplay');
+            if (isAllGroupsSelected) {
+                displayElement.textContent = 'All Groups (Aggregated)';
+            } else if (selectedGroups.length > 0) {
+                displayElement.textContent = selectedGroups[0];
             } else {
-                countElement.textContent = `(${selectedGroups.length}/${availableGroups.length})`;
+                displayElement.textContent = 'Select Group';
             }
         }
         
@@ -1019,9 +1028,17 @@
 
                 // Data Processing with Group Filter
                 const dataPoints = timeline.map(date => {
-                    // Filter data by technology, date, and selected groups
-                    const values = allData
-                        .filter(d => d.Tech === tech && d[dateHeaderName] === date && selectedGroups.includes(d.Group))
+                    // Filter data by technology and date
+                    let filteredData = allData.filter(d => d.Tech === tech && d[dateHeaderName] === date);
+                    
+                    // Apply group filter
+                    if (!isAllGroupsSelected && selectedGroups.length > 0) {
+                        // Single group selected
+                        filteredData = filteredData.filter(d => d.Group === selectedGroups[0]);
+                    }
+                    // If isAllGroupsSelected is true, we use all data (no group filter)
+                    
+                    const values = filteredData
                         .map(d => d[kpi])
                         .filter(v => v !== null && v !== "")
                         .map(Number)
@@ -1043,7 +1060,11 @@
                     noDataMsg.style.textAlign = "center";
                     noDataMsg.style.padding = "20px";
                     noDataMsg.style.color = "#666";
-                    noDataMsg.textContent = "No data available for this KPI with selected groups";
+                    if (isAllGroupsSelected) {
+                        noDataMsg.textContent = "No data available for this KPI";
+                    } else {
+                        noDataMsg.textContent = `No data available for ${selectedGroups[0]}`;
+                    }
                     card.appendChild(noDataMsg);
                     return;
                 }
@@ -1128,9 +1149,9 @@
                             },
                             subtitle: {
                                 display: true,
-                                text: selectedGroups.length === availableGroups.length ? 
-                                    'All Groups' : 
-                                    `${selectedGroups.length} of ${availableGroups.length} Groups`,
+                                text: isAllGroupsSelected ? 
+                                    'All Groups (Aggregated)' : 
+                                    `Group: ${selectedGroups[0]}`,
                                 font: {
                                     size: 10,
                                     style: 'italic'
@@ -1547,14 +1568,9 @@
             });
             
             // Add filter information
-            let filterText = '';
-            if (selectedGroups.length === availableGroups.length) {
-                filterText = 'All groups selected';
-            } else if (selectedGroups.length === 0) {
-                filterText = 'No groups selected';
-            } else {
-                filterText = `${selectedGroups.length} of ${availableGroups.length} groups selected`;
-            }
+            let filterText = isAllGroupsSelected ? 
+                'All groups (aggregated)' : 
+                `Group: ${selectedGroups[0]}`;
             titleSlide.addText(`Filter: ${filterText}`, {
                 x: 0.5, y: 2.5, w: 9, h: 0.5,
                 fontSize: 14, color: '666666'
