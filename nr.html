@@ -801,7 +801,56 @@
             fetchData();
         }
 
-        // --- DATA FETCHING (SIMPLIFIED VERSION) ---
+        // --- CSV PARSING FUNCTION (Improved) ---
+        function parseCSV(text) {
+            const rows = [];
+            let currentRow = [];
+            let currentField = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+                
+                if (char === '"' && nextChar === '"') {
+                    // Handle escaped quotes
+                    currentField += '"';
+                    i++; // Skip next quote
+                } else if (char === '"') {
+                    // Toggle quote mode
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    // End of field
+                    currentRow.push(currentField);
+                    currentField = '';
+                } else if (char === '\n' && !inQuotes) {
+                    // End of row
+                    currentRow.push(currentField);
+                    rows.push(currentRow);
+                    currentRow = [];
+                    currentField = '';
+                } else if (char === '\r' && nextChar === '\n' && !inQuotes) {
+                    // Handle Windows line endings
+                    currentRow.push(currentField);
+                    rows.push(currentRow);
+                    currentRow = [];
+                    currentField = '';
+                    i++; // Skip the \n
+                } else {
+                    currentField += char;
+                }
+            }
+            
+            // Add last row if exists
+            if (currentField !== '' || currentRow.length > 0) {
+                currentRow.push(currentField);
+                rows.push(currentRow);
+            }
+            
+            return rows;
+        }
+
+        // --- DATA FETCHING (Fixed CSV parsing) ---
         async function fetchData(){
             document.getElementById("mainChartContainer").innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>Loading NR data...</h2>";
             allData = [];
@@ -818,34 +867,10 @@
                         if (res.ok) {
                             const text = await res.text();
                             if (text && text.trim() !== '') {
-                                const rows = text.trim().split('\n').map(r => {
-                                    // Handle CSV with potential quotes and commas
-                                    const row = [];
-                                    let inQuotes = false;
-                                    let currentField = '';
-                                    
-                                    for (let i = 0; i < r.length; i++) {
-                                        const char = r[i];
-                                        const nextChar = r[i + 1];
-                                        
-                                        if (char === '"' && nextChar === '"') {
-                                            currentField += '"';
-                                            i++; // Skip next quote
-                                        } else if (char === '"') {
-                                            inQuotes = !inQuotes;
-                                        } else if (char === ',' && !inQuotes) {
-                                            row.push(currentField);
-                                            currentField = '';
-                                        } else {
-                                            currentField += char;
-                                        }
-                                    }
-                                    row.push(currentField);
-                                    return row;
-                                });
+                                const rows = parseCSV(text);
                                 
                                 if (rows.length >= 2) {
-                                    const headers = rows.shift().map(h => h.trim());
+                                    const headers = rows[0].map(h => h.trim());
                                     
                                     // Find date header
                                     const dateHeader = headers.find(h => h.toLowerCase().includes('date'));
@@ -853,29 +878,33 @@
                                         dateHeaderName = dateHeader;
                                     }
                                     
+                                    console.log("NR Headers:", headers);
+                                    console.log("Date header found:", dateHeader);
+                                    
                                     // Find group column - check for common patterns
                                     let groupColumn = headers.find(h => 
                                         h.toLowerCase().includes('enodeb') || 
                                         h.toLowerCase().includes('site') ||
                                         h.toLowerCase().includes('cell') ||
-                                        h.toLowerCase().includes('name')
+                                        h.toLowerCase().includes('name') ||
+                                        h.toLowerCase().includes('group')
                                     );
                                     
-                                    // If not found, use first column that's not date
-                                    if (!groupColumn) {
-                                        groupColumn = headers.find(h => h !== dateHeader);
-                                    }
+                                    console.log("Group column found:", groupColumn);
                                     
-                                    if (groupColumn) {
-                                        groupColumnName = groupColumn;
-                                    }
-                                    
-                                    rows.forEach(r => {
-                                        if (r.length < headers.length) return;
+                                    // Process data rows
+                                    for (let i = 1; i < rows.length; i++) {
+                                        const row = rows[i];
+                                        if (row.length < headers.length) {
+                                            console.warn(`Row ${i} has ${row.length} columns, expected ${headers.length}`);
+                                            continue;
+                                        }
                                         
                                         const obj = {};
-                                        headers.forEach((h, i) => {
-                                            const val = r[i] ? r[i].trim() : "";
+                                        let hasDate = false;
+                                        
+                                        headers.forEach((h, j) => {
+                                            const val = row[j] ? row[j].trim() : "";
                                             
                                             // Handle different cases
                                             if (val === "") {
@@ -886,20 +915,25 @@
                                                 const num = parseFloat(val);
                                                 obj[h] = isNaN(num) ? val : num;  // Either number or string
                                             }
+                                            
+                                            // Check if this is a date field
+                                            if (h === dateHeader && obj[h]) {
+                                                hasDate = true;
+                                            }
                                         });
                                         
-                                        if (obj[dateHeader]) {
+                                        if (hasDate) {
                                             obj.Tech = "NR"; // Mark as NR
-                                            obj.Group = obj[groupColumn] || 'Unknown';
+                                            obj.Group = groupColumn ? (obj[groupColumn] || 'Unknown') : 'Unknown';
                                             allData.push(obj);
                                             
                                             // Add to available groups
-                                            const groupValue = obj[groupColumn];
-                                            if (groupValue && !availableGroups.includes(groupValue)) {
+                                            const groupValue = obj.Group;
+                                            if (groupValue && groupValue !== 'Unknown' && !availableGroups.includes(groupValue)) {
                                                 availableGroups.push(groupValue);
                                             }
                                         }
-                                    });
+                                    }
                                 }
                             }
                         }
@@ -916,34 +950,10 @@
                         if (res.ok) {
                             const text = await res.text();
                             if (text && text.trim() !== '') {
-                                const rows = text.trim().split('\n').map(r => {
-                                    // Handle CSV with potential quotes and commas
-                                    const row = [];
-                                    let inQuotes = false;
-                                    let currentField = '';
-                                    
-                                    for (let i = 0; i < r.length; i++) {
-                                        const char = r[i];
-                                        const nextChar = r[i + 1];
-                                        
-                                        if (char === '"' && nextChar === '"') {
-                                            currentField += '"';
-                                            i++; // Skip next quote
-                                        } else if (char === '"') {
-                                            inQuotes = !inQuotes;
-                                        } else if (char === ',' && !inQuotes) {
-                                            row.push(currentField);
-                                            currentField = '';
-                                        } else {
-                                            currentField += char;
-                                        }
-                                    }
-                                    row.push(currentField);
-                                    return row;
-                                });
+                                const rows = parseCSV(text);
                                 
                                 if (rows.length >= 2) {
-                                    const headers = rows.shift().map(h => h.trim());
+                                    const headers = rows[0].map(h => h.trim());
                                     
                                     // Find date header
                                     const dateHeader = headers.find(h => h.toLowerCase().includes('date'));
@@ -951,29 +961,33 @@
                                         dateHeaderName = dateHeader;
                                     }
                                     
+                                    console.log("NSA Headers:", headers);
+                                    console.log("Date header found:", dateHeader);
+                                    
                                     // Find group column - check for common patterns
                                     let groupColumn = headers.find(h => 
                                         h.toLowerCase().includes('enodeb') || 
                                         h.toLowerCase().includes('site') ||
                                         h.toLowerCase().includes('cell') ||
-                                        h.toLowerCase().includes('name')
+                                        h.toLowerCase().includes('name') ||
+                                        h.toLowerCase().includes('group')
                                     );
                                     
-                                    // If not found, use first column that's not date
-                                    if (!groupColumn) {
-                                        groupColumn = headers.find(h => h !== dateHeader);
-                                    }
+                                    console.log("Group column found:", groupColumn);
                                     
-                                    if (groupColumn) {
-                                        groupColumnName = groupColumn;
-                                    }
-                                    
-                                    rows.forEach(r => {
-                                        if (r.length < headers.length) return;
+                                    // Process data rows
+                                    for (let i = 1; i < rows.length; i++) {
+                                        const row = rows[i];
+                                        if (row.length < headers.length) {
+                                            console.warn(`Row ${i} has ${row.length} columns, expected ${headers.length}`);
+                                            continue;
+                                        }
                                         
                                         const obj = {};
-                                        headers.forEach((h, i) => {
-                                            const val = r[i] ? r[i].trim() : "";
+                                        let hasDate = false;
+                                        
+                                        headers.forEach((h, j) => {
+                                            const val = row[j] ? row[j].trim() : "";
                                             
                                             // Handle different cases
                                             if (val === "") {
@@ -984,20 +998,25 @@
                                                 const num = parseFloat(val);
                                                 obj[h] = isNaN(num) ? val : num;  // Either number or string
                                             }
+                                            
+                                            // Check if this is a date field
+                                            if (h === dateHeader && obj[h]) {
+                                                hasDate = true;
+                                            }
                                         });
                                         
-                                        if (obj[dateHeader]) {
+                                        if (hasDate) {
                                             obj.Tech = "NR"; // Store as NR (not NSA)
-                                            obj.Group = obj[groupColumn] || 'Unknown';
+                                            obj.Group = groupColumn ? (obj[groupColumn] || 'Unknown') : 'Unknown';
                                             allData.push(obj);
                                             
                                             // Add to available groups
-                                            const groupValue = obj[groupColumn];
-                                            if (groupValue && !availableGroups.includes(groupValue)) {
+                                            const groupValue = obj.Group;
+                                            if (groupValue && groupValue !== 'Unknown' && !availableGroups.includes(groupValue)) {
                                                 availableGroups.push(groupValue);
                                             }
                                         }
-                                    });
+                                    }
                                 }
                             }
                         }
@@ -1011,9 +1030,11 @@
                 }
                 
                 console.log("DEBUG: Available groups:", availableGroups);
+                console.log("DEBUG: First few groups:", availableGroups.slice(0, 5));
                 console.log("DEBUG: Group column name:", groupColumnName);
                 console.log("DEBUG: Date header name:", dateHeaderName);
                 console.log("DEBUG: Total data points:", allData.length);
+                console.log("DEBUG: Sample data:", allData.slice(0, 2));
                 
                 // Initialize selected groups (FIRST GROUP SELECTED BY DEFAULT)
                 if (availableGroups.length > 0) {
@@ -1057,6 +1078,8 @@
                 
                 groupOptionsList.appendChild(optionDiv);
             });
+            
+            console.log("DEBUG: Populated filter with", availableGroups.length, "groups");
         }
         
         function toggleGroupFilter() {
@@ -1151,11 +1174,9 @@
                 console.log("DEBUG: All groups timeline length:", timeline.length);
             } else if (selectedGroups.length > 0) {
                 // For single group, get dates only for that group
-                timeline = [...new Set(
-                    allData
-                        .filter(d => d.Group === selectedGroups[0])
-                        .map(d => d[dateHeaderName])
-                )];
+                const filteredData = allData.filter(d => d.Group === selectedGroups[0]);
+                console.log("DEBUG: Filtered data for", selectedGroups[0], ":", filteredData.length, "rows");
+                timeline = [...new Set(filteredData.map(d => d[dateHeaderName]))];
                 console.log("DEBUG: Single group timeline for", selectedGroups[0], ":", timeline.length, "dates");
             } else {
                 // No group selected (shouldn't happen)
@@ -1171,7 +1192,7 @@
             });
 
             if (timeline.length === 0) {
-                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No timeline data available.</h2>";
+                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No timeline data available for the selected group.</h2>";
                 return;
             }
 
@@ -1187,6 +1208,8 @@
                 container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No KPIs selected. Please select KPIs from settings drawer.</h2>";
                 return;
             }
+
+            console.log("DEBUG: Rendering", chartsToRender.length, "charts");
 
             chartsToRender.forEach((kpiDef, idx) => {
                 const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
