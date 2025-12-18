@@ -828,12 +828,29 @@
                                         dateHeaderName = dateHeader;
                                     }
                                     
-                                    // Detect group column name for NR (eNodeB Name)
-                                    let groupColumn = headers.find(h => h.toLowerCase().includes('enodeb name') );
+                                    // Detect group column name for NR - check all headers
+                                    let groupColumn = null;
+                                    const possibleGroupHeaders = ['eNodeB Name', 'eNodeB', 'Site', 'Cell Name', 'Name', 'Group', 'Site Name'];
+                                    
+                                    for (const header of headers) {
+                                        for (const possible of possibleGroupHeaders) {
+                                            if (header.toLowerCase().includes(possible.toLowerCase())) {
+                                                groupColumn = header;
+                                                break;
+                                            }
+                                        }
+                                        if (groupColumn) break;
+                                    }
+                                    
+                                    // If still not found, use the first column that's not date and not a KPI
                                     if (!groupColumn) {
-                                        groupColumn = headers.find(h => 
-                                            h.toLowerCase().includes('enodeb name')
-                                        );
+                                        const kpiNames = kpiDefinitions.map(k => k.kpi);
+                                        for (const header of headers) {
+                                            if (header !== dateHeader && !kpiNames.includes(header)) {
+                                                groupColumn = header;
+                                                break;
+                                            }
+                                        }
                                     }
                                     
                                     if (!groupColumnName && groupColumn) {
@@ -857,12 +874,14 @@
                                         });
                                         if (obj[dateHeader]) {
                                             obj.Tech = "NR"; // Mark as NR
-                                            obj.Group = obj[groupColumn] || 'Unknown';
+                                            // Use the detected group column or fallback
+                                            obj.Group = obj[groupColumn] || obj[headers[0]] || 'Unknown';
                                             allData.push(obj);
                                             
                                             // Add to available groups
-                                            if (obj[groupColumn] && !availableGroups.includes(obj[groupColumn])) {
-                                                availableGroups.push(obj[groupColumn]);
+                                            const groupValue = obj[groupColumn] || obj[headers[0]];
+                                            if (groupValue && !availableGroups.includes(groupValue)) {
+                                                availableGroups.push(groupValue);
                                             }
                                         }
                                     });
@@ -892,15 +911,29 @@
                                         dateHeaderName = dateHeader;
                                     }
                                     
-                                    // Detect group column name for NSA (eNodeB Name)
-                                    let groupColumn = headers.find(h => h.toLowerCase().includes('enodeb') || h.toLowerCase().includes('site'));
+                                    // Detect group column name for NSA - check all headers
+                                    let groupColumn = null;
+                                    const possibleGroupHeaders = ['eNodeB Name', 'eNodeB', 'Site', 'Cell Name', 'Name', 'Group', 'Site Name'];
+                                    
+                                    for (const header of headers) {
+                                        for (const possible of possibleGroupHeaders) {
+                                            if (header.toLowerCase().includes(possible.toLowerCase())) {
+                                                groupColumn = header;
+                                                break;
+                                            }
+                                        }
+                                        if (groupColumn) break;
+                                    }
+                                    
+                                    // If still not found, use the first column that's not date and not a KPI
                                     if (!groupColumn) {
-                                        groupColumn = headers.find(h => 
-                                            h.toLowerCase().includes('name') || 
-                                            h.toLowerCase().includes('group') || 
-                                            h.toLowerCase().includes('site') ||
-                                            h.toLowerCase().includes('cell')
-                                        );
+                                        const kpiNames = kpiDefinitions.map(k => k.kpi);
+                                        for (const header of headers) {
+                                            if (header !== dateHeader && !kpiNames.includes(header)) {
+                                                groupColumn = header;
+                                                break;
+                                            }
+                                        }
                                     }
                                     
                                     if (!groupColumnName && groupColumn) {
@@ -924,12 +957,14 @@
                                         });
                                         if (obj[dateHeader]) {
                                             obj.Tech = "NR"; // Store as NR (not NSA)
-                                            obj.Group = obj[groupColumn] || 'Unknown';
+                                            // Use the detected group column or fallback
+                                            obj.Group = obj[groupColumn] || obj[headers[0]] || 'Unknown';
                                             allData.push(obj);
                                             
                                             // Add to available groups
-                                            if (obj[groupColumn] && !availableGroups.includes(obj[groupColumn])) {
-                                                availableGroups.push(obj[groupColumn]);
+                                            const groupValue = obj[groupColumn] || obj[headers[0]];
+                                            if (groupValue && !availableGroups.includes(groupValue)) {
+                                                availableGroups.push(groupValue);
                                             }
                                         }
                                     });
@@ -944,6 +979,11 @@
                 if (allData.length === 0) {
                     throw new Error("No data loaded from any source");
                 }
+                
+                console.log("Available groups:", availableGroups);
+                console.log("Group column name:", groupColumnName);
+                console.log("Date header name:", dateHeaderName);
+                console.log("Total data points:", allData.length);
                 
                 // Initialize selected groups (FIRST GROUP SELECTED BY DEFAULT)
                 if (availableGroups.length > 0) {
@@ -1054,6 +1094,7 @@
         }
         
         function applyGroupFilter() {
+            console.log("Applying group filter:", selectedGroups, isAllGroupsSelected);
             renderCharts();
         }
 
