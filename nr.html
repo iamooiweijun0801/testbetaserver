@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>KPI Dashboard - GSM/LTE</title>
+    <title>KPI Dashboard - NR</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
     <style>
+        /* --- COMPLETE CSS FROM GSM/LTE DASHBOARD --- */
         /* --- BASE STYLES --- */
         body { 
             font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -55,21 +56,16 @@
         }
         
         /* --- CONTROLS --- */
-        .controls-container {
+        .controls {
             display: flex;
             justify-content: center;
-            gap: 20px;
+            gap: 10px;
             margin-bottom: 20px;
             flex-wrap: wrap;
             align-items: center;
-            padding: 0 20px;
         }
         
         /* --- GROUP FILTER --- */
-        .group-filter-wrapper {
-            display: flex;
-            align-items: center;
-        }
         .group-filter-container {
             position: relative;
             min-width: 250px;
@@ -84,10 +80,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            min-height: 40px;
         }
         .group-filter-dropdown:hover {
-            border-color: #2F80ED;
+            border-color: #D24726;
         }
         .group-options {
             position: absolute;
@@ -118,7 +113,7 @@
             background: #f5f5f5;
         }
         .group-option.selected {
-            background: #2F80ED;
+            background: #D24726;
             color: white;
         }
         .group-select-all-btn {
@@ -138,18 +133,6 @@
         .selected-group-display {
             font-weight: 500;
             color: #333;
-        }
-        
-        /* --- SPACER BETWEEN FILTER AND EXPORT BUTTON --- */
-        .controls-spacer {
-            width: 20px;
-            height: 1px;
-        }
-        
-        /* --- EXPORT BUTTON --- */
-        .export-btn-wrapper {
-            display: flex;
-            align-items: center;
         }
         
         /* --- DRAWER TOGGLE BUTTONS --- */
@@ -316,8 +299,7 @@
             color: white;
             text-align: center;
         }
-        .tech-color-btn.gsm { background: #2F80ED; }
-        .tech-color-btn.lte { background: #27AE60; }
+        .tech-color-btn.nr { background: #D24726; }
 
         /* --- COLOR PICKER MODAL --- */
         .color-picker-modal {
@@ -505,35 +487,27 @@
     </style>
 </head>
 <body onload="initDashboard()">
-    <header>KPI Dashboard - GSM/LTE</header>
+    <header>KPI Dashboard - NR</header>
 
     <div class="tech-switcher">
-        <button class="gsm-lte active" onclick="switchToDashboard('gsm-lte')">GSM/LTE</button>
-        <button class="nr" onclick="switchToDashboard('nr')">NR</button>
+        <button class="gsm-lte" onclick="switchToDashboard('gsm-lte')">GSM/LTE</button>
+        <button class="nr active" onclick="switchToDashboard('nr')">NR</button>
     </div>
 
-    <div class="controls-container">
-        <div class="group-filter-wrapper">
-            <div class="group-filter-container">
-                <div class="group-filter-dropdown" onclick="toggleGroupFilter()">
-                    <span class="selected-group-display" id="selectedGroupDisplay">Select Group</span>
-                    <span>▼</span>
-                </div>
-                <div class="group-options" id="groupOptions">
-                    <button class="group-select-all-btn" onclick="selectAllGroups()">Select All (Aggregate)</button>
-                    <div id="groupOptionsList">
-                        <!-- Group options will be loaded here -->
-                    </div>
+    <div class="controls">
+        <div class="group-filter-container">
+            <div class="group-filter-dropdown" onclick="toggleGroupFilter()">
+                <span class="selected-group-display" id="selectedGroupDisplay">Select Group</span>
+                <span>▼</span>
+            </div>
+            <div class="group-options" id="groupOptions">
+                <button class="group-select-all-btn" onclick="selectAllGroups()">Select All (Aggregate)</button>
+                <div id="groupOptionsList">
+                    <!-- Group options will be loaded here -->
                 </div>
             </div>
         </div>
-        
-        <!-- Invisible spacer to prevent overlap -->
-        <div class="controls-spacer"></div>
-        
-        <div class="export-btn-wrapper">
-            <button class="action-btn" onclick="openPPTExport()">📊 Export PPT</button>
-        </div>
+        <button class="action-btn" onclick="openPPTExport()">📊 Export PPT</button>
     </div>
 
     <div class="chart-grid" id="mainChartContainer">
@@ -562,8 +536,8 @@
             <div style="margin: 20px 0; border-top: 1px solid #eee; padding-top: 15px;">
                 <label><b>Technology Colors</b></label>
                 <div class="tech-color-buttons">
-                    <button class="tech-color-btn gsm" onclick="openColorPicker('GSM')">GSM Color</button>
-                    <button class="tech-color-btn lte" onclick="openColorPicker('LTE')">LTE Color</button>
+                    <!-- Only NR color button since NSA data will be displayed as NR -->
+                    <button class="tech-color-btn nr" onclick="openColorPicker('NR')">NR Color</button>
                 </div>
             </div>
         </div>
@@ -578,7 +552,7 @@
         <div class="drawer-controls">
             <button class="action-btn" onclick="selectVisibleKpis()" style="background:#5cb85c;">Select All</button>
             <button class="action-btn" onclick="clearVisibleKpis()" style="background:#f0ad4e;">Clear All</button>
-            <button class="action-btn" onclick="applyKpis()" style="background:#2F80ED;">Apply</button>
+            <button class="action-btn" onclick="applyKpis()" style="background:#D24726;">Apply</button>
         </div>
         <div class="kpi-options-body" id="kpiOptionsList">
             <!-- KPI options will be loaded here -->
@@ -588,7 +562,7 @@
     <!-- Color Picker Modal -->
     <div id="colorPickerModal" class="color-picker-modal">
         <div class="color-picker-content">
-            <h3 id="colorPickerTitle">Select Color for GSM</h3>
+            <h3 id="colorPickerTitle">Select Color for NR</h3>
             <div class="color-picker-grid" id="colorPickerGrid">
                 <!-- Color options will be added here -->
             </div>
@@ -656,44 +630,53 @@
         let selectedKpis = [];
         let selectedTechForColor = '';
         let selectedColor = '';
-        let pptLayout = 9; // Default: 3 graphs per slide
+        let pptLayout = 9;
         let selectedTechForExport = {
-            GSM: true,
-            LTE: true
+            NR: true  // Only NR since NSA data is displayed as NR
         };
         
         // --- GROUP FILTER STATE ---
         let availableGroups = [];
         let selectedGroups = []; // Will contain either ONE group name or be empty (for "All")
-        let groupColumnName = ''; // Will be detected from data (eNodeB Name for LTE, GBSC for GSM)
+        let groupColumnName = ''; // Will be detected from data (eNodeB Name for NR/NSA)
         let isAllGroupsSelected = false; // Flag to track if "Select All" is active
         let dateHeaderName = ''; // Store the date header name globally
 
-        // --- KPI Definitions (GSM/LTE only) ---
+        // --- KPI Definitions (NR + NSA but displayed as NR) ---
         const kpiDefinitions = [
-            { tech: "GSM", kpi: "Call setup success rate(%)", initialChecked: true, color: "#2F80ED" },
-            { tech: "GSM", kpi: "Call drop rate(%)", initialChecked: true, color: "#2F80ED" },
-            { tech: "GSM", kpi: "CS Traffic (erl)", initialChecked: true, color: "#2F80ED" },
-            
-            { tech: "LTE", kpi: "Call Setup Success Rate(%)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "E-RAB Call Drop Rate(%)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "DL -USER Average Throughput (Mbit/s)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "UL -USER Average Throughput (Mbit/s)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "DL Data Total Volume (Gbyte)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "UL Data Total Volume (Gbyte)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "DL PRB Utilization (%)", initialChecked: true, color: "#27AE60" }
+            // NR KPIs (from NR sheet)
+            { tech: "NR", kpi: "SgNB Addition Success Rate (CU)(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "SCG PSCell Change Success Rate(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "SgNB TriSgNB Abnormal Release Rate(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "Intra-SgNB Pscell Change Success Rate(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "Inter-SgNB Pscell Change Success Rate(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "NSA Average User Number", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "DL Avg Latency (ms)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "DL Traffic Volume (GB)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "UL Traffic Volume (GB)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "DL User Throughput(Mbps)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "UL User Throughput(Mbps)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "DL PRB Utilization(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "UL PRB Utilization(%)", initialChecked: true, color: "#D24726" },
+            // NSA KPIs (from NSA sheet, but displayed as NR)
+            { tech: "NR", kpi: "Avg NSA DC User Num", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "SCG Mod Success Rate(4G initiated)(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "SCG Mod Success Rate(5G initiated)(%)", initialChecked: true, color: "#D24726" },
+            { tech: "NR", kpi: "NSA E-RAB Drop Rate(%)", initialChecked: true, color: "#D24726" }
         ];
 
-        // --- Sheet URLs (GSM/LTE only) ---
+        // --- Sheet URLs (NR + NSA sheets) ---
         const sheetUrls = {
-            GSM: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1977848975&single=true&output=csv",
-            LTE: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=893314169&single=true&output=csv"
+            // NR sheet (actual NR data)
+            "NR": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1372365834&single=true&output=csv",
+            
+            // NSA sheet (will be displayed as NR)
+            "NSA": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1503870746&single=true&output=csv"
         };
         
         let activeChartStyle = null;
         let techColors = {
-            GSM: "#2F80ED",
-            LTE: "#27AE60"
+            NR: "#D24726"  // Single color for all NR/NSA charts
         };
 
         // --- Color Palette Options ---
@@ -713,7 +696,7 @@
                 borderDash: [], 
                 tension: 0.2, 
                 fill: true, 
-                backgroundColor: "rgba(47, 128, 237, 0.1)" 
+                backgroundColor: "rgba(210, 71, 38, 0.1)" 
             },
             { 
                 name: "Line with Dots", 
@@ -779,10 +762,10 @@
         // --- DASHBOARD SWITCHER ---
         function switchToDashboard(type) {
             if (type === 'gsm-lte') {
+                window.location.href = 'kpi.html';  // Main GSM/LTE dashboard
+            } else if (type === 'nr') {
                 // Already here
                 return;
-            } else if (type === 'nr') {
-                window.location.href = 'nr.html';
             }
         }
 
@@ -793,73 +776,128 @@
             fetchData();
         }
 
-        // --- DATA FETCHING ---
+        // --- DATA FETCHING (Modified to combine NR and NSA data with group detection) ---
         async function fetchData(){
-            document.getElementById("mainChartContainer").innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>Loading data...</h2>";
+            document.getElementById("mainChartContainer").innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>Loading NR data...</h2>";
             allData = [];
             availableGroups = [];
             selectedGroups = [];
             isAllGroupsSelected = false;
             
             try {
-                for (const tech in sheetUrls) {
+                // Process NR sheet
+                if (sheetUrls["NR"]) {
                     try {
-                        const url = sheetUrls[tech] + "&t=" + Date.now();
+                        const url = sheetUrls["NR"] + "&t=" + Date.now();
                         const res = await fetch(url);
-                        if (!res.ok) continue;
-                        const text = await res.text();
-                        if (!text || text.trim() === '') continue;
-                        const rows = text.trim().split('\n').map(r => r.split(','));
-                        
-                        if (rows.length < 2) continue;
-                        
-                        const headers = rows.shift().map(h => h.trim());
-                        const dateHeader = headers.find(h => h.toLowerCase().includes('date'));
-                        
-                        if (!dateHeaderName && dateHeader) {
-                            dateHeaderName = dateHeader;
-                        }
-                        
-                        // Detect group column name for this technology
-                        let groupColumn = '';
-                        if (tech === 'LTE') {
-                            groupColumn = headers.find(h => h.toLowerCase().includes('enodeb') || h.toLowerCase().includes('site'));
-                        } else if (tech === 'GSM') {
-                            groupColumn = headers.find(h => h.toLowerCase().includes('gbsc') || h.toLowerCase().includes('bsc'));
-                        }
-                        
-                        if (!groupColumn) {
-                            groupColumn = headers.find(h => 
-                                h.toLowerCase().includes('name') || 
-                                h.toLowerCase().includes('group') || 
-                                h.toLowerCase().includes('site') ||
-                                h.toLowerCase().includes('cell')
-                            );
-                        }
-                        
-                        if (!groupColumnName && groupColumn) {
-                            groupColumnName = groupColumn;
-                        }
-                        
-                        rows.forEach(r => {
-                            const obj = {};
-                            headers.forEach((h, i) => {
-                                const val = r[i] ? r[i].trim() : "";
-                                obj[h] = val === "" ? null : (isNaN(val) ? val : parseFloat(val));
-                            });
-                            if (obj[dateHeader]) {
-                                obj.Tech = tech;
-                                obj.Group = obj[groupColumn] || 'Unknown';
-                                allData.push(obj);
+                        if (res.ok) {
+                            const text = await res.text();
+                            if (text && text.trim() !== '') {
+                                const rows = text.trim().split('\n').map(r => r.split(','));
                                 
-                                // Add to available groups
-                                if (obj[groupColumn] && !availableGroups.includes(obj[groupColumn])) {
-                                    availableGroups.push(obj[groupColumn]);
+                                if (rows.length >= 2) {
+                                    const headers = rows.shift().map(h => h.trim());
+                                    const dateHeader = headers.find(h => h.toLowerCase().includes('date'));
+                                    
+                                    if (!dateHeaderName && dateHeader) {
+                                        dateHeaderName = dateHeader;
+                                    }
+                                    
+                                    // Detect group column name for NR (eNodeB Name)
+                                    let groupColumn = headers.find(h => h.toLowerCase().includes('enodeb') || h.toLowerCase().includes('site'));
+                                    if (!groupColumn) {
+                                        groupColumn = headers.find(h => 
+                                            h.toLowerCase().includes('name') || 
+                                            h.toLowerCase().includes('group') || 
+                                            h.toLowerCase().includes('site') ||
+                                            h.toLowerCase().includes('cell')
+                                        );
+                                    }
+                                    
+                                    if (!groupColumnName && groupColumn) {
+                                        groupColumnName = groupColumn;
+                                    }
+                                    
+                                    rows.forEach(r => {
+                                        const obj = {};
+                                        headers.forEach((h, i) => {
+                                            const val = r[i] ? r[i].trim() : "";
+                                            obj[h] = val === "" ? null : (isNaN(val) ? val : parseFloat(val));
+                                        });
+                                        if (obj[dateHeader]) {
+                                            obj.Tech = "NR"; // Mark as NR
+                                            obj.Group = obj[groupColumn] || 'Unknown';
+                                            allData.push(obj);
+                                            
+                                            // Add to available groups
+                                            if (obj[groupColumn] && !availableGroups.includes(obj[groupColumn])) {
+                                                availableGroups.push(obj[groupColumn]);
+                                            }
+                                        }
+                                    });
                                 }
                             }
-                        });
+                        }
                     } catch (e) {
-                        console.error(`Error loading ${tech} data:`, e);
+                        console.error(`Error loading NR data:`, e);
+                    }
+                }
+                
+                // Process NSA sheet (but store as NR)
+                if (sheetUrls["NSA"]) {
+                    try {
+                        const url = sheetUrls["NSA"] + "&t=" + Date.now();
+                        const res = await fetch(url);
+                        if (res.ok) {
+                            const text = await res.text();
+                            if (text && text.trim() !== '') {
+                                const rows = text.trim().split('\n').map(r => r.split(','));
+                                
+                                if (rows.length >= 2) {
+                                    const headers = rows.shift().map(h => h.trim());
+                                    const dateHeader = headers.find(h => h.toLowerCase().includes('date'));
+                                    
+                                    if (!dateHeaderName && dateHeader) {
+                                        dateHeaderName = dateHeader;
+                                    }
+                                    
+                                    // Detect group column name for NSA (eNodeB Name)
+                                    let groupColumn = headers.find(h => h.toLowerCase().includes('enodeb') || h.toLowerCase().includes('site'));
+                                    if (!groupColumn) {
+                                        groupColumn = headers.find(h => 
+                                            h.toLowerCase().includes('name') || 
+                                            h.toLowerCase().includes('group') || 
+                                            h.toLowerCase().includes('site') ||
+                                            h.toLowerCase().includes('cell')
+                                        );
+                                    }
+                                    
+                                    if (!groupColumnName && groupColumn) {
+                                        groupColumnName = groupColumn;
+                                    }
+                                    
+                                    rows.forEach(r => {
+                                        const obj = {};
+                                        headers.forEach((h, i) => {
+                                            const val = r[i] ? r[i].trim() : "";
+                                            obj[h] = val === "" ? null : (isNaN(val) ? val : parseFloat(val));
+                                        });
+                                        if (obj[dateHeader]) {
+                                            obj.Tech = "NR"; // Store as NR (not NSA)
+                                            obj.Group = obj[groupColumn] || 'Unknown';
+                                            allData.push(obj);
+                                            
+                                            // Add to available groups
+                                            if (obj[groupColumn] && !availableGroups.includes(obj[groupColumn])) {
+                                                availableGroups.push(obj[groupColumn]);
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error(`Error loading NSA data:`, e);
                     }
                 }
 
@@ -1036,7 +1074,7 @@
 
             chartsToRender.forEach((kpiDef, idx) => {
                 const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
-                const tech = kpiDef.tech;
+                const tech = kpiDef.tech; // Always "NR"
                 const kpi = kpiDef.kpi;
 
                 const card = document.createElement("div");
@@ -1215,7 +1253,7 @@
                     chartConfig.data.datasets[0].tension = style.tension;
                     chartConfig.data.datasets[0].fill = style.fill;
                     if (style.fill && style.backgroundColor) {
-                        chartConfig.data.datasets[0].backgroundColor = style.backgroundColor.replace('47, 128, 237', 
+                        chartConfig.data.datasets[0].backgroundColor = style.backgroundColor.replace('210, 71, 38', 
                             chartColor.substring(1).match(/.{2}/g).map(x => parseInt(x, 16)).join(', '));
                     }
                 }
@@ -1244,16 +1282,13 @@
         function populateKpiOptions(){
             const list = document.getElementById("kpiOptionsList");
             list.innerHTML = "";
-            let currentTech = "";
+            
+            // Show all KPIs under "NR" group (even NSA KPIs)
+            list.innerHTML += `<div class="kpi-group-title">NR KPIs</div>`;
 
             kpiDefinitions.forEach(kpiDef => {
                 const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
                 
-                if (kpiDef.tech !== currentTech) {
-                    list.innerHTML += `<div class="kpi-group-title">${kpiDef.tech} KPIs</div>`;
-                    currentTech = kpiDef.tech;
-                }
-
                 const checked = selectedKpis.includes(fullKpiName) ? "checked" : "";
                 const d = document.createElement("label");
                 d.className = "kpi-option";
@@ -1308,11 +1343,8 @@
         }
 
         function updateTechColorButtons() {
-            const gsmBtn = document.querySelector('.tech-color-btn.gsm');
-            const lteBtn = document.querySelector('.tech-color-btn.lte');
-            
-            if (gsmBtn) gsmBtn.style.background = techColors.GSM;
-            if (lteBtn) lteBtn.style.background = techColors.LTE;
+            const nrBtn = document.querySelector('.tech-color-btn.nr');
+            if (nrBtn) nrBtn.style.background = techColors.NR;
         }
 
         // --- COLOR PICKER FUNCTIONS ---
@@ -1555,9 +1587,9 @@
             
             // Title slide
             const titleSlide = pptx.addSlide();
-            titleSlide.addText('KPI Dashboard Report - GSM/LTE', {
+            titleSlide.addText('KPI Dashboard Report - NR', {
                 x: 0.5, y: 1, w: 9, h: 1,
-                fontSize: 36, bold: true, color: '2F80ED'
+                fontSize: 36, bold: true, color: 'D24726'
             });
             
             const date = new Date().toLocaleDateString();
@@ -1667,7 +1699,7 @@
             const summarySlide = pptx.addSlide();
             summarySlide.addText('Summary', {
                 x: 0.5, y: 0.5, w: 9, h: 0.5,
-                fontSize: 28, bold: true, color: '2F80ED'
+                fontSize: 28, bold: true, color: 'D24726'
             });
             
             let summaryText = `Total Charts: ${allChartsForExport.length}\n`;
@@ -1693,7 +1725,7 @@
             // Download
             const timestamp = new Date().getTime();
             try {
-                await pptx.writeFile({ fileName: `GSM_LTE_KPI_Report_${timestamp}.pptx` });
+                await pptx.writeFile({ fileName: `NR_KPI_Report_${timestamp}.pptx` });
                 closePPTExport();
             } catch (e) {
                 alert("Error generating PPT: " + e.message);
