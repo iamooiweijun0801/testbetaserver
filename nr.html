@@ -829,13 +829,10 @@
                                     }
                                     
                                     // Detect group column name for NR (eNodeB Name)
-                                    let groupColumn = headers.find(h => h.toLowerCase().includes('enodeb') || h.toLowerCase().includes('site'));
+                                    let groupColumn = headers.find(h => h.toLowerCase().includes('enodeb name') );
                                     if (!groupColumn) {
                                         groupColumn = headers.find(h => 
-                                            h.toLowerCase().includes('name') || 
-                                            h.toLowerCase().includes('group') || 
-                                            h.toLowerCase().includes('site') ||
-                                            h.toLowerCase().includes('cell')
+                                            h.toLowerCase().includes('enodeb name')
                                         );
                                     }
                                     
