@@ -345,6 +345,25 @@
         .tech-color-btn.gsm { background: #2F80ED; }
         .tech-color-btn.lte { background: #27AE60; }
 
+        /* --- PRE/POST COLOR BUTTONS --- */
+        .prepost-color-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .prepost-color-btn {
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            color: white;
+            text-align: center;
+        }
+        .prepost-color-btn.pre { background: #2F80ED; }
+        .prepost-color-btn.post { background: #27AE60; }
+
         /* --- COLOR PICKER MODAL --- */
         .color-picker-modal {
             position: fixed;
@@ -592,6 +611,14 @@
                     <button class="tech-color-btn lte" onclick="openColorPicker('LTE')">LTE Color</button>
                 </div>
             </div>
+            
+            <div style="margin: 20px 0; border-top: 1px solid #eee; padding-top: 15px;">
+                <label><b>Pre/Post Colors</b></label>
+                <div class="prepost-color-buttons">
+                    <button class="prepost-color-btn pre" onclick="openColorPicker('PRE')">PRE Color</button>
+                    <button class="prepost-color-btn post" onclick="openColorPicker('POST')">POST Color</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -614,7 +641,7 @@
     <!-- Color Picker Modal -->
     <div id="colorPickerModal" class="color-picker-modal">
         <div class="color-picker-content">
-            <h3 id="colorPickerTitle">Select Color for GSM</h3>
+            <h3 id="colorPickerTitle">Select Color</h3>
             <div class="color-picker-grid" id="colorPickerGrid">
                 <!-- Color options will be added here -->
             </div>
@@ -680,7 +707,7 @@
         let allData = [];
         let allCharts = {};
         let selectedKpis = [];
-        let selectedTechForColor = '';
+        let selectedColorTarget = ''; // 'GSM', 'LTE', 'PRE', or 'POST'
         let selectedColor = '';
         let pptLayout = 9; // Default: 3 graphs per slide
         let selectedTechForExport = {
@@ -1259,16 +1286,7 @@
                         maintainAspectRatio: false,
                         plugins: { 
                             legend: { 
-                                display: true,
-                                position: 'top',
-                                labels: {
-                                    usePointStyle: true,
-                                    pointStyle: 'circle',
-                                    padding: 20,
-                                    font: {
-                                        size: 10
-                                    }
-                                }
+                                display: false // LEGEND REMOVED AS REQUESTED
                             },
                             title: { 
                                 display: true, 
@@ -1361,7 +1379,7 @@
                                     ctx.save();
                                     
                                     // Pre period background
-                                    ctx.fillStyle = 'rgba(47, 128, 237, 0.05)';
+                                    ctx.fillStyle = prePostColors.PRE.replace(')', ', 0.05)').replace('rgb', 'rgba');
                                     ctx.fillRect(
                                         xAxis.getPixelForTick(0),
                                         yAxis.top,
@@ -1370,7 +1388,7 @@
                                     );
                                     
                                     // Post period background
-                                    ctx.fillStyle = 'rgba(39, 174, 96, 0.05)';
+                                    ctx.fillStyle = prePostColors.POST.replace(')', ', 0.05)').replace('rgb', 'rgba');
                                     ctx.fillRect(
                                         xAxis.getPixelForTick(splitIndex),
                                         yAxis.top,
@@ -1510,24 +1528,39 @@
                 }
             });
             
-            updateTechColorButtons();
+            updateColorButtons();
             
             renderCharts();
         }
 
-        function updateTechColorButtons() {
+        function updateColorButtons() {
+            // Update tech color buttons
             const gsmBtn = document.querySelector('.tech-color-btn.gsm');
             const lteBtn = document.querySelector('.tech-color-btn.lte');
             
             if (gsmBtn) gsmBtn.style.background = techColors.GSM;
             if (lteBtn) lteBtn.style.background = techColors.LTE;
+            
+            // Update pre/post color buttons
+            const preBtn = document.querySelector('.prepost-color-btn.pre');
+            const postBtn = document.querySelector('.prepost-color-btn.post');
+            
+            if (preBtn) preBtn.style.background = prePostColors.PRE;
+            if (postBtn) postBtn.style.background = prePostColors.POST;
         }
 
-        // --- COLOR PICKER FUNCTIONS ---
-        function openColorPicker(tech) {
-            selectedTechForColor = tech;
-            selectedColor = techColors[tech];
-            document.getElementById('colorPickerTitle').textContent = `Select Color for ${tech}`;
+        // --- COLOR PICKER FUNCTIONS (FIXED) ---
+        function openColorPicker(target) {
+            selectedColorTarget = target;
+            
+            // Get the current color based on target
+            if (target === 'GSM' || target === 'LTE') {
+                selectedColor = techColors[target];
+            } else if (target === 'PRE' || target === 'POST') {
+                selectedColor = prePostColors[target];
+            }
+            
+            document.getElementById('colorPickerTitle').textContent = `Select Color for ${target}`;
             
             const colorGrid = document.getElementById('colorPickerGrid');
             colorGrid.innerHTML = '';
@@ -1561,17 +1594,25 @@
         }
 
         function applySelectedColor() {
-            if (selectedTechForColor && selectedColor) {
-                techColors[selectedTechForColor] = selectedColor;
+            if (selectedColorTarget && selectedColor) {
+                // Update the appropriate color variable
+                if (selectedColorTarget === 'GSM' || selectedColorTarget === 'LTE') {
+                    techColors[selectedColorTarget] = selectedColor;
+                    
+                    // Update KPI definitions
+                    kpiDefinitions.forEach(kpi => {
+                        if (kpi.tech === selectedColorTarget) {
+                            kpi.color = selectedColor;
+                        }
+                    });
+                } else if (selectedColorTarget === 'PRE' || selectedColorTarget === 'POST') {
+                    prePostColors[selectedColorTarget] = selectedColor;
+                }
                 
-                kpiDefinitions.forEach(kpi => {
-                    if (kpi.tech === selectedTechForColor) {
-                        kpi.color = selectedColor;
-                    }
-                });
+                // Update UI buttons
+                updateColorButtons();
                 
-                updateTechColorButtons();
-                
+                // Re-render charts with new colors
                 renderCharts();
                 
                 closeColorPicker();
