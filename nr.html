@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>KPI Dashboard - NR</title>
+    <title>KPI Dashboard - GSM/LTE</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.0.1/dist/chartjs-plugin-annotation.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
     <style>
         /* --- BASE STYLES --- */
@@ -87,7 +88,7 @@
             min-height: 40px;
         }
         .group-filter-dropdown:hover {
-            border-color: #D24726;
+            border-color: #2F80ED;
         }
         .group-options {
             position: absolute;
@@ -118,7 +119,7 @@
             background: #f5f5f5;
         }
         .group-option.selected {
-            background: #D24726;
+            background: #2F80ED;
             color: white;
         }
         .group-select-all-btn {
@@ -211,11 +212,36 @@
             box-shadow:0 2px 8px rgba(0,0,0,0.08); 
             display:flex; 
             flex-direction:column; 
+            position: relative;
         }
         .chart-container { 
             position: relative; 
             height: 280px; 
             width: 100%; 
+        }
+        
+        /* --- PERIOD LABELS --- */
+        .period-label {
+            position: absolute;
+            top: 10px;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 3px;
+            z-index: 10;
+            border: 1px solid;
+        }
+        .pre-period {
+            background-color: rgba(47, 128, 237, 0.15);
+            color: #2F80ED;
+            border-color: #2F80ED;
+            left: 10px;
+        }
+        .post-period {
+            background-color: rgba(39, 174, 96, 0.15);
+            color: #27AE60;
+            border-color: #27AE60;
+            right: 10px;
         }
         
         /* --- DRAWERS --- */
@@ -316,7 +342,8 @@
             color: white;
             text-align: center;
         }
-        .tech-color-btn.nr { background: #D24726; }
+        .tech-color-btn.gsm { background: #2F80ED; }
+        .tech-color-btn.lte { background: #27AE60; }
 
         /* --- COLOR PICKER MODAL --- */
         .color-picker-modal {
@@ -504,11 +531,11 @@
     </style>
 </head>
 <body onload="initDashboard()">
-    <header>KPI Dashboard - NR</header>
+    <header>KPI Dashboard - GSM/LTE</header>
 
     <div class="tech-switcher">
-        <button class="gsm-lte" onclick="switchToDashboard('gsm-lte')">GSM/LTE</button>
-        <button class="nr active" onclick="switchToDashboard('nr')">NR</button>
+        <button class="gsm-lte active" onclick="switchToDashboard('gsm-lte')">GSM/LTE</button>
+        <button class="nr" onclick="switchToDashboard('nr')">NR</button>
     </div>
 
     <div class="controls-container">
@@ -561,8 +588,8 @@
             <div style="margin: 20px 0; border-top: 1px solid #eee; padding-top: 15px;">
                 <label><b>Technology Colors</b></label>
                 <div class="tech-color-buttons">
-                    <!-- Only NR color button since NSA data will be displayed as NR -->
-                    <button class="tech-color-btn nr" onclick="openColorPicker('NR')">NR Color</button>
+                    <button class="tech-color-btn gsm" onclick="openColorPicker('GSM')">GSM Color</button>
+                    <button class="tech-color-btn lte" onclick="openColorPicker('LTE')">LTE Color</button>
                 </div>
             </div>
         </div>
@@ -577,7 +604,7 @@
         <div class="drawer-controls">
             <button class="action-btn" onclick="selectVisibleKpis()" style="background:#5cb85c;">Select All</button>
             <button class="action-btn" onclick="clearVisibleKpis()" style="background:#f0ad4e;">Clear All</button>
-            <button class="action-btn" onclick="applyKpis()" style="background:#D24726;">Apply</button>
+            <button class="action-btn" onclick="applyKpis()" style="background:#2F80ED;">Apply</button>
         </div>
         <div class="kpi-options-body" id="kpiOptionsList">
             <!-- KPI options will be loaded here -->
@@ -587,7 +614,7 @@
     <!-- Color Picker Modal -->
     <div id="colorPickerModal" class="color-picker-modal">
         <div class="color-picker-content">
-            <h3 id="colorPickerTitle">Select Color for NR</h3>
+            <h3 id="colorPickerTitle">Select Color for GSM</h3>
             <div class="color-picker-grid" id="colorPickerGrid">
                 <!-- Color options will be added here -->
             </div>
@@ -655,53 +682,44 @@
         let selectedKpis = [];
         let selectedTechForColor = '';
         let selectedColor = '';
-        let pptLayout = 9;
+        let pptLayout = 9; // Default: 3 graphs per slide
         let selectedTechForExport = {
-            NR: true  // Only NR since NSA data is displayed as NR
+            GSM: true,
+            LTE: true
         };
         
         // --- GROUP FILTER STATE ---
         let availableGroups = [];
         let selectedGroups = []; // Will contain either ONE group name or be empty (for "All")
-        let groupColumnName = 'eNodeB Name'; // Hardcode this since we know it's the group column
+        let groupColumnName = ''; // Will be detected from data (eNodeB Name for LTE, GBSC for GSM)
         let isAllGroupsSelected = false; // Flag to track if "Select All" is active
         let dateHeaderName = ''; // Store the date header name globally
 
-        // --- KPI Definitions (NR + NSA but displayed as NR) ---
+        // --- KPI Definitions (GSM/LTE only) ---
         const kpiDefinitions = [
-            // NR KPIs (from NR sheet)
-            { tech: "NR", kpi: "SgNB Addition Success Rate (CU)(%)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "SCG PSCell Change Success Rate(%)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "SgNB TriSgNB Abnormal Release Rate(%)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "Intra-SgNB Pscell Change Success Rate(%)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "Inter-SgNB Pscell Change Success Rate(%)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "NSA Average User Number", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "DL Avg Latency (ms)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "DL Traffic Volume (GB)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "UL Traffic Volume (GB)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "DL User Throughput(Mbps)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "UL User Throughput(Mbps)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "DL PRB Utilization(%)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "UL PRB Utilization(%)", initialChecked: true, color: "#D24726" },
-            // NSA KPIs (from NSA sheet, but displayed as NR)
-            { tech: "NR", kpi: "Avg NSA DC User Num", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "SCG Mod Success Rate(4G initiated)(%)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "SCG Mod Success Rate(5G initiated)(%)", initialChecked: true, color: "#D24726" },
-            { tech: "NR", kpi: "NSA E-RAB Drop Rate(%)", initialChecked: true, color: "#D24726" }
+            { tech: "GSM", kpi: "Call setup success rate(%)", initialChecked: true, color: "#2F80ED" },
+            { tech: "GSM", kpi: "Call drop rate(%)", initialChecked: true, color: "#2F80ED" },
+            { tech: "GSM", kpi: "CS Traffic (erl)", initialChecked: true, color: "#2F80ED" },
+            
+            { tech: "LTE", kpi: "Call Setup Success Rate(%)", initialChecked: true, color: "#27AE60" },
+            { tech: "LTE", kpi: "E-RAB Call Drop Rate(%)", initialChecked: true, color: "#27AE60" },
+            { tech: "LTE", kpi: "DL -USER Average Throughput (Mbit/s)", initialChecked: true, color: "#27AE60" },
+            { tech: "LTE", kpi: "UL -USER Average Throughput (Mbit/s)", initialChecked: true, color: "#27AE60" },
+            { tech: "LTE", kpi: "DL Data Total Volume (Gbyte)", initialChecked: true, color: "#27AE60" },
+            { tech: "LTE", kpi: "UL Data Total Volume (Gbyte)", initialChecked: true, color: "#27AE60" },
+            { tech: "LTE", kpi: "DL PRB Utilization (%)", initialChecked: true, color: "#27AE60" }
         ];
 
-        // --- Sheet URLs (NR + NSA sheets) ---
+        // --- Sheet URLs (GSM/LTE only) ---
         const sheetUrls = {
-            // NR sheet (actual NR data)
-            "NR": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1372365834&single=true&output=csv",
-            
-            // NSA sheet (will be displayed as NR)
-            "NSA": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1503870746&single=true&output=csv"
+            GSM: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=1977848975&single=true&output=csv",
+            LTE: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIeWBt5CB8zpdFja0b3h2kodVsUrjD_PSHOkF93MkecZF04gWDoMXVq-q0REU-RvFQbjVggJVDLpUi/pub?gid=893314169&single=true&output=csv"
         };
         
         let activeChartStyle = null;
         let techColors = {
-            NR: "#D24726"  // Single color for all NR/NSA charts
+            GSM: "#2F80ED",
+            LTE: "#27AE60"
         };
 
         // --- Color Palette Options ---
@@ -721,7 +739,7 @@
                 borderDash: [], 
                 tension: 0.2, 
                 fill: true, 
-                backgroundColor: "rgba(210, 71, 38, 0.1)" 
+                backgroundColor: "rgba(47, 128, 237, 0.1)" 
             },
             { 
                 name: "Line with Dots", 
@@ -787,264 +805,98 @@
         // --- DASHBOARD SWITCHER ---
         function switchToDashboard(type) {
             if (type === 'gsm-lte') {
-                window.location.href = 'kpi.html';  // Main GSM/LTE dashboard
-            } else if (type === 'nr') {
                 // Already here
                 return;
+            } else if (type === 'nr') {
+                window.location.href = 'nr.html';
             }
-        }
-
-        // --- CSV PARSING FUNCTION (Improved) ---
-        function parseCSV(text) {
-            const lines = text.split('\n');
-            const result = [];
-            
-            for (let line of lines) {
-                if (line.trim() === '') continue;
-                
-                // Handle quoted fields with commas
-                const fields = [];
-                let currentField = '';
-                let inQuotes = false;
-                
-                for (let i = 0; i < line.length; i++) {
-                    const char = line[i];
-                    
-                    if (char === '"') {
-                        // Check if next char is also a quote (escaped quote)
-                        if (i + 1 < line.length && line[i + 1] === '"') {
-                            currentField += '"';
-                            i++; // Skip next quote
-                        } else {
-                            inQuotes = !inQuotes;
-                        }
-                    } else if (char === ',' && !inQuotes) {
-                        fields.push(currentField.trim());
-                        currentField = '';
-                    } else {
-                        currentField += char;
-                    }
-                }
-                
-                // Add the last field
-                fields.push(currentField.trim());
-                result.push(fields);
-            }
-            
-            return result;
         }
 
         // --- INITIALIZATION ---
         function initDashboard() {
-            dateHeaderName = ''; // Reset date header
             selectedKpis = kpiDefinitions.filter(k => k.initialChecked).map(k => k.tech + " - " + k.kpi);
             applyChartStyle(1);
             fetchData();
         }
 
-        // --- DATA FETCHING (Fixed CSV parsing) ---
-        async function fetchData() {
-            document.getElementById("mainChartContainer").innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>Loading NR data...</h2>";
+        // --- DATA FETCHING ---
+        async function fetchData(){
+            document.getElementById("mainChartContainer").innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>Loading data...</h2>";
             allData = [];
             availableGroups = [];
             selectedGroups = [];
             isAllGroupsSelected = false;
             
             try {
-                // Clear date header name at start
-                dateHeaderName = '';
-                
-                // Process NR sheet
-                if (sheetUrls["NR"]) {
+                for (const tech in sheetUrls) {
                     try {
-                        console.log("Fetching NR data...");
-                        const url = sheetUrls["NR"] + "&t=" + Date.now();
+                        const url = sheetUrls[tech] + "&t=" + Date.now();
                         const res = await fetch(url);
-                        if (res.ok) {
-                            const text = await res.text();
-                            console.log("NR data received, length:", text.length);
-                            
-                            if (text && text.trim() !== '') {
-                                const rows = parseCSV(text);
-                                console.log("NR rows parsed:", rows.length);
+                        if (!res.ok) continue;
+                        const text = await res.text();
+                        if (!text || text.trim() === '') continue;
+                        const rows = text.trim().split('\n').map(r => r.split(','));
+                        
+                        if (rows.length < 2) continue;
+                        
+                        const headers = rows.shift().map(h => h.trim());
+                        const dateHeader = headers.find(h => h.toLowerCase().includes('date'));
+                        
+                        if (!dateHeaderName && dateHeader) {
+                            dateHeaderName = dateHeader;
+                        }
+                        
+                        // Detect group column name for this technology
+                        let groupColumn = '';
+                        if (tech === 'LTE') {
+                            groupColumn = headers.find(h => h.toLowerCase().includes('enodeb') || h.toLowerCase().includes('site'));
+                        } else if (tech === 'GSM') {
+                            groupColumn = headers.find(h => h.toLowerCase().includes('gbsc') || h.toLowerCase().includes('bsc'));
+                        }
+                        
+                        if (!groupColumn) {
+                            groupColumn = headers.find(h => 
+                                h.toLowerCase().includes('name') || 
+                                h.toLowerCase().includes('group') || 
+                                h.toLowerCase().includes('site') ||
+                                h.toLowerCase().includes('cell')
+                            );
+                        }
+                        
+                        if (!groupColumnName && groupColumn) {
+                            groupColumnName = groupColumn;
+                        }
+                        
+                        rows.forEach(r => {
+                            const obj = {};
+                            headers.forEach((h, i) => {
+                                const val = r[i] ? r[i].trim() : "";
+                                obj[h] = val === "" ? null : (isNaN(val) ? val : parseFloat(val));
+                            });
+                            if (obj[dateHeader]) {
+                                obj.Tech = tech;
+                                obj.Group = obj[groupColumn] || 'Unknown';
+                                allData.push(obj);
                                 
-                                if (rows.length >= 2) {
-                                    const headers = rows[0].map(h => h.trim());
-                                    console.log("NR Headers:", headers);
-                                    
-                                    // Find date header
-                                    const dateHeader = headers.find(h => 
-                                        h.toLowerCase().includes('date') || 
-                                        h.toLowerCase().includes('day') ||
-                                        h.toLowerCase().includes('time')
-                                    );
-                                    if (!dateHeaderName && dateHeader) {
-                                        dateHeaderName = dateHeader;
-                                        console.log("Date header found (NR):", dateHeaderName);
-                                    }
-                                    
-                                    // Find group column
-                                    let groupColumn = headers.find(h => 
-                                        h.toLowerCase().includes('enodeb') || 
-                                        h.toLowerCase().includes('site') ||
-                                        h.toLowerCase().includes('cell') ||
-                                        h.toLowerCase().includes('name') ||
-                                        h.toLowerCase().includes('group')
-                                    );
-                                    
-                                    if (!groupColumn && headers.length > 0) {
-                                        groupColumn = headers[1]; // Use second column as fallback
-                                    }
-                                    
-                                    console.log("Group column (NR):", groupColumn);
-                                    
-                                    // Process data rows
-                                    let rowCount = 0;
-                                    for (let i = 1; i < rows.length; i++) {
-                                        const row = rows[i];
-                                        if (row.length < 2) continue; // Skip empty rows
-                                        
-                                        const obj = {};
-                                        headers.forEach((h, j) => {
-                                            if (j < row.length) {
-                                                const val = row[j] ? row[j].trim() : "";
-                                                if (val === "" || val.toLowerCase() === "null" || val.toLowerCase() === "n/a") {
-                                                    obj[h] = null;
-                                                } else if (!isNaN(val) && val !== "") {
-                                                    obj[h] = parseFloat(val);
-                                                } else {
-                                                    obj[h] = val;
-                                                }
-                                            }
-                                        });
-                                        
-                                        // Only add if we have a date
-                                        if (dateHeaderName && obj[dateHeaderName]) {
-                                            obj.Tech = "NR";
-                                            obj.Group = groupColumn ? (obj[groupColumn] || 'Unknown') : 'Unknown';
-                                            allData.push(obj);
-                                            rowCount++;
-                                            
-                                            // Add to available groups
-                                            const groupValue = obj.Group;
-                                            if (groupValue && groupValue !== 'Unknown' && !availableGroups.includes(groupValue)) {
-                                                availableGroups.push(groupValue);
-                                            }
-                                        }
-                                    }
-                                    console.log(`NR: Added ${rowCount} rows, total groups: ${availableGroups.length}`);
+                                // Add to available groups
+                                if (obj[groupColumn] && !availableGroups.includes(obj[groupColumn])) {
+                                    availableGroups.push(obj[groupColumn]);
                                 }
                             }
-                        } else {
-                            console.error("NR fetch failed:", res.status);
-                        }
+                        });
                     } catch (e) {
-                        console.error(`Error loading NR data:`, e);
-                    }
-                }
-                
-                // Process NSA sheet (but store as NR)
-                if (sheetUrls["NSA"]) {
-                    try {
-                        console.log("Fetching NSA data...");
-                        const url = sheetUrls["NSA"] + "&t=" + Date.now();
-                        const res = await fetch(url);
-                        if (res.ok) {
-                            const text = await res.text();
-                            console.log("NSA data received, length:", text.length);
-                            
-                            if (text && text.trim() !== '') {
-                                const rows = parseCSV(text);
-                                console.log("NSA rows parsed:", rows.length);
-                                
-                                if (rows.length >= 2) {
-                                    const headers = rows[0].map(h => h.trim());
-                                    console.log("NSA Headers:", headers);
-                                    
-                                    // Find date header
-                                    const dateHeader = headers.find(h => 
-                                        h.toLowerCase().includes('date') || 
-                                        h.toLowerCase().includes('day') ||
-                                        h.toLowerCase().includes('time')
-                                    );
-                                    if (!dateHeaderName && dateHeader) {
-                                        dateHeaderName = dateHeader;
-                                        console.log("Date header found (NSA):", dateHeaderName);
-                                    }
-                                    
-                                    // Find group column
-                                    let groupColumn = headers.find(h => 
-                                        h.toLowerCase().includes('enodeb') || 
-                                        h.toLowerCase().includes('site') ||
-                                        h.toLowerCase().includes('cell') ||
-                                        h.toLowerCase().includes('name') ||
-                                        h.toLowerCase().includes('group')
-                                    );
-                                    
-                                    if (!groupColumn && headers.length > 0) {
-                                        groupColumn = headers[1]; // Use second column as fallback
-                                    }
-                                    
-                                    console.log("Group column (NSA):", groupColumn);
-                                    
-                                    // Process data rows
-                                    let rowCount = 0;
-                                    for (let i = 1; i < rows.length; i++) {
-                                        const row = rows[i];
-                                        if (row.length < 2) continue; // Skip empty rows
-                                        
-                                        const obj = {};
-                                        headers.forEach((h, j) => {
-                                            if (j < row.length) {
-                                                const val = row[j] ? row[j].trim() : "";
-                                                if (val === "" || val.toLowerCase() === "null" || val.toLowerCase() === "n/a") {
-                                                    obj[h] = null;
-                                                } else if (!isNaN(val) && val !== "") {
-                                                    obj[h] = parseFloat(val);
-                                                } else {
-                                                    obj[h] = val;
-                                                }
-                                            }
-                                        });
-                                        
-                                        // Only add if we have a date
-                                        if (dateHeaderName && obj[dateHeaderName]) {
-                                            obj.Tech = "NR"; // Store as NR (not NSA)
-                                            obj.Group = groupColumn ? (obj[groupColumn] || 'Unknown') : 'Unknown';
-                                            allData.push(obj);
-                                            rowCount++;
-                                            
-                                            // Add to available groups
-                                            const groupValue = obj.Group;
-                                            if (groupValue && groupValue !== 'Unknown' && !availableGroups.includes(groupValue)) {
-                                                availableGroups.push(groupValue);
-                                            }
-                                        }
-                                    }
-                                    console.log(`NSA: Added ${rowCount} rows, total groups: ${availableGroups.length}`);
-                                }
-                            }
-                        } else {
-                            console.error("NSA fetch failed:", res.status);
-                        }
-                    } catch (e) {
-                        console.error(`Error loading NSA data:`, e);
+                        console.error(`Error loading ${tech} data:`, e);
                     }
                 }
 
-                console.log("DEBUG: Total data loaded:", allData.length);
-                console.log("DEBUG: Available groups:", availableGroups);
-                console.log("DEBUG: Date header:", dateHeaderName);
-                
                 if (allData.length === 0) {
-                    throw new Error("No data loaded from any source. Check CSV format and column names.");
+                    throw new Error("No data loaded from any source");
                 }
                 
                 // Initialize selected groups (FIRST GROUP SELECTED BY DEFAULT)
                 if (availableGroups.length > 0) {
                     selectedGroups = [availableGroups[0]]; // Only first group
                     isAllGroupsSelected = false;
-                    console.log("DEBUG: Default selected group:", selectedGroups[0]);
                 }
                 
                 populateGroupFilter();
@@ -1055,15 +907,7 @@
 
             } catch(e) {
                 console.error("Data loading error:", e);
-                document.getElementById("mainChartContainer").innerHTML = `
-                    <div style="text-align:center;padding:40px;color:#D24726;">
-                        <h2>Failed to load data</h2>
-                        <p>Error: ${e.message}</p>
-                        <p>Check browser console (F12) for details</p>
-                        <button onclick="fetchData()" style="padding:10px 20px;background:#D24726;color:white;border:none;border-radius:5px;cursor:pointer;margin-top:20px;">
-                            Retry Loading Data
-                        </button>
-                    </div>`;
+                document.getElementById("mainChartContainer").innerHTML = "<h2 style='text-align:center;padding:40px;color:#D24726;'>Failed to load data. Check console for details.</h2>";
             }
         }
 
@@ -1091,8 +935,6 @@
                 
                 groupOptionsList.appendChild(optionDiv);
             });
-            
-            console.log("DEBUG: Populated filter with", availableGroups.length, "groups");
         }
         
         function toggleGroupFilter() {
@@ -1109,7 +951,6 @@
         }
         
         function selectSingleGroup(group) {
-            console.log("DEBUG: Selecting single group:", group);
             // Single selection mode - only select one group
             selectedGroups = [group];
             isAllGroupsSelected = false;
@@ -1132,7 +973,6 @@
         }
         
         function selectAllGroups() {
-            console.log("DEBUG: Selecting all groups (aggregate)");
             // Select all groups (aggregate mode)
             selectedGroups = []; // Empty array means all groups
             isAllGroupsSelected = true;
@@ -1162,21 +1002,11 @@
         }
         
         function applyGroupFilter() {
-            console.log("DEBUG: Applying group filter:", selectedGroups, isAllGroupsSelected);
             renderCharts();
         }
 
-        // --- CHART RENDERING with DYNAMIC TIMELINE ---
+        // --- CHART RENDERING with PRE/POST DIFFERENTIATION ---
         function renderCharts() {
-            console.log("DEBUG: Rendering charts...");
-            console.log("DEBUG: Date header name:", dateHeaderName);
-            
-            if (!dateHeaderName || dateHeaderName.trim() === '') {
-                const container = document.getElementById("mainChartContainer");
-                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#D24726;'>Error: Date column not found in data. Please check CSV format.</h2>";
-                return;
-            }
-            
             const container = document.getElementById("mainChartContainer");
             container.innerHTML = "";
             allCharts = {};
@@ -1190,17 +1020,14 @@
             let timeline = [];
             
             if (isAllGroupsSelected) {
-                // For "All Groups", get dates from ALL data
                 timeline = [...new Set(allData.map(d => d[dateHeaderName]))];
-                console.log("DEBUG: All groups timeline length:", timeline.length);
             } else if (selectedGroups.length > 0) {
-                // For single group, get dates only for that group
-                const filteredData = allData.filter(d => d.Group === selectedGroups[0]);
-                console.log("DEBUG: Filtered data for", selectedGroups[0], ":", filteredData.length, "rows");
-                timeline = [...new Set(filteredData.map(d => d[dateHeaderName]))];
-                console.log("DEBUG: Single group timeline for", selectedGroups[0], ":", timeline.length, "dates");
+                timeline = [...new Set(
+                    allData
+                        .filter(d => d.Group === selectedGroups[0])
+                        .map(d => d[dateHeaderName])
+                )];
             } else {
-                // No group selected (shouldn't happen)
                 container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No group selected.</h2>";
                 return;
             }
@@ -1213,7 +1040,7 @@
             });
 
             if (timeline.length === 0) {
-                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No timeline data available for the selected group.</h2>";
+                container.innerHTML = "<h2 style='text-align:center;padding:40px;color:#666;'>No timeline data available.</h2>";
                 return;
             }
 
@@ -1223,6 +1050,9 @@
                 return `${day} ${monthNames[month - 1]}`;
             });
 
+            // Determine pre/post split point (assume first half is pre, second half is post)
+            const splitIndex = Math.floor(timelineLabels.length / 2);
+
             const chartsToRender = kpiDefinitions.filter(k => selectedKpis.includes(k.tech + " - " + k.kpi));
             
             if (chartsToRender.length === 0) {
@@ -1230,15 +1060,26 @@
                 return;
             }
 
-            console.log("DEBUG: Rendering", chartsToRender.length, "charts");
-
             chartsToRender.forEach((kpiDef, idx) => {
                 const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
-                const tech = kpiDef.tech; // Always "NR"
+                const tech = kpiDef.tech;
                 const kpi = kpiDef.kpi;
 
                 const card = document.createElement("div");
                 card.className = "chart-card";
+                card.style.position = "relative";
+                
+                // Add period labels to card
+                const preLabel = document.createElement("div");
+                preLabel.className = "period-label pre-period";
+                preLabel.textContent = "PRE";
+                card.appendChild(preLabel);
+                
+                const postLabel = document.createElement("div");
+                postLabel.className = "period-label post-period";
+                postLabel.textContent = "POST";
+                card.appendChild(postLabel);
+                
                 const wrapper = document.createElement("div");
                 wrapper.className = "chart-container";
                 const canvas = document.createElement("canvas");
@@ -1247,43 +1088,27 @@
                 card.appendChild(wrapper);
                 container.appendChild(card);
 
-                // Data Processing with Group Filter and Dynamic Timeline
+                // Data Processing with Group Filter
                 const dataPoints = timeline.map(date => {
-                    // Filter data by technology and date
                     let filteredData = allData.filter(d => d.Tech === tech && d[dateHeaderName] === date);
                     
-                    // Apply group filter
                     if (!isAllGroupsSelected && selectedGroups.length > 0) {
-                        // Single group selected
                         filteredData = filteredData.filter(d => d.Group === selectedGroups[0]);
                     }
-                    // If isAllGroupsSelected is true, we use all data (no group filter)
                     
-                    // Get values for this KPI
-                    const values = filteredData.map(d => d[kpi]);
-                    
-                    // Check if ALL values are null/undefined (truly no data)
-                    const allNull = values.every(v => v === null || v === undefined || v === "");
-                    
-                    if (allNull) {
-                        return null; // Truly blank - no data at all
-                    }
-                    
-                    // Filter out only null/blank values, keep zeros
-                    const validValues = values
-                        .filter(v => v !== null && v !== undefined && v !== "")
+                    const values = filteredData
+                        .map(d => d[kpi])
+                        .filter(v => v !== null && v !== "")
                         .map(Number)
                         .filter(v => !isNaN(v));
                     
-                    if (validValues.length === 0) {
-                        return null; // No valid numeric values
-                    }
+                    if (values.length === 0) return null;
                     
                     const kpiLower = kpi.toLowerCase();
                     if (kpiLower.includes('%') || kpiLower.includes('rate') || kpiLower.includes('avg') || kpiLower.includes('average')|| kpiLower.includes('max')) {
-                        return validValues.reduce((a, b) => a + b, 0) / validValues.length;
+                        return values.reduce((a, b) => a + b, 0) / values.length;
                     } else {
-                        return validValues.reduce((a, b) => a + b, 0);
+                        return values.reduce((a, b) => a + b, 0);
                     }
                 });
 
@@ -1324,7 +1149,7 @@
                     }
                     return niceFraction * Math.pow(10, exponent);
                 }
-      
+  
                 function computeYAxis(minVal, maxVal) {
                     if (minVal >= 98 && maxVal <= 100) {
                         return { niceMin: 98, niceMax: 100, tickSpacing: 0.5 };
@@ -1344,25 +1169,38 @@
                 const { niceMin, niceMax, tickSpacing } = computeYAxis(minVal, maxVal);
                 let chartColor = techColors[tech];
 
+                // Create dataset with pre/post styling
+                const datasets = [{
+                    label: kpi,
+                    data: dataPoints,
+                    borderColor: chartColor,
+                    backgroundColor: (context) => {
+                        const index = context.dataIndex;
+                        if (index < splitIndex) {
+                            return 'rgba(47, 128, 237, 0.1)';
+                        } else {
+                            return 'rgba(39, 174, 96, 0.1)';
+                        }
+                    },
+                    borderWidth: activeChartStyle ? activeChartStyle.borderWidth : 2,
+                    pointRadius: activeChartStyle ? activeChartStyle.pointRadius : 5,
+                    pointBackgroundColor: (context) => {
+                        const index = context.dataIndex;
+                        return index < splitIndex ? '#2F80ED' : '#27AE60';
+                    },
+                    pointBorderColor: chartColor,
+                    pointBorderWidth: 1,
+                    tension: activeChartStyle ? activeChartStyle.tension : 0.4,
+                    spanGaps: true,
+                    fill: true
+                }];
+
                 // Chart Config
                 const chartConfig = {
                     type: 'line',
                     data: {
                         labels: timelineLabels,
-                        datasets: [{ 
-                            label: kpi,
-                            data: dataPoints,
-                            borderColor: chartColor,
-                            backgroundColor: activeChartStyle && activeChartStyle.fill ? 
-                                chartColor.replace(')', ', 0.1)').replace('rgb', 'rgba') : 'transparent',
-                            borderWidth: activeChartStyle ? activeChartStyle.borderWidth : 2, 
-                            pointRadius: activeChartStyle ? activeChartStyle.pointRadius : 5, 
-                            pointBackgroundColor: chartColor,
-                            pointBorderColor: chartColor,
-                            pointBorderWidth: 1,
-                            tension: activeChartStyle ? activeChartStyle.tension : 0.4, 
-                            spanGaps: true
-                        }]
+                        datasets: datasets
                     },
                     options: {
                         responsive: true, 
@@ -1391,16 +1229,109 @@
                                 },
                                 color: '#666',
                                 position: 'bottom'
+                            },
+                            // Add annotation plugin for vertical line
+                            annotation: {
+                                annotations: {
+                                    prePostDivider: {
+                                        type: 'line',
+                                        xMin: splitIndex - 0.5,
+                                        xMax: splitIndex - 0.5,
+                                        yMin: '0%',
+                                        yMax: '100%',
+                                        borderColor: '#ff6b6b',
+                                        borderWidth: 2,
+                                        borderDash: [5, 5],
+                                        label: {
+                                            enabled: true,
+                                            content: 'Pre/Post',
+                                            position: 'top',
+                                            backgroundColor: '#ff6b6b',
+                                            color: 'white',
+                                            font: {
+                                                size: 10,
+                                                weight: 'bold'
+                                            },
+                                            padding: {
+                                                top: 2,
+                                                bottom: 2,
+                                                left: 6,
+                                                right: 6
+                                            },
+                                            yAdjust: -15
+                                        }
+                                    }
+                                }
+                            },
+                            // Enhanced tooltip
+                            tooltip: {
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        const index = tooltipItems[0].dataIndex;
+                                        const period = index < splitIndex ? 'PRE - ' : 'POST - ';
+                                        return period + timelineLabels[index];
+                                    },
+                                    labelColor: function(context) {
+                                        const index = context.dataIndex;
+                                        return {
+                                            borderColor: index < splitIndex ? '#2F80ED' : '#27AE60',
+                                            backgroundColor: index < splitIndex ? '#2F80ED' : '#27AE60',
+                                            borderWidth: 2,
+                                            borderRadius: 2
+                                        };
+                                    },
+                                    label: function(context) {
+                                        const index = context.dataIndex;
+                                        const period = index < splitIndex ? 'Pre Period' : 'Post Period';
+                                        return `${period}: ${context.parsed.y.toFixed(2)}`;
+                                    }
+                                }
+                            },
+                            // Add background shading for pre/post
+                            afterDraw: function(chart) {
+                                const ctx = chart.ctx;
+                                const xAxis = chart.scales.x;
+                                const yAxis = chart.scales.y;
+                                
+                                if (chart.data.labels.length > 0) {
+                                    ctx.save();
+                                    
+                                    // Pre period background
+                                    ctx.fillStyle = 'rgba(47, 128, 237, 0.05)';
+                                    ctx.fillRect(
+                                        xAxis.getPixelForTick(0),
+                                        yAxis.top,
+                                        xAxis.getPixelForTick(splitIndex) - xAxis.getPixelForTick(0),
+                                        yAxis.bottom - yAxis.top
+                                    );
+                                    
+                                    // Post period background
+                                    ctx.fillStyle = 'rgba(39, 174, 96, 0.05)';
+                                    ctx.fillRect(
+                                        xAxis.getPixelForTick(splitIndex),
+                                        yAxis.top,
+                                        xAxis.getPixelForTick(chart.data.labels.length - 1) - xAxis.getPixelForTick(splitIndex),
+                                        yAxis.bottom - yAxis.top
+                                    );
+                                    
+                                    ctx.restore();
+                                }
                             }
                         },
                         scales: {
                             x: { 
                                 ticks: { 
-                                    font: { size: 8 } 
+                                    font: { 
+                                        size: 8,
+                                        color: (context) => {
+                                            const index = context.index;
+                                            return index < splitIndex ? '#2F80ED' : '#27AE60';
+                                        }
+                                    } 
                                 }, 
                                 grid: { 
                                     display: false 
-                                } 
+                                }
                             },
                             y: { 
                                 grid: { 
@@ -1425,8 +1356,14 @@
                     chartConfig.data.datasets[0].tension = style.tension;
                     chartConfig.data.datasets[0].fill = style.fill;
                     if (style.fill && style.backgroundColor) {
-                        chartConfig.data.datasets[0].backgroundColor = style.backgroundColor.replace('210, 71, 38', 
-                            chartColor.substring(1).match(/.{2}/g).map(x => parseInt(x, 16)).join(', '));
+                        chartConfig.data.datasets[0].backgroundColor = (context) => {
+                            const index = context.dataIndex;
+                            if (index < splitIndex) {
+                                return 'rgba(47, 128, 237, 0.1)';
+                            } else {
+                                return 'rgba(39, 174, 96, 0.1)';
+                            }
+                        };
                     }
                 }
 
@@ -1454,13 +1391,16 @@
         function populateKpiOptions(){
             const list = document.getElementById("kpiOptionsList");
             list.innerHTML = "";
-            
-            // Show all KPIs under "NR" group (even NSA KPIs)
-            list.innerHTML += `<div class="kpi-group-title">NR KPIs</div>`;
+            let currentTech = "";
 
             kpiDefinitions.forEach(kpiDef => {
                 const fullKpiName = kpiDef.tech + " - " + kpiDef.kpi;
                 
+                if (kpiDef.tech !== currentTech) {
+                    list.innerHTML += `<div class="kpi-group-title">${kpiDef.tech} KPIs</div>`;
+                    currentTech = kpiDef.tech;
+                }
+
                 const checked = selectedKpis.includes(fullKpiName) ? "checked" : "";
                 const d = document.createElement("label");
                 d.className = "kpi-option";
@@ -1515,8 +1455,11 @@
         }
 
         function updateTechColorButtons() {
-            const nrBtn = document.querySelector('.tech-color-btn.nr');
-            if (nrBtn) nrBtn.style.background = techColors.NR;
+            const gsmBtn = document.querySelector('.tech-color-btn.gsm');
+            const lteBtn = document.querySelector('.tech-color-btn.lte');
+            
+            if (gsmBtn) gsmBtn.style.background = techColors.GSM;
+            if (lteBtn) lteBtn.style.background = techColors.LTE;
         }
 
         // --- COLOR PICKER FUNCTIONS ---
@@ -1759,9 +1702,9 @@
             
             // Title slide
             const titleSlide = pptx.addSlide();
-            titleSlide.addText('KPI Dashboard Report - NR', {
+            titleSlide.addText('KPI Dashboard Report - GSM/LTE', {
                 x: 0.5, y: 1, w: 9, h: 1,
-                fontSize: 36, bold: true, color: 'D24726'
+                fontSize: 36, bold: true, color: '2F80ED'
             });
             
             const date = new Date().toLocaleDateString();
@@ -1871,7 +1814,7 @@
             const summarySlide = pptx.addSlide();
             summarySlide.addText('Summary', {
                 x: 0.5, y: 0.5, w: 9, h: 0.5,
-                fontSize: 28, bold: true, color: 'D24726'
+                fontSize: 28, bold: true, color: '2F80ED'
             });
             
             let summaryText = `Total Charts: ${allChartsForExport.length}\n`;
@@ -1897,7 +1840,7 @@
             // Download
             const timestamp = new Date().getTime();
             try {
-                await pptx.writeFile({ fileName: `NR_KPI_Report_${timestamp}.pptx` });
+                await pptx.writeFile({ fileName: `GSM_LTE_KPI_Report_${timestamp}.pptx` });
                 closePPTExport();
             } catch (e) {
                 alert("Error generating PPT: " + e.message);
