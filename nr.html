@@ -329,7 +329,7 @@
         /* --- TECH COLOR BUTTONS --- */
         .tech-color-buttons {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 8px;
             margin-top: 15px;
         }
@@ -341,28 +341,12 @@
             font-weight: 500;
             color: white;
             text-align: center;
+            font-size: 12px;
         }
-        .tech-color-btn.gsm { background: #2F80ED; }
-        .tech-color-btn.lte { background: #27AE60; }
-
-        /* --- PRE/POST COLOR BUTTONS --- */
-        .prepost-color-buttons {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin-top: 15px;
-        }
-        .prepost-color-btn {
-            padding: 8px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            color: white;
-            text-align: center;
-        }
-        .prepost-color-btn.pre { background: #2F80ED; }
-        .prepost-color-btn.post { background: #27AE60; }
+        .tech-color-btn.gsm-pre { background: #2F80ED; }
+        .tech-color-btn.gsm-post { background: #2980b9; }
+        .tech-color-btn.lte-pre { background: #27AE60; }
+        .tech-color-btn.lte-post { background: #219653; }
 
         /* --- COLOR PICKER MODAL --- */
         .color-picker-modal {
@@ -607,16 +591,10 @@
             <div style="margin: 20px 0; border-top: 1px solid #eee; padding-top: 15px;">
                 <label><b>Technology Colors</b></label>
                 <div class="tech-color-buttons">
-                    <button class="tech-color-btn gsm" onclick="openColorPicker('GSM')">GSM Color</button>
-                    <button class="tech-color-btn lte" onclick="openColorPicker('LTE')">LTE Color</button>
-                </div>
-            </div>
-            
-            <div style="margin: 20px 0; border-top: 1px solid #eee; padding-top: 15px;">
-                <label><b>Pre/Post Colors</b></label>
-                <div class="prepost-color-buttons">
-                    <button class="prepost-color-btn pre" onclick="openColorPicker('PRE')">PRE Color</button>
-                    <button class="prepost-color-btn post" onclick="openColorPicker('POST')">POST Color</button>
+                    <button class="tech-color-btn gsm-pre" onclick="openColorPicker('GSM-PRE')">GSM-PRE</button>
+                    <button class="tech-color-btn gsm-post" onclick="openColorPicker('GSM-POST')">GSM-POST</button>
+                    <button class="tech-color-btn lte-pre" onclick="openColorPicker('LTE-PRE')">LTE-PRE</button>
+                    <button class="tech-color-btn lte-post" onclick="openColorPicker('LTE-POST')">LTE-POST</button>
                 </div>
             </div>
         </div>
@@ -707,7 +685,7 @@
         let allData = [];
         let allCharts = {};
         let selectedKpis = [];
-        let selectedColorTarget = ''; // 'GSM', 'LTE', 'PRE', or 'POST'
+        let selectedColorTarget = ''; // 'GSM-PRE', 'GSM-POST', 'LTE-PRE', 'LTE-POST'
         let selectedColor = '';
         let pptLayout = 9; // Default: 3 graphs per slide
         let selectedTechForExport = {
@@ -724,17 +702,17 @@
 
         // --- KPI Definitions (GSM/LTE only) ---
         const kpiDefinitions = [
-            { tech: "GSM", kpi: "Call setup success rate(%)", initialChecked: true, color: "#2F80ED" },
-            { tech: "GSM", kpi: "Call drop rate(%)", initialChecked: true, color: "#2F80ED" },
-            { tech: "GSM", kpi: "CS Traffic (erl)", initialChecked: true, color: "#2F80ED" },
+            { tech: "GSM", kpi: "Call setup success rate(%)", initialChecked: true },
+            { tech: "GSM", kpi: "Call drop rate(%)", initialChecked: true },
+            { tech: "GSM", kpi: "CS Traffic (erl)", initialChecked: true },
             
-            { tech: "LTE", kpi: "Call Setup Success Rate(%)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "E-RAB Call Drop Rate(%)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "DL -USER Average Throughput (Mbit/s)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "UL -USER Average Throughput (Mbit/s)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "DL Data Total Volume (Gbyte)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "UL Data Total Volume (Gbyte)", initialChecked: true, color: "#27AE60" },
-            { tech: "LTE", kpi: "DL PRB Utilization (%)", initialChecked: true, color: "#27AE60" }
+            { tech: "LTE", kpi: "Call Setup Success Rate(%)", initialChecked: true },
+            { tech: "LTE", kpi: "E-RAB Call Drop Rate(%)", initialChecked: true },
+            { tech: "LTE", kpi: "DL -USER Average Throughput (Mbit/s)", initialChecked: true },
+            { tech: "LTE", kpi: "UL -USER Average Throughput (Mbit/s)", initialChecked: true },
+            { tech: "LTE", kpi: "DL Data Total Volume (Gbyte)", initialChecked: true },
+            { tech: "LTE", kpi: "UL Data Total Volume (Gbyte)", initialChecked: true },
+            { tech: "LTE", kpi: "DL PRB Utilization (%)", initialChecked: true }
         ];
 
         // --- Sheet URLs (GSM/LTE only) ---
@@ -744,15 +722,13 @@
         };
         
         let activeChartStyle = null;
-        let techColors = {
-            GSM: "#2F80ED",
-            LTE: "#27AE60"
-        };
         
-        // Pre/Post Colors
-        let prePostColors = {
-            PRE: "#2F80ED", // Blue for pre
-            POST: "#27AE60"  // Green for post
+        // Technology-specific Pre/Post Colors
+        let techPrePostColors = {
+            'GSM-PRE': '#2F80ED',    // Bright blue for GSM pre
+            'GSM-POST': '#2980b9',   // Darker blue for GSM post
+            'LTE-PRE': '#27AE60',    // Bright green for LTE pre
+            'LTE-POST': '#219653'    // Darker green for LTE post
         };
 
         // --- Color Palette Options ---
@@ -760,7 +736,9 @@
             "#2F80ED", "#27AE60", "#D24726", "#8E44AD",
             "#3498DB", "#2ECC71", "#E74C3C", "#9B59B6",
             "#1ABC9C", "#F39C12", "#34495E", "#95A5A6",
-            "#2980B9", "#16A085", "#C0392B", "#8E44AD"
+            "#2980B9", "#16A085", "#C0392B", "#8E44AD",
+            "#1f5ab5", "#4cae4c", "#ff6b6b", "#8e44ad",
+            "#3498db", "#e74c3c", "#f1c40f", "#1abc9c"
         ];
 
         // --- Chart Styles ---
@@ -1038,7 +1016,7 @@
             renderCharts();
         }
 
-        // --- CHART RENDERING with SEPARATE PRE/POST LINES ---
+        // --- CHART RENDERING with TECH-SPECIFIC PRE/POST COLORS ---
         function renderCharts() {
             const container = document.getElementById("mainChartContainer");
             container.innerHTML = "";
@@ -1102,15 +1080,21 @@
                 card.className = "chart-card";
                 card.style.position = "relative";
                 
-                // Add period labels to card
+                // Add period labels to card (with tech-specific colors)
                 const preLabel = document.createElement("div");
                 preLabel.className = "period-label pre-period";
                 preLabel.textContent = "PRE";
+                preLabel.style.backgroundColor = techPrePostColors[`${tech}-PRE`].replace(')', ', 0.15)').replace('rgb', 'rgba');
+                preLabel.style.color = techPrePostColors[`${tech}-PRE`];
+                preLabel.style.borderColor = techPrePostColors[`${tech}-PRE`];
                 card.appendChild(preLabel);
                 
                 const postLabel = document.createElement("div");
                 postLabel.className = "period-label post-period";
                 postLabel.textContent = "POST";
+                postLabel.style.backgroundColor = techPrePostColors[`${tech}-POST`].replace(')', ', 0.15)').replace('rgb', 'rgba');
+                postLabel.style.color = techPrePostColors[`${tech}-POST`];
+                postLabel.style.borderColor = techPrePostColors[`${tech}-POST`];
                 card.appendChild(postLabel);
                 
                 const wrapper = document.createElement("div");
@@ -1238,19 +1222,23 @@
                 
                 const { niceMin, niceMax, tickSpacing } = computeYAxis(minVal, maxVal);
 
+                // Get tech-specific colors
+                const preColor = techPrePostColors[`${tech}-PRE`];
+                const postColor = techPrePostColors[`${tech}-POST`];
+
                 // Create TWO SEPARATE datasets for pre and post
                 const datasets = [
                     // PRE period dataset
                     {
                         label: 'PRE - ' + kpi,
                         data: [...preDataPoints, ...Array(postDataPoints.length).fill(null)], // Fill post positions with null
-                        borderColor: prePostColors.PRE,
+                        borderColor: preColor,
                         backgroundColor: activeChartStyle && activeChartStyle.fill ? 
-                            prePostColors.PRE.replace(')', ', 0.1)').replace('rgb', 'rgba') : 'transparent',
+                            preColor.replace(')', ', 0.1)').replace('rgb', 'rgba') : 'transparent',
                         borderWidth: activeChartStyle ? activeChartStyle.borderWidth : 2,
                         pointRadius: activeChartStyle ? activeChartStyle.pointRadius : 5,
-                        pointBackgroundColor: prePostColors.PRE,
-                        pointBorderColor: prePostColors.PRE,
+                        pointBackgroundColor: preColor,
+                        pointBorderColor: preColor,
                         pointBorderWidth: 1,
                         tension: activeChartStyle ? activeChartStyle.tension : 0.4,
                         spanGaps: true,
@@ -1260,13 +1248,13 @@
                     {
                         label: 'POST - ' + kpi,
                         data: [...Array(preDataPoints.length).fill(null), ...postDataPoints], // Fill pre positions with null
-                        borderColor: prePostColors.POST,
+                        borderColor: postColor,
                         backgroundColor: activeChartStyle && activeChartStyle.fill ? 
-                            prePostColors.POST.replace(')', ', 0.1)').replace('rgb', 'rgba') : 'transparent',
+                            postColor.replace(')', ', 0.1)').replace('rgb', 'rgba') : 'transparent',
                         borderWidth: activeChartStyle ? activeChartStyle.borderWidth : 2,
                         pointRadius: activeChartStyle ? activeChartStyle.pointRadius : 5,
-                        pointBackgroundColor: prePostColors.POST,
-                        pointBorderColor: prePostColors.POST,
+                        pointBackgroundColor: postColor,
+                        pointBorderColor: postColor,
                         pointBorderWidth: 1,
                         tension: activeChartStyle ? activeChartStyle.tension : 0.4,
                         spanGaps: true,
@@ -1286,7 +1274,7 @@
                         maintainAspectRatio: false,
                         plugins: { 
                             legend: { 
-                                display: false // LEGEND REMOVED AS REQUESTED
+                                display: false // NO LEGEND
                             },
                             title: { 
                                 display: true, 
@@ -1359,7 +1347,7 @@
                                     },
                                     labelColor: function(context) {
                                         const datasetLabel = context.dataset.label;
-                                        const color = datasetLabel.startsWith('PRE') ? prePostColors.PRE : prePostColors.POST;
+                                        const color = datasetLabel.startsWith('PRE') ? preColor : postColor;
                                         return {
                                             borderColor: color,
                                             backgroundColor: color,
@@ -1379,7 +1367,7 @@
                                     ctx.save();
                                     
                                     // Pre period background
-                                    ctx.fillStyle = prePostColors.PRE.replace(')', ', 0.05)').replace('rgb', 'rgba');
+                                    ctx.fillStyle = preColor.replace(')', ', 0.05)').replace('rgb', 'rgba');
                                     ctx.fillRect(
                                         xAxis.getPixelForTick(0),
                                         yAxis.top,
@@ -1388,7 +1376,7 @@
                                     );
                                     
                                     // Post period background
-                                    ctx.fillStyle = prePostColors.POST.replace(')', ', 0.05)').replace('rgb', 'rgba');
+                                    ctx.fillStyle = postColor.replace(')', ', 0.05)').replace('rgb', 'rgba');
                                     ctx.fillRect(
                                         xAxis.getPixelForTick(splitIndex),
                                         yAxis.top,
@@ -1407,7 +1395,7 @@
                                         size: 8,
                                         color: (context) => {
                                             const index = context.index;
-                                            return index < splitIndex ? prePostColors.PRE : prePostColors.POST;
+                                            return index < splitIndex ? preColor : postColor;
                                         }
                                     } 
                                 }, 
@@ -1440,8 +1428,8 @@
                         dataset.fill = style.fill;
                         if (style.fill && style.backgroundColor) {
                             dataset.backgroundColor = dataset.label.startsWith('PRE') ? 
-                                prePostColors.PRE.replace(')', ', 0.1)').replace('rgb', 'rgba') :
-                                prePostColors.POST.replace(')', ', 0.1)').replace('rgb', 'rgba');
+                                preColor.replace(')', ', 0.1)').replace('rgb', 'rgba') :
+                                postColor.replace(')', ', 0.1)').replace('rgb', 'rgba');
                         }
                     });
                 }
@@ -1534,31 +1522,24 @@
         }
 
         function updateColorButtons() {
-            // Update tech color buttons
-            const gsmBtn = document.querySelector('.tech-color-btn.gsm');
-            const lteBtn = document.querySelector('.tech-color-btn.lte');
-            
-            if (gsmBtn) gsmBtn.style.background = techColors.GSM;
-            if (lteBtn) lteBtn.style.background = techColors.LTE;
-            
-            // Update pre/post color buttons
-            const preBtn = document.querySelector('.prepost-color-btn.pre');
-            const postBtn = document.querySelector('.prepost-color-btn.post');
-            
-            if (preBtn) preBtn.style.background = prePostColors.PRE;
-            if (postBtn) postBtn.style.background = prePostColors.POST;
+            // Update all tech color buttons
+            document.querySelectorAll('.tech-color-btn').forEach(btn => {
+                if (btn.classList.contains('gsm-pre')) {
+                    btn.style.background = techPrePostColors['GSM-PRE'];
+                } else if (btn.classList.contains('gsm-post')) {
+                    btn.style.background = techPrePostColors['GSM-POST'];
+                } else if (btn.classList.contains('lte-pre')) {
+                    btn.style.background = techPrePostColors['LTE-PRE'];
+                } else if (btn.classList.contains('lte-post')) {
+                    btn.style.background = techPrePostColors['LTE-POST'];
+                }
+            });
         }
 
-        // --- COLOR PICKER FUNCTIONS (FIXED) ---
+        // --- COLOR PICKER FUNCTIONS ---
         function openColorPicker(target) {
             selectedColorTarget = target;
-            
-            // Get the current color based on target
-            if (target === 'GSM' || target === 'LTE') {
-                selectedColor = techColors[target];
-            } else if (target === 'PRE' || target === 'POST') {
-                selectedColor = prePostColors[target];
-            }
+            selectedColor = techPrePostColors[target];
             
             document.getElementById('colorPickerTitle').textContent = `Select Color for ${target}`;
             
@@ -1595,19 +1576,8 @@
 
         function applySelectedColor() {
             if (selectedColorTarget && selectedColor) {
-                // Update the appropriate color variable
-                if (selectedColorTarget === 'GSM' || selectedColorTarget === 'LTE') {
-                    techColors[selectedColorTarget] = selectedColor;
-                    
-                    // Update KPI definitions
-                    kpiDefinitions.forEach(kpi => {
-                        if (kpi.tech === selectedColorTarget) {
-                            kpi.color = selectedColor;
-                        }
-                    });
-                } else if (selectedColorTarget === 'PRE' || selectedColorTarget === 'POST') {
-                    prePostColors[selectedColorTarget] = selectedColor;
-                }
+                // Update the tech-specific color
+                techPrePostColors[selectedColorTarget] = selectedColor;
                 
                 // Update UI buttons
                 updateColorButtons();
