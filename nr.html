@@ -244,6 +244,22 @@
             right: 10px;
         }
         
+        /* --- GAP INDICATOR --- */
+        .gap-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 107, 107, 0.9);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            z-index: 5;
+            white-space: nowrap;
+        }
+        
         /* --- DRAWERS --- */
         .chartStyleDrawer, .kpiDrawer { 
             position: fixed; 
@@ -1005,7 +1021,23 @@
             renderCharts();
         }
 
-        // --- CHART RENDERING with PRE/POST DIFFERENTIATION ---
+        // --- HELPER FUNCTION: Calculate date gap ---
+        function calculateDateGapInDays(date1, date2) {
+            // Parse dates in dd/mm/yyyy format
+            const [d1, m1, y1] = date1.split('/').map(Number);
+            const [d2, m2, y2] = date2.split('/').map(Number);
+            
+            const dateObj1 = new Date(y1, m1 - 1, d1);
+            const dateObj2 = new Date(y2, m2 - 1, d2);
+            
+            // Calculate difference in days
+            const diffTime = Math.abs(dateObj2 - dateObj1);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            return diffDays;
+        }
+
+        // --- CHART RENDERING with GAP FOR NON-CONTINUOUS DATA ---
         function renderCharts() {
             const container = document.getElementById("mainChartContainer");
             container.innerHTML = "";
@@ -1044,14 +1076,58 @@
                 return;
             }
 
-            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            const timelineLabels = timeline.map(d => {
-                const [day, month] = d.split('/').map(Number);
-                return `${day} ${monthNames[month - 1]}`;
-            });
+            // Check if there's a gap in the timeline
+            let hasGap = false;
+            let gapStartIndex = -1;
+            
+            // Find where the biggest gap is (likely between pre and post)
+            if (timeline.length > 1) {
+                let maxGap = 0;
+                for (let i = 1; i < timeline.length; i++) {
+                    const gapDays = calculateDateGapInDays(timeline[i-1], timeline[i]);
+                    if (gapDays > 7) { // More than 7 days gap is significant
+                        if (gapDays > maxGap) {
+                            maxGap = gapDays;
+                            gapStartIndex = i; // Start of post period
+                        }
+                    }
+                }
+                hasGap = maxGap > 7;
+            }
 
-            // Determine pre/post split point (assume first half is pre, second half is post)
-            const splitIndex = Math.floor(timelineLabels.length / 2);
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            let timelineLabels = [];
+            let splitIndex = -1;
+            
+            if (hasGap && gapStartIndex !== -1) {
+                // We have a gap, so split at the gap
+                splitIndex = gapStartIndex;
+                
+                // Create labels for pre-period
+                const preDates = timeline.slice(0, splitIndex);
+                timelineLabels = preDates.map(d => {
+                    const [day, month] = d.split('/').map(Number);
+                    return `${day} ${monthNames[month - 1]}`;
+                });
+                
+                // Add a gap indicator in the middle
+                const gapLabel = `GAP (${calculateDateGapInDays(timeline[splitIndex-1], timeline[splitIndex])} days)`;
+                timelineLabels.push(gapLabel);
+                
+                // Add labels for post-period
+                const postDates = timeline.slice(splitIndex);
+                timelineLabels = timelineLabels.concat(postDates.map(d => {
+                    const [day, month] = d.split('/').map(Number);
+                    return `${day} ${monthNames[month - 1]}`;
+                }));
+            } else {
+                // No significant gap, split in half
+                splitIndex = Math.floor(timeline.length / 2);
+                timelineLabels = timeline.map(d => {
+                    const [day, month] = d.split('/').map(Number);
+                    return `${day} ${monthNames[month - 1]}`;
+                });
+            }
 
             const chartsToRender = kpiDefinitions.filter(k => selectedKpis.includes(k.tech + " - " + k.kpi));
             
@@ -1079,6 +1155,15 @@
                 postLabel.className = "period-label post-period";
                 postLabel.textContent = "POST";
                 card.appendChild(postLabel);
+                
+                // Add gap indicator if there's a gap
+                if (hasGap) {
+                    const gapIndicator = document.createElement("div");
+                    gapIndicator.className = "gap-indicator";
+                    gapIndicator.textContent = `GAP: ${calculateDateGapInDays(timeline[splitIndex-1], timeline[splitIndex])} days`;
+                    gapIndicator.style.display = "none"; // Hidden by default, shown in afterDraw
+                    card.appendChild(gapIndicator);
+                }
                 
                 const wrapper = document.createElement("div");
                 wrapper.className = "chart-container";
@@ -1112,7 +1197,14 @@
                     }
                 });
 
-                const validValues = dataPoints.filter(v => v !== null);
+                // Insert null value for the gap if there is one
+                let finalDataPoints = [...dataPoints];
+                if (hasGap) {
+                    // Insert null at the gap position to break the line
+                    finalDataPoints.splice(splitIndex, 0, null);
+                }
+
+                const validValues = finalDataPoints.filter(v => v !== null);
                 if (validValues.length === 0) {
                     const noDataMsg = document.createElement("div");
                     noDataMsg.style.textAlign = "center";
@@ -1172,27 +1264,56 @@
                 // Create dataset with pre/post styling
                 const datasets = [{
                     label: kpi,
-                    data: dataPoints,
+                    data: finalDataPoints,
                     borderColor: chartColor,
                     backgroundColor: (context) => {
                         const index = context.dataIndex;
-                        if (index < splitIndex) {
-                            return 'rgba(47, 128, 237, 0.1)';
+                        if (hasGap) {
+                            if (index < splitIndex) {
+                                return 'rgba(47, 128, 237, 0.1)'; // Pre period
+                            } else if (index > splitIndex) {
+                                return 'rgba(39, 174, 96, 0.1)'; // Post period
+                            }
                         } else {
-                            return 'rgba(39, 174, 96, 0.1)';
+                            return index < splitIndex ? 'rgba(47, 128, 237, 0.1)' : 'rgba(39, 174, 96, 0.1)';
                         }
+                        return 'transparent'; // For gap position
                     },
                     borderWidth: activeChartStyle ? activeChartStyle.borderWidth : 2,
-                    pointRadius: activeChartStyle ? activeChartStyle.pointRadius : 5,
+                    pointRadius: (context) => {
+                        const index = context.dataIndex;
+                        if (hasGap && index === splitIndex) {
+                            return 0; // No point for gap
+                        }
+                        return activeChartStyle ? activeChartStyle.pointRadius : 5;
+                    },
                     pointBackgroundColor: (context) => {
                         const index = context.dataIndex;
-                        return index < splitIndex ? '#2F80ED' : '#27AE60';
+                        if (hasGap) {
+                            if (index < splitIndex) {
+                                return '#2F80ED'; // Pre period
+                            } else if (index > splitIndex) {
+                                return '#27AE60'; // Post period
+                            }
+                        } else {
+                            return index < splitIndex ? '#2F80ED' : '#27AE60';
+                        }
+                        return 'transparent'; // For gap position
                     },
                     pointBorderColor: chartColor,
                     pointBorderWidth: 1,
                     tension: activeChartStyle ? activeChartStyle.tension : 0.4,
-                    spanGaps: true,
-                    fill: true
+                    spanGaps: false, // DO NOT span gaps - this creates the break
+                    fill: true,
+                    segment: {
+                        borderColor: (ctx) => {
+                            // Create break at the gap
+                            if (hasGap && ctx.p1DataIndex === splitIndex - 1) {
+                                return 'transparent';
+                            }
+                            return chartColor;
+                        }
+                    }
                 }];
 
                 // Chart Config
@@ -1230,8 +1351,8 @@
                                 color: '#666',
                                 position: 'bottom'
                             },
-                            // Add annotation plugin for vertical line
-                            annotation: {
+                            // Add annotation plugin for vertical line (only if no gap)
+                            annotation: hasGap ? {} : {
                                 annotations: {
                                     prePostDivider: {
                                         type: 'line',
@@ -1268,11 +1389,24 @@
                                 callbacks: {
                                     title: function(tooltipItems) {
                                         const index = tooltipItems[0].dataIndex;
-                                        const period = index < splitIndex ? 'PRE - ' : 'POST - ';
+                                        if (hasGap && index === splitIndex) {
+                                            return 'GAP PERIOD';
+                                        }
+                                        const period = hasGap ? 
+                                            (index < splitIndex ? 'PRE - ' : 'POST - ') : 
+                                            (index < splitIndex ? 'PRE - ' : 'POST - ');
                                         return period + timelineLabels[index];
                                     },
                                     labelColor: function(context) {
                                         const index = context.dataIndex;
+                                        if (hasGap && index === splitIndex) {
+                                            return {
+                                                borderColor: '#ff6b6b',
+                                                backgroundColor: '#ff6b6b',
+                                                borderWidth: 2,
+                                                borderRadius: 2
+                                            };
+                                        }
                                         return {
                                             borderColor: index < splitIndex ? '#2F80ED' : '#27AE60',
                                             backgroundColor: index < splitIndex ? '#2F80ED' : '#27AE60',
@@ -1282,12 +1416,24 @@
                                     },
                                     label: function(context) {
                                         const index = context.dataIndex;
-                                        const period = index < splitIndex ? 'Pre Period' : 'Post Period';
+                                        if (hasGap && index === splitIndex) {
+                                            return `Data Gap: ${calculateDateGapInDays(timeline[splitIndex-1], timeline[splitIndex])} days`;
+                                        }
+                                        const period = hasGap ? 
+                                            (index < splitIndex ? 'Pre Period' : 'Post Period') : 
+                                            (index < splitIndex ? 'Pre Period' : 'Post Period');
                                         return `${period}: ${context.parsed.y.toFixed(2)}`;
+                                    },
+                                    beforeBody: function(context) {
+                                        const index = context[0].dataIndex;
+                                        if (hasGap && index === splitIndex) {
+                                            return ['No data available for this period'];
+                                        }
+                                        return [];
                                     }
                                 }
                             },
-                            // Add background shading for pre/post
+                            // Add background shading for pre/post and show gap indicator
                             afterDraw: function(chart) {
                                 const ctx = chart.ctx;
                                 const xAxis = chart.scales.x;
@@ -1296,23 +1442,50 @@
                                 if (chart.data.labels.length > 0) {
                                     ctx.save();
                                     
-                                    // Pre period background
-                                    ctx.fillStyle = 'rgba(47, 128, 237, 0.05)';
-                                    ctx.fillRect(
-                                        xAxis.getPixelForTick(0),
-                                        yAxis.top,
-                                        xAxis.getPixelForTick(splitIndex) - xAxis.getPixelForTick(0),
-                                        yAxis.bottom - yAxis.top
-                                    );
-                                    
-                                    // Post period background
-                                    ctx.fillStyle = 'rgba(39, 174, 96, 0.05)';
-                                    ctx.fillRect(
-                                        xAxis.getPixelForTick(splitIndex),
-                                        yAxis.top,
-                                        xAxis.getPixelForTick(chart.data.labels.length - 1) - xAxis.getPixelForTick(splitIndex),
-                                        yAxis.bottom - yAxis.top
-                                    );
+                                    if (hasGap) {
+                                        // Pre period background (before gap)
+                                        ctx.fillStyle = 'rgba(47, 128, 237, 0.05)';
+                                        ctx.fillRect(
+                                            xAxis.getPixelForTick(0),
+                                            yAxis.top,
+                                            xAxis.getPixelForTick(splitIndex) - xAxis.getPixelForTick(0),
+                                            yAxis.bottom - yAxis.top
+                                        );
+                                        
+                                        // Post period background (after gap)
+                                        ctx.fillStyle = 'rgba(39, 174, 96, 0.05)';
+                                        ctx.fillRect(
+                                            xAxis.getPixelForTick(splitIndex + 1),
+                                            yAxis.top,
+                                            xAxis.getPixelForTick(chart.data.labels.length - 1) - xAxis.getPixelForTick(splitIndex + 1),
+                                            yAxis.bottom - yAxis.top
+                                        );
+                                        
+                                        // Show gap indicator
+                                        const gapIndicator = card.querySelector('.gap-indicator');
+                                        if (gapIndicator) {
+                                            const gapX = (xAxis.getPixelForTick(splitIndex) + xAxis.getPixelForTick(splitIndex + 1)) / 2;
+                                            gapIndicator.style.left = `${gapX}px`;
+                                            gapIndicator.style.display = 'block';
+                                        }
+                                    } else {
+                                        // No gap, simple split
+                                        ctx.fillStyle = 'rgba(47, 128, 237, 0.05)';
+                                        ctx.fillRect(
+                                            xAxis.getPixelForTick(0),
+                                            yAxis.top,
+                                            xAxis.getPixelForTick(splitIndex) - xAxis.getPixelForTick(0),
+                                            yAxis.bottom - yAxis.top
+                                        );
+                                        
+                                        ctx.fillStyle = 'rgba(39, 174, 96, 0.05)';
+                                        ctx.fillRect(
+                                            xAxis.getPixelForTick(splitIndex),
+                                            yAxis.top,
+                                            xAxis.getPixelForTick(chart.data.labels.length - 1) - xAxis.getPixelForTick(splitIndex),
+                                            yAxis.bottom - yAxis.top
+                                        );
+                                    }
                                     
                                     ctx.restore();
                                 }
@@ -1325,9 +1498,19 @@
                                         size: 8,
                                         color: (context) => {
                                             const index = context.index;
+                                            if (hasGap && index === splitIndex) {
+                                                return '#ff6b6b';
+                                            }
                                             return index < splitIndex ? '#2F80ED' : '#27AE60';
                                         }
-                                    } 
+                                    },
+                                    callback: function(value, index, values) {
+                                        // Skip label for gap position
+                                        if (hasGap && index === splitIndex) {
+                                            return 'GAP';
+                                        }
+                                        return timelineLabels[index];
+                                    }
                                 }, 
                                 grid: { 
                                     display: false 
@@ -1351,18 +1534,29 @@
                 if (activeChartStyle) {
                     const style = activeChartStyle;
                     chartConfig.data.datasets[0].borderWidth = style.borderWidth;
-                    chartConfig.data.datasets[0].pointRadius = style.pointRadius;
+                    chartConfig.data.datasets[0].pointRadius = (context) => {
+                        const index = context.dataIndex;
+                        if (hasGap && index === splitIndex) {
+                            return 0;
+                        }
+                        return style.pointRadius;
+                    };
                     chartConfig.data.datasets[0].borderDash = style.borderDash;
                     chartConfig.data.datasets[0].tension = style.tension;
                     chartConfig.data.datasets[0].fill = style.fill;
                     if (style.fill && style.backgroundColor) {
                         chartConfig.data.datasets[0].backgroundColor = (context) => {
                             const index = context.dataIndex;
-                            if (index < splitIndex) {
-                                return 'rgba(47, 128, 237, 0.1)';
+                            if (hasGap) {
+                                if (index < splitIndex) {
+                                    return 'rgba(47, 128, 237, 0.1)';
+                                } else if (index > splitIndex) {
+                                    return 'rgba(39, 174, 96, 0.1)';
+                                }
                             } else {
-                                return 'rgba(39, 174, 96, 0.1)';
+                                return index < splitIndex ? 'rgba(47, 128, 237, 0.1)' : 'rgba(39, 174, 96, 0.1)';
                             }
+                            return 'transparent';
                         };
                     }
                 }
